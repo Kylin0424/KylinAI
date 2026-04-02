@@ -31,6 +31,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enablePngCrunchInReleaseBuilds": false
+          }
+        }
+      ],
       process.env.EXPO_PUBLIC_BACKEND_BASE_URL ? [
         "expo-router",
         {
