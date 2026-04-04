@@ -1,1 +1,1 @@
-export { default } from '@/screens/splash';
+export { default } from '@/screens/home';

@@ -690,7 +690,7 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
     );
   };
 
-  // 渲染小说左滑操作按钮
+  // 渲染小说左滑操作按钮（只显示图标）
   const renderRightActions = (novel: Novel) => {
     return (
       <View style={styles.swipeActionsContainer}>
@@ -701,22 +701,19 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
             setShowExportModal(true);
           }}
         >
-          <Feather name="download" size={16} color="#FFFFFF" />
-          <ThemedText variant="caption" color="#FFFFFF">导出</ThemedText>
+          <Feather name="download" size={18} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.swipeAction, styles.scriptAction]}
           onPress={() => handleOpenScriptModal(novel)}
         >
-          <Feather name="film" size={16} color="#FFFFFF" />
-          <ThemedText variant="caption" color="#FFFFFF">剧本</ThemedText>
+          <Feather name="film" size={18} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.swipeAction, styles.deleteAction]}
           onPress={() => handleOpenDeleteModal(novel)}
         >
-          <Feather name="trash-2" size={16} color="#FFFFFF" />
-          <ThemedText variant="caption" color="#FFFFFF">删除</ThemedText>
+          <Feather name="trash-2" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     );
@@ -733,9 +730,18 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
       >
         <View style={styles.novelItem}>
           <View style={styles.novelInfo}>
-            <ThemedText variant="small" color={theme.textPrimary} style={styles.novelTitleText}>
-              {item.title}
-            </ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ThemedText variant="small" color={theme.textPrimary} style={styles.novelTitleText}>
+                {item.title}
+              </ThemedText>
+              {item.isImported && (
+                <View style={styles.importedBadge}>
+                  <ThemedText variant="caption" color="#FFFFFF" style={styles.importedBadgeText}>
+                    转载续写
+                  </ThemedText>
+                </View>
+              )}
+            </View>
             <ThemedText variant="caption" color={theme.textMuted}>
               {item.themeType ? NOVEL_THEME_TYPES.find(t => t.id === item.themeType)?.name : '未分类'} · {item.chapters.length}章
             </ThemedText>
@@ -783,14 +789,14 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <ThemedText variant="small" color={theme.textPrimary} style={styles.sectionTitle}>
-                正在创作
+                正在创作 ({writingNovels.length})
               </ThemedText>
               <ThemedText variant="caption" color={theme.textMuted}>
-                左滑更多操作
+                左滑操作
               </ThemedText>
             </View>
             <FlatList
-              data={writingNovels.slice(0, 2)}
+              data={writingNovels.slice(0, 10)}
               renderItem={renderWritingNovel}
               keyExtractor={item => item.id}
               scrollEnabled={false}
@@ -943,6 +949,17 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
             <ThemedText variant="caption" color="#C8102E">角色生成器</ThemedText>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.smallActionButton}
+            onPress={() => router.push('/novel-import')}
+          >
+            <Feather name="upload" size={12} color={theme.textPrimary} />
+            <ThemedText variant="caption" color={theme.textPrimary}>导入</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* 第二行功能入口 */}
+        <View style={styles.actionButtonsRow}>
           <TouchableOpacity
             style={styles.smallActionButton}
             onPress={() => setShowDraftModal(true)}

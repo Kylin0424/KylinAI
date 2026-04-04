@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deleteCharacter, getAllCharacters } from './characterStorage';
 
 export interface NovelChapter {
   id: string;
@@ -22,6 +23,7 @@ export interface Novel {
   createdAt: number;
   updatedAt: number;
   status: 'draft' | 'writing' | 'completed';
+  isImported?: boolean; // 是否为导入小说
 }
 
 const NOVELS_KEY = '@novel_app_novels';
@@ -76,7 +78,8 @@ export const createNovel = async (
   theme: string,
   themeType: string,
   maleCharacterId?: string,
-  femaleCharacterId?: string
+  femaleCharacterId?: string,
+  isImported?: boolean
 ): Promise<Novel> => {
   const novel: Novel = {
     id: generateId(),
@@ -90,6 +93,7 @@ export const createNovel = async (
     createdAt: Date.now(),
     updatedAt: Date.now(),
     status: 'draft',
+    isImported: isImported || false,
   };
   await saveNovel(novel);
   return novel;
@@ -116,21 +120,27 @@ export const updateNovelContent = async (novelId: string, content: string): Prom
 export const addChapter = async (
   novelId: string, 
   title: string, 
-  isPrologue: boolean = false
+  isPrologue: boolean = false,
+  customOrder?: number // 可选的自定义序号（用于导入章节）
 ): Promise<NovelChapter> => {
   try {
     const novels = await getAllNovels();
     const index = novels.findIndex(n => n.id === novelId);
     if (index !== -1) {
-      // 计算章节顺序：楔子为0，正文章节从1开始
-      const existingPrologue = novels[index].chapters.find(c => c.isPrologue);
       let order: number;
-      if (isPrologue) {
-        order = 0;
+      
+      // 如果传入了自定义序号，直接使用
+      if (customOrder !== undefined) {
+        order = customOrder;
       } else {
-        // 正文章节顺序 = 现有非楔子章节数 + 1
-        const normalChapters = novels[index].chapters.filter(c => !c.isPrologue);
-        order = normalChapters.length + 1;
+        // 否则自动计算章节顺序：楔子为0，正文章节从1开始
+        if (isPrologue) {
+          order = 0;
+        } else {
+          // 正文章节顺序 = 现有非楔子章节数 + 1
+          const normalChapters = novels[index].chapters.filter(c => !c.isPrologue);
+          order = normalChapters.length + 1;
+        }
       }
       
       const chapter: NovelChapter = {
@@ -208,9 +218,23 @@ export const deleteChapter = async (novelId: string, chapterId: string): Promise
 // 删除小说
 export const deleteNovel = async (novelId: string): Promise<void> => {
   try {
+    // 获取小说信息以获取关联的角色ID
     const novels = await getAllNovels();
+    const novel = novels.find(n => n.id === novelId);
+    
+    // 删除小说
     const filtered = novels.filter(n => n.id !== novelId);
     await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(filtered));
+    
+    // 删除锁定的角色（novelId字段等于该小说ID的角色）
+    if (novel) {
+      const characters = await getAllCharacters();
+      const lockedCharacters = characters.filter(c => c.novelId === novelId);
+      
+      for (const character of lockedCharacters) {
+        await deleteCharacter(character.id);
+      }
+    }
   } catch (error) {
     console.error('Error deleting novel:', error);
     throw error;

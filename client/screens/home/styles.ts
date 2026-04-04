@@ -5,54 +5,54 @@ export const createStyles = (theme: Theme) => {
   return StyleSheet.create({
     scrollContent: {
       flexGrow: 1,
-      paddingHorizontal: Spacing.sm,
-      paddingTop: Spacing['2xl'],  // 增加顶部间距
-      paddingBottom: Spacing.xl,
+      paddingHorizontal: Spacing.xs,
+      paddingTop: Spacing.sm,  // 进一步减小顶部间距
+      paddingBottom: Spacing.md,
     },
     header: {
-      marginTop: Spacing['4xl'],  // 增加顶部margin，给logo留足够空间（40px）
-      marginBottom: Spacing.lg,
+      marginTop: Spacing.lg,  // 进一步减小顶部margin
+      marginBottom: Spacing.xs,
       alignItems: 'center',
     },
     logo: {
-      width: 100,  // 再放大logo尺寸
-      height: 100,
-      marginBottom: Spacing.md,
+      width: 50,  // 进一步缩小logo
+      height: 50,
+      marginBottom: 2,
     },
     title: {
-      fontSize: 30,  // 标题也放大
+      fontSize: 22,  // 进一步缩小标题
       fontWeight: '900',
       letterSpacing: -0.5,
       textAlign: 'center',
     },
     subtitle: {
-      marginTop: Spacing.xs,
+      marginTop: 2,
       textTransform: 'uppercase',
       letterSpacing: 2,
-      fontSize: 12,
+      fontSize: 10,
     },
     section: {
-      marginBottom: Spacing.sm,
+      marginBottom: 2,  // 减小section间距
     },
     sectionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: Spacing.xs,
+      marginBottom: 2,  // 减小底部间距
     },
     sectionTitle: {
       fontWeight: '700',
       textTransform: 'uppercase',
       letterSpacing: 1,
-      fontSize: 11,
+      fontSize: 10,  // 缩小字体
     },
     titleSection: {
-      marginBottom: Spacing.sm,
+      marginBottom: 2,  // 减小section间距
     },
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: Spacing.xs,
+      marginBottom: 2,  // 减小底部间距
     },
     labelIconSmall: {
       width: 20,
@@ -71,22 +71,22 @@ export const createStyles = (theme: Theme) => {
     titleInput: {
       backgroundColor: theme.backgroundTertiary,
       borderRadius: 6,
-      paddingHorizontal: Spacing.sm,
-      paddingVertical: Spacing.xs,
-      fontSize: 14,
+      paddingHorizontal: Spacing.xs,  // 减小padding
+      paddingVertical: 2,  // 减小padding
+      fontSize: 13,  // 缩小字体
       color: theme.textPrimary,
     },
 
     // 角色选择并排布局
     characterRow: {
       flexDirection: 'row',
-      gap: Spacing.xs,
+      gap: 2,  // 减小间距
     },
     characterColumn: {
       flex: 1,
     },
     genderTab: {
-      paddingVertical: Spacing.xs,
+      paddingVertical: 2,  // 减小padding
       alignItems: 'center',
       borderBottomWidth: 2,
       borderBottomColor: 'transparent',
@@ -102,13 +102,13 @@ export const createStyles = (theme: Theme) => {
       backgroundColor: theme.backgroundTertiary,
       borderBottomLeftRadius: 6,
       borderBottomRightRadius: 6,
-      padding: Spacing.xs,
-      minHeight: 48,
+      padding: 2,  // 减小padding
+      minHeight: 36,  // 减小最小高度
     },
     previewCard: {
       backgroundColor: theme.backgroundDefault,
       borderRadius: 4,
-      padding: Spacing.xs,
+      padding: 2,  // 减小padding
     },
     previewHeader: {
       flexDirection: 'row',
@@ -125,7 +125,7 @@ export const createStyles = (theme: Theme) => {
     emptyPreview: {
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 36,
+      minHeight: 28,  // 减小最小高度
       gap: 2,
     },
 
@@ -133,8 +133,8 @@ export const createStyles = (theme: Theme) => {
     themeSelector: {
       backgroundColor: theme.backgroundTertiary,
       borderRadius: 6,
-      paddingHorizontal: Spacing.sm,
-      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.xs,  // 减小padding
+      paddingVertical: 2,  // 减小padding
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -195,23 +195,23 @@ export const createStyles = (theme: Theme) => {
     // 按钮样式
     generateButton: {
       backgroundColor: '#1A1A1A',
-      paddingVertical: Spacing.sm,
+      paddingVertical: Spacing.xs,  // 减小padding
       paddingHorizontal: Spacing.lg,
       borderRadius: 0,
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: Spacing.xs,
+      marginBottom: 2,
     },
     generateButtonDisabled: {
       opacity: 0.6,
     },
     actionButtons: {
-      marginBottom: Spacing.sm,
+      marginBottom: Spacing.xs,  // 减小margin
     },
     characterButton: {
       backgroundColor: 'transparent',
-      paddingVertical: Spacing.sm,
+      paddingVertical: Spacing.xs,  // 减小padding
       paddingHorizontal: Spacing.lg,
       borderRadius: 0,
       flexDirection: 'row',
@@ -223,7 +223,7 @@ export const createStyles = (theme: Theme) => {
     },
     characterLibraryButton: {
       backgroundColor: 'transparent',
-      paddingVertical: Spacing.sm,
+      paddingVertical: Spacing.xs,  // 减小padding
       paddingHorizontal: Spacing.lg,
       borderRadius: 0,
       flexDirection: 'row',
@@ -236,40 +236,56 @@ export const createStyles = (theme: Theme) => {
       marginLeft: Spacing.xs,
       fontWeight: '600',
       letterSpacing: 0.5,
-      fontSize: 13,
+      fontSize: 12,  // 缩小字体
     },
 
-    // 正在写作的小说
+    // 正在写作的小说 - 紧凑但完整显示
     novelItem: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.backgroundDefault,
-      padding: Spacing.xs,
-      borderRadius: 4,
-      marginBottom: 2,
+      paddingVertical: 6,
+      paddingHorizontal: 8,
+      borderRadius: 6,
+      marginBottom: 4,
     },
     novelInfo: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     novelTitleText: {
-      marginBottom: 1,
-      fontSize: 13,
+      fontSize: 14,
+      flex: 1,
+    },
+    importedBadge: {
+      backgroundColor: '#F59E0B',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+      marginLeft: 6,
+    },
+    importedBadgeText: {
+      fontSize: 10,
+      fontWeight: '500',
     },
     novelDeleteButton: {
-      padding: Spacing.xs,
+      padding: 4,
     },
 
-    // 滑动操作
+    // 滑动操作按钮 - 完整显示
     swipeActionsContainer: {
       flexDirection: 'row',
-      marginBottom: 2,
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 4,
     },
     swipeAction: {
       justifyContent: 'center',
       alignItems: 'center',
-      width: 50,
-      borderRadius: 4,
-      marginLeft: 2,
+      width: 36,
+      height: 36,
+      borderRadius: 8,
     },
     exportAction: {
       backgroundColor: '#0EA5E9',
@@ -280,16 +296,14 @@ export const createStyles = (theme: Theme) => {
     deleteAction: {
       backgroundColor: '#EF4444',
     },
-    swipeText: {
-      marginTop: 1,
-      fontSize: 9,
-    },
+
+    // 续写按钮
     novelContinueButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: Spacing.xs,
-      paddingVertical: 2,
-      gap: 2,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
+      gap: 1,
     },
 
     // 弹窗样式
@@ -366,21 +380,21 @@ export const createStyles = (theme: Theme) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: Spacing.sm,
-      gap: Spacing.xs,
+      marginBottom: Spacing.xs,  // 减小margin
+      gap: 2,  // 减小gap
     },
     smallActionButton: {
       flex: 1,
       flexDirection: 'column',
       alignItems: 'center',
-      paddingVertical: Spacing.xs,
+      paddingVertical: 2,  // 减小padding
       gap: 2,
     },
     generatorButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,  // 减小padding
+      paddingHorizontal: Spacing.xs,  // 减小padding
       gap: 2,
     },
     draftBadge: {

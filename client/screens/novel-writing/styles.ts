@@ -710,5 +710,63 @@ export const createStyles = (theme: Theme) => {
       marginLeft: Spacing.sm,
       marginTop: 2,
     },
+    // 字数提醒弹窗
+    wordCountAlertOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: Spacing.lg,
+    },
+    wordCountAlertContent: {
+      backgroundColor: theme.backgroundRoot,
+      borderRadius: 16,
+      padding: Spacing.xl,
+      width: '100%',
+      maxWidth: 340,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    wordCountAlertIcon: {
+      marginBottom: Spacing.md,
+    },
+    wordCountAlertTitle: {
+      marginBottom: Spacing.sm,
+    },
+    wordCountAlertText: {
+      textAlign: 'center',
+      marginBottom: Spacing.xs,
+    },
+    wordCountAlertHint: {
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    wordCountAlertButtons: {
+      flexDirection: 'row',
+      marginTop: Spacing.lg,
+      gap: Spacing.md,
+    },
+    wordCountAlertButtonPrimary: {
+      flex: 1,
+      backgroundColor: '#C8102E',
+      paddingVertical: Spacing.sm + 2,
+      paddingHorizontal: Spacing.md,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    wordCountAlertButtonSecondary: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: '#C8102E',
+      paddingVertical: Spacing.sm + 2,
+      paddingHorizontal: Spacing.md,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
   });
 };

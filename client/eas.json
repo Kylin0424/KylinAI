@@ -8,18 +8,29 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
+      },
+      "channel": "preview"
     },
     "production": {
       "android": {
         "buildType": "apk"
-      }
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
+      },
+      "channel": "production"
     }
   },
   "submit": {

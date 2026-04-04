@@ -58,6 +58,7 @@ export default function CharacterResultScreen() {
     education: string;
     memberCount: string;
     familyRelation: string;
+    familyMembersBrief: string;
     familyBackground: string;
     socialExperience: string;
   }>();
@@ -109,7 +110,8 @@ export default function CharacterResultScreen() {
        * 接口：POST /api/v1/character/generate
        * Body 参数：sliders: object, name: string, gender: string, age: string, height: string,
        *          weight: string, group: string, occupation: string, education: string,
-       *          memberCount: string, familyRelation: string, familyBackground: string, socialExperience: string
+       *          memberCount: string, familyRelation: string, familyMembersBrief: string,
+       *          familyBackground: string, socialExperience: string
        */
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate`, {
         method: 'POST',
@@ -128,6 +130,7 @@ export default function CharacterResultScreen() {
           education: params.education,
           memberCount: params.memberCount,
           familyRelation: params.familyRelation,
+          familyMembersBrief: params.familyMembersBrief,
           familyBackground: params.familyBackground,
           socialExperience: params.socialExperience,
         }),

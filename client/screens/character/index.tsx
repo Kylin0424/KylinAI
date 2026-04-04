@@ -26,7 +26,7 @@ import { EDUCATION_OPTIONS, getEducationByCategory } from '@/constants/education
 const MEMBER_COUNT_OPTIONS = generateMemberCountOptions();
 
 // 性别选项
-const GENDER_OPTIONS = ['男', '女', '扶她', '人妖', '手动输入'];
+const GENDER_OPTIONS = ['男', '女', '男娘', '扶她', '人妖', '手动输入'];
 const GENDER_CUSTOM_OPTION = '手动输入';
 
 interface SliderConfig {
@@ -60,6 +60,7 @@ export default function CharacterScreen() {
   // 家庭背景
   const [memberCount, setMemberCount] = useState<number>(3);
   const [selectedRelations, setSelectedRelations] = useState<string[]>([]); // 已选的关系列表
+  const [familyMembersBrief, setFamilyMembersBrief] = useState(''); // 家庭成员简述
   const [familyBackground, setFamilyBackground] = useState('');
   const [socialExperience, setSocialExperience] = useState('');
   
@@ -183,6 +184,7 @@ export default function CharacterScreen() {
       education: education === '手动输入' ? customEducation.trim() || '未设定' : education.trim() || '未设定',
       memberCount: memberCount.toString(),
       familyRelation: selectedRelations.join('、') || '未设定',
+      familyMembersBrief: familyMembersBrief.trim() || '未设定',
       familyBackground: familyBackground.trim() || '未设定',
       socialExperience: finalSocialExperience,
     });
@@ -508,6 +510,20 @@ export default function CharacterScreen() {
                 </ThemedText>
               </View>
             )}
+
+            {/* 家庭成员简述 */}
+            <ThemedText variant="caption" color={theme.textMuted} style={[styles.inputLabel, { marginTop: Spacing.md }]}>
+              家庭成员简述
+            </ThemedText>
+            <TextInput
+              style={styles.textInput}
+              placeholder="简要描述家庭成员信息（如：父亲是医生，母亲是教师等）"
+              placeholderTextColor={theme.textMuted}
+              value={familyMembersBrief}
+              onChangeText={setFamilyMembersBrief}
+              multiline
+              numberOfLines={2}
+            />
 
             {/* 家庭背景输入 */}
             <ThemedText variant="caption" color={theme.textMuted} style={[styles.inputLabel, { marginTop: Spacing.md }]}>

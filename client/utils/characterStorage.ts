@@ -12,6 +12,7 @@ export interface Character {
   education?: string; // 学历
   personality: string;
   experience: string;
+  familyMembersBrief?: string; // 家庭成员简述
   familyBackground: string;
   appearance: string;
   specialTraits: string;

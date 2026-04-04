@@ -34,6 +34,7 @@ export default function RootLayout() {
               <Stack.Screen name="settings" options={{ title: "设置" }} />
               <Stack.Screen name="novel" options={{ title: "小说创作" }} />
               <Stack.Screen name="novel-writing" options={{ title: "续写小说" }} />
+              <Stack.Screen name="novel-import" options={{ title: "导入小说" }} />
               <Stack.Screen name="character" options={{ title: "角色生成器" }} />
               <Stack.Screen name="character-result" options={{ title: "角色档案" }} />
               <Stack.Screen name="character-list" options={{ title: "角色库" }} />

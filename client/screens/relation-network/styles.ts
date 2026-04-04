@@ -72,72 +72,13 @@ export const createStyles = (theme: Theme) => {
     emptyText: {
       marginTop: Spacing.lg,
     },
-    networkContainer: {
-      gap: Spacing.md,
-    },
-    characterNode: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 12,
-      padding: Spacing.lg,
-      borderLeftWidth: 4,
-      borderLeftColor: '#C8102E',
-    },
-    maleNode: {
-      borderLeftColor: '#3B82F6',
-    },
-    femaleNode: {
-      borderLeftColor: '#EC4899',
-    },
-    nodeHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: Spacing.md,
-    },
-    nodeName: {
-      fontWeight: '700',
-    },
-    nodeGender: {
-      fontSize: 12,
-    },
-    relationsSection: {
-      marginTop: Spacing.sm,
-    },
-    relationsTitle: {
-      marginBottom: Spacing.sm,
-      fontWeight: '600',
-    },
-    relationItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.backgroundTertiary,
-      paddingVertical: Spacing.sm,
-      paddingHorizontal: Spacing.md,
-      borderRadius: 8,
-      marginBottom: Spacing.xs,
-    },
-    relationType: {
-      marginRight: Spacing.sm,
-      fontWeight: '500',
-    },
-    relationArrow: {
-      marginHorizontal: Spacing.xs,
-    },
-    targetName: {
-      flex: 1,
-    },
-    noRelations: {
-      fontStyle: 'italic',
-      marginTop: Spacing.xs,
-    },
+
+    // 图例
     legend: {
       flexDirection: 'row',
       justifyContent: 'center',
       gap: Spacing.lg,
-      marginTop: Spacing.lg,
-      paddingVertical: Spacing.md,
-      backgroundColor: theme.backgroundTertiary,
-      borderRadius: 8,
+      marginBottom: Spacing.md,
     },
     legendItem: {
       flexDirection: 'row',
@@ -145,15 +86,153 @@ export const createStyles = (theme: Theme) => {
       gap: Spacing.xs,
     },
     legendDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
     },
     maleDot: {
       backgroundColor: '#3B82F6',
     },
     femaleDot: {
       backgroundColor: '#EC4899',
+    },
+    relationDot: {
+      backgroundColor: '#C8102E',
+    },
+
+    // 网络图
+    graphWrapper: {
+      marginBottom: Spacing.md,
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+
+    // 提示
+    tipContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.xs,
+      marginBottom: Spacing.lg,
+    },
+    tipText: {
+      fontStyle: 'italic',
+    },
+
+    // 角色详情卡片
+    characterDetail: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      marginBottom: Spacing.lg,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    detailHeader: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      padding: Spacing.sm,
+    },
+    closeButton: {
+      padding: Spacing.xs,
+    },
+    detailContent: {
+      padding: Spacing.md,
+      paddingTop: 0,
+    },
+    characterInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      marginBottom: Spacing.lg,
+    },
+    characterAvatar: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      borderWidth: 3,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#F9FAFB',
+    },
+    avatarText: {
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    characterMeta: {
+      flex: 1,
+    },
+    relationsList: {
+      marginTop: Spacing.sm,
+    },
+    relationsTitle: {
+      marginBottom: Spacing.sm,
+    },
+    relationItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    relationType: {
+      backgroundColor: '#C8102E' + '15',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    relationTypeText: {
+      fontSize: 12,
+      color: '#C8102E',
+      fontWeight: '500',
+    },
+    targetGender: {
+      marginLeft: 'auto',
+    },
+    noRelations: {
+      alignItems: 'center',
+      paddingVertical: Spacing.lg,
+    },
+
+    // 角色列表
+    characterList: {
+      marginBottom: Spacing.lg,
+    },
+    listTitle: {
+      marginBottom: Spacing.md,
+    },
+    characterGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+    },
+    characterCard: {
+      width: '31%',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      padding: Spacing.sm,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    characterCardActive: {
+      borderColor: '#C8102E',
+      backgroundColor: '#FEF2F2',
+    },
+    miniAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: Spacing.xs,
+      backgroundColor: '#F9FAFB',
+    },
+    miniAvatarText: {
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
 };

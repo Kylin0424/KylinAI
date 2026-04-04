@@ -1,9 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   ScrollView,
   View,
   TouchableOpacity,
   Alert,
+  Text,
+  Dimensions,
+  Animated,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -12,12 +15,16 @@ import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { FloatingBall } from '@/components/FloatingBall';
+import { NetworkGraph } from '@/components/NetworkGraph';
 import { createStyles } from './styles';
 import {
   RelationNetworkNode,
   getRelationNetwork,
 } from '@/utils/characterStorage';
 import { Novel, getWritingNovels } from '@/utils/novelStorage';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const GRAPH_HEIGHT = 400;
 
 export default function RelationNetworkScreen() {
   const { theme, isDark } = useTheme();
@@ -29,6 +36,8 @@ export default function RelationNetworkScreen() {
   const [network, setNetwork] = useState<RelationNetworkNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNovelPicker, setShowNovelPicker] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState<RelationNetworkNode | null>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const loadData = async () => {
     setIsLoading(true);
@@ -52,24 +61,39 @@ export default function RelationNetworkScreen() {
     }, [])
   );
 
+  // 动画显示
+  useEffect(() => {
+    if (!isLoading && network.length > 0) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isLoading, network]);
+
   const handleSelectNovel = async (novel: Novel) => {
     setSelectedNovel(novel);
     setShowNovelPicker(false);
+    setSelectedCharacter(null);
     const networkData = await getRelationNetwork(novel.id);
     setNetwork(networkData);
   };
 
-  const getGenderStyle = (gender: string) => {
-    if (gender === '男') return styles.maleNode;
-    if (gender === '女') return styles.femaleNode;
-    return null;
-  };
+  const handleNodePress = useCallback((characterId: string) => {
+    const node = network.find(n => n.characterId === characterId);
+    if (node) {
+      setSelectedCharacter(node);
+    }
+  }, [network]);
 
   const getGenderColor = (gender: string) => {
     if (gender === '男') return '#3B82F6';
     if (gender === '女') return '#EC4899';
     return '#C8102E';
   };
+
+  const graphWidth = SCREEN_WIDTH - 32; // 减去水平padding
 
   return (
     <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
@@ -177,66 +201,127 @@ export default function RelationNetworkScreen() {
                 <View style={[styles.legendDot, styles.femaleDot]} />
                 <ThemedText variant="caption" color={theme.textSecondary}>女性角色</ThemedText>
               </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.relationDot]} />
+                <ThemedText variant="caption" color={theme.textSecondary}>关系连线</ThemedText>
+              </View>
             </View>
 
-            {/* 关系网络节点 */}
-            <View style={styles.networkContainer}>
-              {network.map(node => (
-                <View 
-                  key={node.characterId} 
-                  style={[styles.characterNode, getGenderStyle(node.characterGender)]}
-                >
-                  <View style={styles.nodeHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <ThemedText variant="h3" color={theme.textPrimary} style={styles.nodeName}>
-                        {node.characterName}
+            {/* 关系网络图 */}
+            <Animated.View style={[styles.graphWrapper, { opacity: fadeAnim }]}>
+              <NetworkGraph
+                network={network}
+                width={graphWidth}
+                height={GRAPH_HEIGHT}
+                onNodePress={handleNodePress}
+              />
+            </Animated.View>
+
+            {/* 提示 */}
+            <View style={styles.tipContainer}>
+              <Feather name="info" size={14} color={theme.textMuted} />
+              <ThemedText variant="caption" color={theme.textMuted} style={styles.tipText}>
+                点击角色节点查看详细信息
+              </ThemedText>
+            </View>
+
+            {/* 选中角色的详细信息 */}
+            {selectedCharacter && (
+              <View style={styles.characterDetail}>
+                <View style={styles.detailHeader}>
+                  <TouchableOpacity 
+                    style={styles.closeButton}
+                    onPress={() => setSelectedCharacter(null)}
+                  >
+                    <Feather name="x" size={18} color={theme.textMuted} />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.detailContent}>
+                  <View style={styles.characterInfo}>
+                    <View style={[styles.characterAvatar, { borderColor: getGenderColor(selectedCharacter.characterGender) }]}>
+                      <Text style={[styles.avatarText, { color: getGenderColor(selectedCharacter.characterGender) }]}>
+                        {selectedCharacter.characterName[0]}
+                      </Text>
+                    </View>
+                    <View style={styles.characterMeta}>
+                      <ThemedText variant="h3" color={theme.textPrimary}>
+                        {selectedCharacter.characterName}
                       </ThemedText>
-                      <ThemedText 
-                        variant="caption" 
-                        color={getGenderColor(node.characterGender)}
-                        style={styles.nodeGender}
-                      >
-                        {node.characterGender}
+                      <ThemedText variant="caption" color={getGenderColor(selectedCharacter.characterGender)}>
+                        {selectedCharacter.characterGender}
                       </ThemedText>
                     </View>
                   </View>
-
-                  {node.relations.length > 0 ? (
-                    <View style={styles.relationsSection}>
-                      <ThemedText variant="caption" color={theme.textMuted} style={styles.relationsTitle}>
-                        关系 ({node.relations.length})
+                  
+                  {selectedCharacter.relations.length > 0 ? (
+                    <View style={styles.relationsList}>
+                      <ThemedText variant="small" color={theme.textMuted} style={styles.relationsTitle}>
+                        关系列表
                       </ThemedText>
-                      {node.relations.map((relation, index) => (
+                      {selectedCharacter.relations.map((relation, index) => (
                         <View key={index} style={styles.relationItem}>
-                          <ThemedText 
-                            variant="small" 
-                            color="#C8102E" 
-                            style={styles.relationType}
-                          >
-                            {relation.relationType}
-                          </ThemedText>
+                          <View style={styles.relationType}>
+                            <Text style={styles.relationTypeText}>{relation.relationType}</Text>
+                          </View>
                           <Feather 
                             name="arrow-right" 
                             size={14} 
                             color={theme.textMuted} 
-                            style={styles.relationArrow}
                           />
-                          <ThemedText variant="small" color={theme.textPrimary} style={styles.targetName}>
+                          <ThemedText variant="body" color={theme.textPrimary}>
                             {relation.targetName}
                           </ThemedText>
-                          <ThemedText variant="caption" color={getGenderColor(relation.targetGender)}>
+                          <ThemedText 
+                            variant="caption" 
+                            color={getGenderColor(relation.targetGender)}
+                            style={styles.targetGender}
+                          >
                             {relation.targetGender}
                           </ThemedText>
                         </View>
                       ))}
                     </View>
                   ) : (
-                    <ThemedText variant="caption" color={theme.textMuted} style={styles.noRelations}>
-                      暂无关系
-                    </ThemedText>
+                    <View style={styles.noRelations}>
+                      <ThemedText variant="small" color={theme.textMuted}>
+                        暂无关系数据
+                      </ThemedText>
+                    </View>
                   )}
                 </View>
-              ))}
+              </View>
+            )}
+
+            {/* 角色列表（简化版） */}
+            <View style={styles.characterList}>
+              <ThemedText variant="small" color={theme.textMuted} style={styles.listTitle}>
+                角色列表 ({network.length})
+              </ThemedText>
+              <View style={styles.characterGrid}>
+                {network.map(node => (
+                  <TouchableOpacity
+                    key={node.characterId}
+                    style={[
+                      styles.characterCard,
+                      selectedCharacter?.characterId === node.characterId && styles.characterCardActive,
+                    ]}
+                    onPress={() => setSelectedCharacter(node)}
+                  >
+                    <View style={[styles.miniAvatar, { borderColor: getGenderColor(node.characterGender) }]}>
+                      <Text style={[styles.miniAvatarText, { color: getGenderColor(node.characterGender) }]}>
+                        {node.characterName[0]}
+                      </Text>
+                    </View>
+                    <ThemedText variant="caption" color={theme.textPrimary} numberOfLines={1}>
+                      {node.characterName}
+                    </ThemedText>
+                    <ThemedText variant="caption" color={theme.textMuted}>
+                      {node.relations.length} 关系
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </>
         )}

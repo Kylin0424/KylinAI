@@ -166,6 +166,13 @@ export default function NovelWritingScreen() {
     highlightColor: null as string | null,
   });
 
+  // 字数监测与提醒
+  const [showWordCountAlert, setShowWordCountAlert] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
+  const hasShownWordCountAlert = useRef(false);
+  const WORD_COUNT_WARNING_THRESHOLD = 4500; // 提醒阈值
+  const WORD_COUNT_MAX = 5000; // 最大字数
+
   // 文字选择状态 - 使用ref保存最后的选中范围，避免失去焦点后丢失
   const lastSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
@@ -279,6 +286,23 @@ export default function NovelWritingScreen() {
       loadData();
     }, [params.novelId])
   );
+
+  // 字数监测与提醒
+  useEffect(() => {
+    const currentWordCount = content.length;
+    setWordCount(currentWordCount);
+    
+    // 当字数接近阈值且未提醒过时，显示提醒
+    if (currentWordCount >= WORD_COUNT_WARNING_THRESHOLD && !hasShownWordCountAlert.current) {
+      hasShownWordCountAlert.current = true;
+      setShowWordCountAlert(true);
+    }
+    
+    // 如果字数降到阈值以下，重置提醒状态（允许再次提醒）
+    if (currentWordCount < WORD_COUNT_WARNING_THRESHOLD - 200) {
+      hasShownWordCountAlert.current = false;
+    }
+  }, [content]);
 
   // 获取可用的大模型列表
   const fetchAiModels = async () => {
@@ -718,6 +742,18 @@ export default function NovelWritingScreen() {
     setContent(newContent);
     // 重新搜索
     performSearch(searchText);
+  };
+
+  // 跳转到搜索结果位置
+  const jumpToSearchResult = (index: number, textLength: number) => {
+    // 设置选择位置
+    setSelection({ start: index, end: index + textLength });
+    // 关闭搜索弹窗
+    setShowSearchModal(false);
+    // 使用setTimeout确保选择生效后再聚焦
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 100);
   };
 
   // 一键全部替换
@@ -1206,8 +1242,11 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
           </View>
 
           <View style={styles.topBarRight}>
-            <ThemedText variant="caption" color={theme.textMuted}>
-              {content.length}字
+            <ThemedText 
+              variant="caption" 
+              color={wordCount >= WORD_COUNT_WARNING_THRESHOLD ? '#C8102E' : theme.textMuted}
+            >
+              {wordCount}字
             </ThemedText>
             <TouchableOpacity style={styles.searchButton} onPress={openSearchModal}>
               <Feather name="search" size={16} color={theme.textPrimary} />
@@ -2207,7 +2246,12 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                         ]}
                         onPress={() => {
                           setCurrentSearchIndex(idx);
-                          replaceSingle(result.index, result.text);
+                          jumpToSearchResult(result.index, result.text.length);
+                        }}
+                        onLongPress={() => {
+                          if (replaceText.trim()) {
+                            replaceSingle(result.index, result.text);
+                          }
                         }}
                       >
                         <ThemedText variant="small" color={theme.textPrimary} numberOfLines={1}>
@@ -2245,7 +2289,12 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                       <TouchableOpacity
                         key={`synonym-${idx}`}
                         style={styles.searchResultItem}
-                        onPress={() => replaceSingle(result.index, result.text)}
+                        onPress={() => jumpToSearchResult(result.index, result.text.length)}
+                        onLongPress={() => {
+                          if (replaceText.trim()) {
+                            replaceSingle(result.index, result.text);
+                          }
+                        }}
                       >
                         <ThemedText variant="small" color={theme.textPrimary} numberOfLines={1}>
                           ...{beforeText}
@@ -2288,6 +2337,49 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                 <ThemedText variant="small" color="#FFFFFF" style={{ marginLeft: 6 }}>
                   全部替换 ({searchResults.exact.length + searchResults.synonyms.length}处)
                 </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 字数提醒弹窗 */}
+      <Modal
+        visible={showWordCountAlert}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWordCountAlert(false)}
+      >
+        <View style={styles.wordCountAlertOverlay}>
+          <View style={styles.wordCountAlertContent}>
+            <View style={styles.wordCountAlertIcon}>
+              <Feather name="alert-circle" size={48} color="#C8102E" />
+            </View>
+            <ThemedText variant="h3" color={theme.textPrimary} style={styles.wordCountAlertTitle}>
+              字数提醒
+            </ThemedText>
+            <ThemedText variant="body" color={theme.textSecondary} style={styles.wordCountAlertText}>
+              当前章节已达到 {wordCount} 字，接近建议上限 {WORD_COUNT_MAX} 字。
+            </ThemedText>
+            <ThemedText variant="small" color={theme.textMuted} style={styles.wordCountAlertHint}>
+              {'\n'}过长章节可能导致剧本生成时超时，建议分章节创作。{'\n\n'}
+              您可以继续创作，或考虑新建章节。
+            </ThemedText>
+            <View style={styles.wordCountAlertButtons}>
+              <TouchableOpacity
+                style={styles.wordCountAlertButtonSecondary}
+                onPress={() => {
+                  setShowWordCountAlert(false);
+                  handleAddChapter();
+                }}
+              >
+                <ThemedText variant="body" color="#C8102E">新建章节</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.wordCountAlertButtonPrimary}
+                onPress={() => setShowWordCountAlert(false)}
+              >
+                <ThemedText variant="body" color="#FFFFFF">继续创作</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
