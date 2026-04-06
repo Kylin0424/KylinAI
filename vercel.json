@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd client && npx expo export:embed",
+  "outputDirectory": "client/web-build",
+  "installCommand": "pnpm install"
+}
