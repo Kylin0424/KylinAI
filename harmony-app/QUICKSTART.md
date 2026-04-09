@@ -68,7 +68,7 @@ cp -r /workspace/projects/harmony-app ~/你的工作目录/
 ```typescript
 // 文件：entry/src/main/ets/services/AIService.ets
 // 第10行
-private baseUrl: string = 'http://你的服务器地址:9091/api/v1';
+private baseUrl: string = 'http://https://kylinai-1.onrender.com/api/v1';
 ```
 
 ---

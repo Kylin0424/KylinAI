@@ -5,7 +5,7 @@ import http from '@ohos.net.http';
  * AI服务 - 负责与后端通信生成小说内容
  */
 export class AIService {
-  private baseUrl: string = 'http://localhost:9091/api/v1';
+  private baseUrl: string = 'http://https://kylinai-1.onrender.com/api/v1';
 
   /**
    * 流式生成楔子内容
