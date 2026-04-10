@@ -376,8 +376,7 @@ router.post('/generate-avatars', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    typescript
-const config = new Config({
+    const config = new Config({
   apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
   baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
 });
