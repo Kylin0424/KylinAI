@@ -100,7 +100,11 @@ router.post('/analyze', upload.single('file'), async (req: Request, res: Respons
 
     // 使用AI分析内容，识别角色
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    typescript
+const config = new Config({
+  apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
+  baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
+});
     const client = new LLMClient(config, customHeaders);
 
     // 第一步：AI分析角色和主题（使用前10万字）
@@ -372,7 +376,11 @@ router.post('/generate-avatars', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    typescript
+const config = new Config({
+  apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
+  baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
+});
     const imageClient = new ImageGenerationClient(config, customHeaders);
 
     const results: { name: string; avatarUrl?: string; error?: string }[] = [];
