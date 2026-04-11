@@ -205,6 +205,7 @@ export default function CharacterScreen() {
   };
 
   const handleConfirmCustomOccupation = () => {
+    setOccupation(customOccupation.trim() || '未设定');
     setShowCustomOccupationInput(false);
   };
 
@@ -221,6 +222,7 @@ export default function CharacterScreen() {
   };
 
   const handleConfirmCustomEducation = () => {
+    setEducation(customEducation.trim() || '未设定');
     setShowCustomEducationInput(false);
   };
 
@@ -237,6 +239,7 @@ export default function CharacterScreen() {
   };
 
   const handleConfirmCustomGender = () => {
+    setGender(customGender.trim() || '未设定');
     setShowCustomGenderInput(false);
   };
 
