@@ -50,8 +50,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }
         }
       ],
-      // 开发环境不设置代理，直接使用本地地址
-      'expo-router',
+      // 临时使用线上代理地址
+      process.env.EXPO_PUBLIC_BACKEND_BASE_URL ? [
+        "expo-router",
+        {
+          "origin": process.env.EXPO_PUBLIC_BACKEND_BASE_URL
+        }
+      ] : 'expo-router',
       [
         "expo-splash-screen",
         {

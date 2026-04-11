@@ -54,8 +54,8 @@ import {
 } from '@/utils/draftStorage';
 import { NOVEL_THEME_TYPES } from '@/constants/occupations';
 
-// 开发环境使用本地地址
-const EXPO_PUBLIC_BACKEND_BASE_URL = 'http://localhost:9091';
+// 临时使用线上地址测试
+const EXPO_PUBLIC_BACKEND_BASE_URL = 'https://kylinai-1.onrender.com';
 
 export default function HomeScreen() {
   const { theme, isDark } = useThemeContext();
