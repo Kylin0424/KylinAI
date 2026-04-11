@@ -369,7 +369,7 @@ export default function CharacterScreen() {
             </View>
           </View>
 
-          {/* 第二行：身高、体重、团体 */}
+          {/* 第二行：身高、体重、学历 */}
           <View style={styles.inputRow}>
             {/* 身高 - 预留4个汉字位置 */}
             <View style={[styles.inputGroup, styles.heightInputGroup]}>
@@ -407,38 +407,8 @@ export default function CharacterScreen() {
                 <ThemedText variant="caption" color={theme.textMuted} style={styles.suffixText}>kg</ThemedText>
               </View>
             </View>
-            {/* 团体 - 占剩余空间 */}
-            <View style={[styles.inputGroup, { flex: 0.5, marginLeft: 8 }]}>
-              <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
-                团体
-              </ThemedText>
-              <TextInput
-                style={styles.textInput}
-                placeholder="军团/教派"
-                placeholderTextColor={theme.textMuted}
-                value={groupInput}
-                onChangeText={setGroupInput}
-              />
-            </View>
-          </View>
-
-          {/* 第三行：职位、学历、职业 */}
-          <View style={styles.inputRow}>
-            {/* 职位 - 手动输入 */}
-            <View style={[styles.inputGroup, { flex: 0.8, marginRight: 8 }]}>
-              <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
-                职位
-              </ThemedText>
-              <TextInput
-                style={styles.textInput}
-                placeholder="如：队长、长老"
-                placeholderTextColor={theme.textMuted}
-                value={positionInput}
-                onChangeText={setPositionInput}
-              />
-            </View>
-            {/* 学历 Selection - Left side, larger */}
-            <View style={[styles.inputGroup, { flex: 1.2, marginRight: 8 }]}>
+            {/* 学历 Selection - 右侧 */}
+            <View style={[styles.inputGroup, { flex: 0.8, marginLeft: 8 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 学历
               </ThemedText>
@@ -456,8 +426,38 @@ export default function CharacterScreen() {
                 <Feather name="chevron-down" size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
-            {/* Occupation Selection - Right side, smaller */}
-            <View style={[styles.inputGroup, { flex: 0.8, marginLeft: 8 }]}>
+          </View>
+
+          {/* 第三行：团体、职位、职业 */}
+          <View style={styles.inputRow}>
+            {/* 团体 - 左侧 */}
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+              <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
+                团体
+              </ThemedText>
+              <TextInput
+                style={styles.textInput}
+                placeholder="军团/教派"
+                placeholderTextColor={theme.textMuted}
+                value={groupInput}
+                onChangeText={setGroupInput}
+              />
+            </View>
+            {/* 职位 - 中间 */}
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+              <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
+                职位
+              </ThemedText>
+              <TextInput
+                style={styles.textInput}
+                placeholder="如：队长、长老"
+                placeholderTextColor={theme.textMuted}
+                value={positionInput}
+                onChangeText={setPositionInput}
+              />
+            </View>
+            {/* 职业 - 右侧 */}
+            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 职业
               </ThemedText>
