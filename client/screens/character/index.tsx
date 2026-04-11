@@ -320,8 +320,8 @@ export default function CharacterScreen() {
 
           {/* 第一行：姓名、性别、年龄 */}
           <View style={styles.inputRow}>
-            {/* 姓名 - 占一半宽度 */}
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+            {/* 姓名 - 缩小五分之一 */}
+            <View style={[styles.inputGroup, { flex: 0.8 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 姓名 *
               </ThemedText>
@@ -370,15 +370,15 @@ export default function CharacterScreen() {
           </View>
 
           {/* 第二行：身高、体重、学历 */}
-          <View style={styles.inputRow}>
+          <View style={[styles.inputRow, { alignItems: 'flex-end' }]}>
             {/* 身高 - 预留4个汉字位置 */}
             <View style={[styles.inputGroup, styles.heightInputGroup]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 身高
               </ThemedText>
-              <View style={styles.inputWithSuffix}>
+              <View style={[styles.inputWithSuffix, styles.compactInputWithSuffix]}>
                 <TextInput
-                  style={styles.textInputWithSuffix}
+                  style={[styles.textInputWithSuffix, styles.compactInput]}
                   placeholder="170"
                   placeholderTextColor={theme.textMuted}
                   value={heightInput.replace(/[^0-9]/g, '')}
@@ -386,7 +386,7 @@ export default function CharacterScreen() {
                   keyboardType="numeric"
                   maxLength={3}
                 />
-                <ThemedText variant="caption" color={theme.textMuted} style={styles.suffixText}>cm</ThemedText>
+                <ThemedText variant="caption" color={theme.textMuted} style={[styles.suffixText, styles.compactSuffixText]}>cm</ThemedText>
               </View>
             </View>
             {/* 体重 - 预留4个汉字位置 */}
@@ -394,9 +394,9 @@ export default function CharacterScreen() {
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 体重
               </ThemedText>
-              <View style={styles.inputWithSuffix}>
+              <View style={[styles.inputWithSuffix, styles.compactInputWithSuffix]}>
                 <TextInput
-                  style={styles.textInputWithSuffix}
+                  style={[styles.textInputWithSuffix, styles.compactInput]}
                   placeholder="60"
                   placeholderTextColor={theme.textMuted}
                   value={weightInput.replace(/[^0-9]/g, '')}
@@ -404,11 +404,11 @@ export default function CharacterScreen() {
                   keyboardType="numeric"
                   maxLength={3}
                 />
-                <ThemedText variant="caption" color={theme.textMuted} style={styles.suffixText}>kg</ThemedText>
+                <ThemedText variant="caption" color={theme.textMuted} style={[styles.suffixText, styles.compactSuffixText]}>kg</ThemedText>
               </View>
             </View>
             {/* 学历 Selection - 右侧 */}
-            <View style={[styles.inputGroup, { flex: 0.8, marginLeft: 8 }]}>
+            <View style={[styles.inputGroup, { flex: 0.8, marginLeft: 'auto' }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 学历
               </ThemedText>
@@ -431,7 +431,7 @@ export default function CharacterScreen() {
           {/* 第三行：团体、职位、职业 */}
           <View style={styles.inputRow}>
             {/* 团体 - 左侧 */}
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 团体
               </ThemedText>
@@ -444,7 +444,7 @@ export default function CharacterScreen() {
               />
             </View>
             {/* 职位 - 中间 */}
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 职位
               </ThemedText>
@@ -457,7 +457,7 @@ export default function CharacterScreen() {
               />
             </View>
             {/* 职业 - 右侧 */}
-            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 职业
               </ThemedText>

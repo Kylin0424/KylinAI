@@ -58,12 +58,16 @@ export const createStyles = (theme: Theme) => {
       textTransform: 'uppercase',
       letterSpacing: 1,
       fontSize: 13,
+      marginBottom: Spacing.sm,
     },
     inputGroup: {
-      marginBottom: Spacing.sm,
+      marginBottom: Spacing.xs,
     },
     inputRow: {
       flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 8,
+      marginBottom: Spacing.xs,
     },
     inputLabel: {
       marginBottom: 2,
@@ -87,7 +91,7 @@ export const createStyles = (theme: Theme) => {
       borderRadius: 6,
       borderWidth: 1,
       borderColor: theme.border,
-      minHeight: 38,
+      minHeight: 24,
     },
     textInputWithSuffix: {
       flex: 1,
@@ -95,7 +99,7 @@ export const createStyles = (theme: Theme) => {
       paddingVertical: Spacing.xs,
       fontSize: 14,
       color: theme.textPrimary,
-      minHeight: 38,
+      minHeight: 24,
       borderWidth: 0,
       backgroundColor: 'transparent',
     },
@@ -103,7 +107,7 @@ export const createStyles = (theme: Theme) => {
       paddingHorizontal: Spacing.sm,
       paddingVertical: Spacing.xs,
       fontSize: 12,
-      lineHeight: 38,
+      lineHeight: 24,
       textAlignVertical: 'center',
     },
     occupationSelector: {
@@ -429,22 +433,33 @@ export const createStyles = (theme: Theme) => {
     // 性别输入组 - 预留4个汉字宽度（约64px）
     genderInputGroup: {
       width: 80,
-      marginLeft: 8,
     },
     // 年龄输入组 - 预留3个汉字宽度（约48px）
     ageInputGroup: {
       width: 64,
-      marginLeft: 8,
     },
-    // 身高输入组 - 预留4个汉字宽度（约64px）
+    // 身高输入组 - 预留4个汉字宽度（约64px），高度缩小
     heightInputGroup: {
       width: 80,
-      marginRight: 8,
     },
-    // 体重输入组 - 预留4个汉字宽度（约64px）
+    // 体重输入组 - 预留4个汉字宽度（约64px），高度缩小
     weightInputGroup: {
       width: 80,
-      marginLeft: 8,
+    },
+    // 缩小后的输入框高度
+    compactInput: {
+      minHeight: 24,
+      paddingVertical: Spacing.xs - 2,
+    },
+    // 缩小后的带单位输入框高度
+    compactInputWithSuffix: {
+      minHeight: 24,
+      paddingVertical: Spacing.xs - 2,
+    },
+    // 缩小后的单位文字
+    compactSuffixText: {
+      lineHeight: 24,
+      paddingVertical: 0,
     },
     // 性别选择弹窗
     genderModalContent: {

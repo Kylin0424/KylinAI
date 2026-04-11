@@ -154,6 +154,7 @@ export default function CharacterResultScreen() {
         height: protagonistData.height || params.height || '170cm',
         weight: params.weight || '未设定',
         group: params.group || '未设定',
+        position: params.position || '未设定',
         occupation: protagonistData.occupation || '未设定',
         education: params.education || '未设定',
         personality: protagonistData.personality || '',
