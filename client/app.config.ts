@@ -50,12 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }
         }
       ],
-      process.env.EXPO_PUBLIC_BACKEND_BASE_URL ? [
-        "expo-router",
-        {
-          "origin": process.env.EXPO_PUBLIC_BACKEND_BASE_URL
-        }
-      ] : 'expo-router',
+      // 开发环境不设置代理，直接使用本地地址
+      'expo-router',
       [
         "expo-splash-screen",
         {

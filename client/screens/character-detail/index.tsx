@@ -37,7 +37,8 @@ import {
   RELATION_CATEGORIES,
 } from '@/constants/familyRelations';
 
-const EXPO_PUBLIC_BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || '';
+// 开发环境使用本地地址
+const EXPO_PUBLIC_BACKEND_BASE_URL = 'http://localhost:9091';
 
 export default function CharacterDetailScreen() {
   const { theme, isDark } = useTheme();

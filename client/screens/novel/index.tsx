@@ -15,7 +15,8 @@ import { createStyles } from './styles';
 // @ts-ignore
 import RNSSE from 'react-native-sse';
 
-const EXPO_PUBLIC_BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || '';
+// 开发环境使用本地地址
+const EXPO_PUBLIC_BACKEND_BASE_URL = 'http://localhost:9091';
 
 export default function NovelScreen() {
   const { theme, isDark } = useTheme();
