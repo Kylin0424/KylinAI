@@ -78,6 +78,7 @@ export const createStyles = (theme: Theme) => {
       color: theme.textPrimary,
       borderWidth: 1,
       borderColor: theme.border,
+      minHeight: 38,
     },
     inputWithSuffix: {
       flexDirection: 'row',
@@ -86,6 +87,7 @@ export const createStyles = (theme: Theme) => {
       borderRadius: 6,
       borderWidth: 1,
       borderColor: theme.border,
+      minHeight: 38,
     },
     textInputWithSuffix: {
       flex: 1,
@@ -93,11 +95,16 @@ export const createStyles = (theme: Theme) => {
       paddingVertical: Spacing.xs,
       fontSize: 14,
       color: theme.textPrimary,
+      minHeight: 38,
+      borderWidth: 0,
+      backgroundColor: 'transparent',
     },
     suffixText: {
       paddingHorizontal: Spacing.sm,
       paddingVertical: Spacing.xs,
       fontSize: 12,
+      lineHeight: 38,
+      textAlignVertical: 'center',
     },
     occupationSelector: {
       backgroundColor: theme.backgroundTertiary,

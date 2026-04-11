@@ -25,9 +25,9 @@ import {
   generateId,
 } from '@/utils/characterStorage';
 
-// 临时使用线上地址测试
-const EXPO_PUBLIC_BACKEND_BASE_URL = 'http://localhost:9091';
-console.log('Character result page - Backend URL:', EXPO_PUBLIC_BACKEND_BASE_URL);
+// 使用相对路径，通过Metro代理到后端
+const API_BASE_URL = '/api/v1';
+console.log('Character result page - API Base URL:', API_BASE_URL);
 
 // 关系类型定义
 const RELATION_TYPES = [
@@ -115,7 +115,7 @@ export default function CharacterResultScreen() {
        *          memberCount: string, familyRelation: string, familyMembersBrief: string,
        *          familyBackground: string, socialExperience: string
        */
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate`, {
+      const response = await fetch(`${API_BASE_URL}/character/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ export default function CharacterResultScreen() {
          * Body 参数：name: string, gender: string, age: string, height: string, weight: string,
          *          occupation: string, appearance: string, personality: string
          */
-        const avatarResponse = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate-avatar`, {
+        const avatarResponse = await fetch(`${API_BASE_URL}/character/generate-avatar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export default function CharacterResultScreen() {
     setShowRelationModal(false);
 
     try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate-npc`, {
+      const response = await fetch(`${API_BASE_URL}/character/generate-npc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

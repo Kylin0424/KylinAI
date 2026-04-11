@@ -33,7 +33,8 @@ import {
 import { createFormDataFile } from '@/utils';
 
 // 临时使用线上地址测试
-const EXPO_PUBLIC_BACKEND_BASE_URL = 'http://localhost:9091';
+// 使用相对路径，通过Metro代理到后端
+const API_BASE_URL = '/api/v1';
 
 // 使用技巧列表
 const TIPS_DATA = [
@@ -401,7 +402,7 @@ export default function NovelImportScreen() {
        * 接口：POST /api/v1/import/analyze
        * Body 参数：FormData with file field
        */
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/import/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/import/analyze`, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
