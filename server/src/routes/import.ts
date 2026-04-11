@@ -1,7 +1,8 @@
 import express, { type Request, type Response } from 'express';
 import multer from 'multer';
 import mammoth from 'mammoth';
-import { LLMClient, Config, HeaderUtils, ImageGenerationClient } from 'coze-coding-dev-sdk';
+import OpenAI from 'openai';
+import { HeaderUtils, ImageGenerationClient, Config } from 'coze-coding-dev-sdk';
 
 const router = express.Router();
 
@@ -75,7 +76,7 @@ async function parseFileContent(buffer: Buffer, filename: string): Promise<strin
   throw new Error('不支持的文件格式');
 }
 
-/**
+/** 
  * POST /api/v1/import/analyze
  * 上传并分析小说文件，识别角色
  * Body: FormData with file field
@@ -98,14 +99,11 @@ router.post('/analyze', upload.single('file'), async (req: Request, res: Respons
     // 提取小说标题（从文件名或内容中）
     const titleFromFilename = req.file.originalname.replace(/\.(txt|doc|docx)$/i, '');
 
-   // 使用AI分析内容，识别角色
-const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record);
-const config = new Config({
-  apiKey: process.env.ARK_API_KEY,
-  baseUrl: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
-  modelBaseUrl: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
-});
-const client = new LLMClient(config, customHeaders);
+    // 使用火山引擎 OpenAI 兼容 API
+    const client = new OpenAI({
+      apiKey: process.env.ARK_API_KEY,
+      baseURL: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+    });
 
     // 第一步：AI分析角色和主题（使用前10万字）
     const maxContentLength = 100000;
@@ -178,15 +176,17 @@ ${truncatedContent}
       { role: 'user' as const, content: userPrompt }
     ];
 
-    const response = await client.invoke(messages, {
+    const response = await client.chat.completions.create({
       model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
+      messages: messages,
       temperature: 0.3,
     });
+
+    const responseContent = response.choices[0].message.content || '';
 
     // 解析返回的JSON
     let analysisResult;
     try {
-      const responseContent = response.content;
       const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         let jsonStr = jsonMatch[0];
@@ -282,14 +282,14 @@ ${segmentContent}
 只返回JSON，不要有其他任何文字。`;
 
       try {
-        const chapterResponse = await client.invoke([
-          { role: 'user' as const, content: chapterPrompt }
-        ], {
+        const chapterResponse = await client.chat.completions.create({
           model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
+          messages: [{ role: 'user' as const, content: chapterPrompt }],
           temperature: 0.1,
         });
-
-        const chapterJsonMatch = chapterResponse.content.match(/\{[\s\S]*\}/);
+const chapterResponseContent = chapterResponse.choices[0].message.content || '';
+        const chapterJsonMatch = chapterResponseContent.match(/\{[\s\S]*\}/);
+        
         if (chapterJsonMatch) {
           try {
             const chapterResult = JSON.parse(chapterJsonMatch[0]);
@@ -375,14 +375,14 @@ router.post('/generate-avatars', async (req: Request, res: Response) => {
   }
 
   try {
-const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record);
-const config = new Config({
-  apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
-  baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
-  modelBaseUrl: process.env.COZE_INTEGRATION_MODEL_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
-});
-const imageClient = new ImageGenerationClient(config, customHeaders);
-const results: { name: string; avatarUrl?: string; error?: string }[] = [];
+    const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
+    const config = new Config({
+      apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
+      baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
+      modelBaseUrl: process.env.COZE_INTEGRATION_MODEL_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+    });
+    const imageClient = new ImageGenerationClient(config, customHeaders);
+    const results: { name: string; avatarUrl?: string; error?: string }[] = [];
 
     // 逐个生成头像（避免并发过多）
     for (const character of characters.slice(0, 5)) { // 最多生成5个头像
@@ -446,7 +446,7 @@ Style requirements:
   }
 });
 
-/**
+/** 
  * POST /api/v1/import/extract-chapters
  * 从内容中提取章节
  * Body: { content: string }
