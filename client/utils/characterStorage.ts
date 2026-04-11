@@ -8,6 +8,7 @@ export interface Character {
   height: string;
   weight?: string; // 体重
   group?: string; // 所属团体
+  position?: string; // 职位
   occupation: string;
   education?: string; // 学历
   personality: string;

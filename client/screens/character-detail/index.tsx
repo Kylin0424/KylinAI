@@ -63,6 +63,7 @@ export default function CharacterDetailScreen() {
     height: '',
     weight: '',
     group: '',
+    position: '',
     occupation: '',
     personality: '',
     experience: '',
@@ -101,6 +102,7 @@ export default function CharacterDetailScreen() {
             height: char.height,
             weight: char.weight || '',
             group: char.group || '',
+            position: char.position || '',
             occupation: char.occupation,
             personality: char.personality,
             experience: char.experience,
@@ -180,6 +182,7 @@ export default function CharacterDetailScreen() {
         height: editForm.height,
         weight: editForm.weight,
         group: editForm.group,
+        position: editForm.position,
         occupation: editForm.occupation,
         personality: editForm.personality,
         experience: editForm.experience,
@@ -489,9 +492,11 @@ export default function CharacterDetailScreen() {
             </ThemedText>
           )}
           {!isEditing && (
-            <ThemedText variant="small" color={theme.textMuted}>
-              {character.occupation}
-            </ThemedText>
+            <View style={styles.metaInfo}>
+              <ThemedText variant="small" color={theme.textMuted}>
+                {character.gender} · {character.age}岁
+              </ThemedText>
+            </View>
           )}
         </View>
 
@@ -556,7 +561,7 @@ export default function CharacterDetailScreen() {
               )}
             </View>
           </View>
-          {/* 团体信息 */}
+          {/* 团体、职位、职业信息 */}
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
               <ThemedText variant="caption" color={theme.textMuted}>所属团体</ThemedText>
@@ -572,19 +577,35 @@ export default function CharacterDetailScreen() {
                 <ThemedText variant="smallMedium" color={theme.textPrimary}>{character.group || '未设定'}</ThemedText>
               )}
             </View>
-          </View>
-          {isEditing && (
-            <View style={styles.infoItemFull}>
-              <ThemedText variant="caption" color={theme.textMuted}>职业</ThemedText>
-              <TextInput
-                style={styles.infoInput}
-                value={editForm.occupation}
-                onChangeText={(text) => setEditForm({ ...editForm, occupation: text })}
-                placeholder="职业"
-                placeholderTextColor={theme.textMuted}
-              />
+            <View style={styles.infoItem}>
+              <ThemedText variant="caption" color={theme.textMuted}>职位</ThemedText>
+              {isEditing ? (
+                <TextInput
+                  style={styles.infoInput}
+                  value={editForm.position}
+                  onChangeText={(text) => setEditForm({ ...editForm, position: text })}
+                  placeholder="职位"
+                  placeholderTextColor={theme.textMuted}
+                />
+              ) : (
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>{character.position || '未设定'}</ThemedText>
+              )}
             </View>
-          )}
+            <View style={styles.infoItem}>
+              <ThemedText variant="caption" color={theme.textMuted}>职业</ThemedText>
+              {isEditing ? (
+                <TextInput
+                  style={styles.infoInput}
+                  value={editForm.occupation}
+                  onChangeText={(text) => setEditForm({ ...editForm, occupation: text })}
+                  placeholder="职业"
+                  placeholderTextColor={theme.textMuted}
+                />
+              ) : (
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>{character.occupation}</ThemedText>
+              )}
+            </View>
+          </View>
         </View>
 
         {/* 所属小说提示 */}

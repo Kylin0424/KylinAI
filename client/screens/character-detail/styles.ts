@@ -59,6 +59,9 @@ export const createStyles = (theme: Theme) => {
     characterName: {
       marginBottom: Spacing.xs,
     },
+    metaInfo: {
+      marginTop: Spacing.xs,
+    },
     infoCard: {
       backgroundColor: theme.backgroundDefault,
       borderRadius: BorderRadius.lg,
