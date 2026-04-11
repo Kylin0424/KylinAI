@@ -4,6 +4,7 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
