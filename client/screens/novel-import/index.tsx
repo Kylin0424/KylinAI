@@ -203,7 +203,7 @@ interface AnalysisResult {
   originalContent?: string; // 原始内容
 }
 
-type ImportStep = 'select' | 'uploading' | 'analyzing' | 'confirm' | 'result' | 'error';
+type ImportStep = 'select' | 'uploading' | 'analyzing' | 'result' | 'error';
 
 interface ImportSuccessData {
   visible: boolean;
@@ -356,23 +356,22 @@ export default function NovelImportScreen() {
     novelId: '',
     novelTitle: '',
   });
-  // 保存从novel-preview返回的切割后的章节
-  const [manualChapters, setManualChapters] = useState<{ title: string; content: string; order: number }[] | null>(null);
 
-  // 监听从novel-preview返回的参数
-  useEffect(() => {
-    if (params.chapters && params.previewMode === 'manual') {
-      console.log('[Import] 收到从novel-preview返回的章节:', params.chapters);
-      try {
-        const chapters = JSON.parse(params.chapters);
-        setManualChapters(chapters);
-        setStep('confirm');
-      } catch (error) {
-        console.error('[Import] 解析章节数据失败:', error);
-        Alert.alert('错误', '章节数据解析失败');
-      }
+  // 开始章节定位（跳转到novel-preview）
+  const handleStartPreview = () => {
+    if (!analysisResult || !selectedFile) {
+      Alert.alert('提示', '分析结果或文件信息缺失');
+      return;
     }
-  }, [params.chapters, params.previewMode]);
+
+    router.push('/novel-preview', {
+      filename: selectedFile.name,
+      content: analysisResult.originalContent || '',
+      characters: JSON.stringify(analysisResult.characters || []),
+      title: analysisResult.title || selectedFile.name,
+      themeType: analysisResult.themeType || '未分类',
+    });
+  };
 
   // 选择文件
   const handleSelectFile = async () => {
@@ -444,19 +443,15 @@ export default function NovelImportScreen() {
 
       setProgressText('正在解析分析结果...');
       setProgress(80);
-      
+
       const data = await response.json();
-      
+
       setProgressText('分析完成');
       setProgress(100);
       setAnalysisResult(data);
 
-      // 跳转到预览页面进行手动章节标记
-      router.push('/novel-preview', {
-        filename: file.name,
-        content: data.originalContent || '',
-        characters: JSON.stringify(data.characters || []),
-      });
+      // 进入result步骤，显示角色信息
+      setStep('result');
 
     } catch (err) {
       clearTimeout(timeoutId);
@@ -472,192 +467,6 @@ export default function NovelImportScreen() {
         setError('分析失败，请重试');
       }
       setStep('error');
-    }
-  };
-
-  // 确认导入
-  const handleConfirmImport = async () => {
-    console.log('[Import] 开始导入流程');
-    
-    if (!analysisResult || analysisResult.characters.length === 0) {
-      console.log('[Import] 没有可导入的角色');
-      Alert.alert('提示', '没有可导入的角色');
-      return;
-    }
-
-    setIsImporting(true);
-    setImportProgress('正在创建小说...');
-    console.log('[Import] 分析结果:', JSON.stringify(analysisResult, null, 2));
-
-    try {
-      // 1. 创建小说（标记为导入）
-      console.log('[Import] 步骤1: 创建小说');
-      const novel = await createNovel(
-        analysisResult.title,
-        analysisResult.themeType,
-        analysisResult.themeType.toLowerCase(),
-        undefined,
-        undefined,
-        true // 标记为导入小说
-      );
-      console.log('[Import] 小说创建成功:', novel.id, '(导入小说)');
-
-      // 2. 保存所有角色
-      console.log('[Import] 步骤2: 保存角色，共', analysisResult.characters.length, '个');
-      const savedCharacters: Character[] = [];
-      const characterIdMap: Record<string, string> = {}; // 原名 -> ID 映射
-
-      for (let i = 0; i < analysisResult.characters.length; i++) {
-        const char = analysisResult.characters[i];
-        setImportProgress(`正在保存角色 ${i + 1}/${analysisResult.characters.length}: ${char.name}`);
-        console.log(`[Import] 保存角色 ${i + 1}/${analysisResult.characters.length}:`, char.name);
-        
-        // 转换角色类型
-        let roleType: 'male_lead' | 'female_lead' | 'npc' | undefined = undefined;
-        if (char.roleType === '男主' || char.roleType === '主角') {
-          roleType = 'male_lead';
-        } else if (char.roleType === '女主') {
-          roleType = 'female_lead';
-        } else if (char.roleType === '配角' || char.roleType === '反派') {
-          roleType = 'npc';
-        }
-        console.log('[Import] 角色类型映射:', char.roleType, '->', roleType);
-
-        const newCharacter: Character = {
-          id: generateId(),
-          name: char.name,
-          gender: char.gender || '未知',
-          age: char.age || 25,
-          height: char.height || '未知',
-          occupation: char.occupation || '未知',
-          education: char.education || '未知',
-          personality: char.personality || '',
-          experience: char.experience || '',
-          familyBackground: char.familyBackground || '',
-          appearance: char.appearance || '',
-          specialTraits: char.specialTraits || '',
-          avatarUrl: char.avatarUrl,
-          novelId: novel.id, // 锁定到导入的小说
-          roleType: roleType, // 设置角色类型
-          isTemporary: false, // 导入的角色不是临时角色
-          createdAt: Date.now(),
-        };
-
-        await saveCharacter(newCharacter);
-        savedCharacters.push(newCharacter);
-        characterIdMap[char.name] = newCharacter.id;
-        console.log('[Import] 角色保存成功:', char.name, 'ID:', newCharacter.id);
-
-        // 如果是主角，更新小说的主角ID
-        if (roleType === 'male_lead') {
-          novel.maleCharacterId = newCharacter.id;
-        } else if (roleType === 'female_lead') {
-          novel.femaleCharacterId = newCharacter.id;
-        }
-      }
-
-      // 3. 保存角色关系到关系网络
-      console.log('[Import] 步骤3: 保存关系网络');
-      setImportProgress('正在构建关系网络...');
-      let relationCount = 0;
-      for (const char of analysisResult.characters) {
-        if (char.relationships && char.relationships.length > 0) {
-          const sourceId = characterIdMap[char.name];
-          if (!sourceId) {
-            console.log('[Import] 跳过角色:', char.name, '（未找到ID）');
-            continue;
-          }
-
-          for (const rel of char.relationships) {
-            const targetId = characterIdMap[rel.targetName];
-            if (!targetId) {
-              console.log('[Import] 跳过关系:', char.name, '->', rel.targetName, '（目标未找到）');
-              continue;
-            }
-
-            console.log('[Import] 保存关系:', char.name, rel.relationType, rel.targetName);
-            // 保存到关系网络
-            await addRelationToNetwork(
-              novel.id,
-              sourceId,
-              char.name,
-              char.gender,
-              targetId,
-              rel.targetName,
-              '', // 目标角色性别未知
-              rel.relationType,
-              undefined // 反向关系可选
-            );
-            relationCount++;
-          }
-        }
-      }
-      console.log('[Import] 关系网络保存完成，共', relationCount, '条关系');
-
-      // 3.5 保存男女主角ID到小说
-      if (novel.maleCharacterId || novel.femaleCharacterId) {
-        console.log('[Import] 步骤3.5: 保存男女主角ID到小说');
-        await saveNovel(novel);
-        console.log('[Import] 男主角ID:', novel.maleCharacterId, '女主角ID:', novel.femaleCharacterId);
-      }
-
-      // 4. 保存章节（使用用户手动标记的章节）
-      let savedChapterCount = 0;
-      if (manualChapters && manualChapters.length > 0) {
-        console.log('[Import] 步骤4: 保存用户手动标记的章节，共', manualChapters.length, '个');
-        setImportProgress('正在保存章节...');
-        
-        for (let i = 0; i < manualChapters.length; i++) {
-          const chapter = manualChapters[i];
-          setImportProgress(`正在保存章节 ${i + 1}/${manualChapters.length}: ${chapter.title}`);
-          
-          console.log('[Import] 创建章节:', chapter.title, 'order:', chapter.order);
-          
-          const newChapter = await addChapter(novel.id, chapter.title, false, chapter.order);
-          
-          // 在最后一章末尾添加作者更换声明
-          let chapterContent = chapter.content;
-          if (i === manualChapters.length - 1) {
-            const authorNote = '\n\n---\n\n【本书作者已更换】\n尊敬的读者，原作品至此章节完结。后续内容将由新作者续写，风格可能有所变化，敬请理解。感谢您对原作者的尊重和对本续作的支持。';
-            chapterContent = chapter.content + authorNote;
-          }
-          
-          await updateChapter(novel.id, newChapter.id, {
-            content: chapterContent,
-          });
-          console.log('[Import] 章节已保存:', chapter.title, '长度:', chapterContent.length);
-          savedChapterCount++;
-        }
-      } else {
-        console.log('[Import] 没有手动标记的章节，跳过章节保存');
-      }
-
-      console.log('[Import] 导入流程完成');
-      setImportProgress('');
-      setIsImporting(false);
-      
-      // 显示成功弹窗
-      setSuccessModal({
-        visible: true,
-        title: '导入成功',
-        characterCount: savedCharacters.length,
-        chapterCount: savedChapterCount,
-        novelId: novel.id,
-        novelTitle: analysisResult.title,
-      });
-
-    } catch (err) {
-      console.error('[Import] 导入失败:', err);
-      console.error('[Import] 错误堆栈:', err instanceof Error ? err.stack : 'unknown');
-      setImportProgress('');
-      setIsImporting(false);
-      
-      // 使用弹窗显示错误
-      if (Platform.OS === 'web') {
-        window.alert(`导入失败: ${err instanceof Error ? err.message : '请重试'}`);
-      } else {
-        Alert.alert('错误', `导入失败: ${err instanceof Error ? err.message : '请重试'}`);
-      }
     }
   };
 
@@ -857,106 +666,6 @@ export default function NovelImportScreen() {
           </View>
         )}
 
-        {/* Step: Confirm - 显示手动标记的章节 */}
-        {step === 'confirm' && analysisResult && manualChapters && (
-          <View style={styles.resultSection}>
-            {/* 小说信息 */}
-            <View style={styles.resultHeader}>
-              <View>
-                <ThemedText variant="h3" color={theme.textPrimary} style={styles.novelTitle}>
-                  《{analysisResult.title}》
-                </ThemedText>
-                <View style={styles.novelMeta}>
-                  <View style={styles.metaTag}>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      {analysisResult.themeType}
-                    </ThemedText>
-                  </View>
-                  <View style={styles.metaTag}>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      {analysisResult.characters.length} 个角色
-                    </ThemedText>
-                  </View>
-                  <View style={styles.metaTag}>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      {manualChapters.length} 个章节
-                    </ThemedText>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* 章节列表 */}
-            <View style={{ marginBottom: 16 }}>
-              <ThemedText variant="label" color={theme.textPrimary}>
-                已标记的章节
-              </ThemedText>
-              <View style={styles.chapterList}>
-                {manualChapters.map((chapter, index) => (
-                  <View key={index} style={styles.chapterItem}>
-                    <ThemedText variant="small" color={theme.textPrimary}>
-                      {chapter.order}. {chapter.title}
-                    </ThemedText>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      {chapter.content.length} 字
-                    </ThemedText>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* 角色列表 */}
-            <View style={styles.characterList}>
-              <ThemedText variant="label" color={theme.textPrimary}>
-                识别出的角色
-              </ThemedText>
-              {analysisResult.characters.map((char, index) => renderCharacterCard(char, index))}
-            </View>
-
-            {/* 底部操作按钮 */}
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cancelButton]}
-                onPress={() => {
-                  setStep('select');
-                  setManualChapters(null);
-                  setAnalysisResult(null);
-                }}
-                disabled={isImporting}
-              >
-                <ThemedText variant="smallMedium" color={theme.textPrimary}>
-                  取消
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.confirmButton]}
-                onPress={handleConfirmImport}
-                disabled={isImporting}
-              >
-                {isImporting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <ThemedText variant="smallMedium" color="#FFFFFF">
-                      确认导入
-                    </ThemedText>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* 导入进度 */}
-            {isImporting && (
-              <View style={styles.importProgressSection}>
-                <ActivityIndicator size="small" color="#C8102E" />
-                <ThemedText variant="caption" color={theme.textMuted} style={{ marginLeft: 8 }}>
-                  {importProgress}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        )}
-
         {/* Step: Result */}
         {step === 'result' && analysisResult && (
           <View style={styles.resultSection}>
@@ -1008,34 +717,21 @@ export default function NovelImportScreen() {
 
             {/* 底部操作按钮 */}
             <View style={styles.bottomActions}>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
+              <TouchableOpacity
+                style={styles.cancelButton}
                 onPress={handleRetry}
-                disabled={isImporting}
               >
                 <ThemedText variant="smallMedium" color={theme.textPrimary}>
                   重新选择
                 </ThemedText>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.confirmButton, isImporting && styles.confirmButtonDisabled]} 
-                onPress={handleConfirmImport}
-                disabled={isImporting}
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleStartPreview}
               >
-                {isImporting ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                    {importProgress ? (
-                      <ThemedText variant="smallMedium" color="#FFFFFF" style={{ marginLeft: 8 }}>
-                        {importProgress}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                ) : (
-                  <ThemedText variant="smallMedium" color="#FFFFFF">
-                    确认导入
-                  </ThemedText>
-                )}
+                <ThemedText variant="smallMedium" color="#FFFFFF">
+                  开始章节定位
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
