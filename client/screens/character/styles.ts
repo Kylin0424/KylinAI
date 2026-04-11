@@ -433,10 +433,12 @@ export const createStyles = (theme: Theme) => {
     // 性别输入组 - 预留4个汉字宽度（约64px）
     genderInputGroup: {
       width: 80,
+      marginLeft: 25,
     },
-    // 年龄输入组 - 预留3个汉字宽度（约48px）
+    // 年龄输入组 - 预留3个汉字宽度（约48px），靠右对齐
     ageInputGroup: {
       width: 64,
+      marginLeft: 'auto',
     },
     // 身高输入组 - 预留4个汉字宽度（约64px），高度缩小
     heightInputGroup: {
@@ -445,6 +447,7 @@ export const createStyles = (theme: Theme) => {
     // 体重输入组 - 预留4个汉字宽度（约64px），高度缩小
     weightInputGroup: {
       width: 80,
+      marginLeft: 25,
     },
     // 缩小后的输入框高度
     compactInput: {
