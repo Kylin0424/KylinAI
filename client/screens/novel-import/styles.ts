@@ -140,6 +140,26 @@ export const createStyles = (theme: any) =>
     characterList: {
       marginTop: Spacing.md,
     },
+
+    // 章节列表
+    chapterList: {
+      marginTop: Spacing.sm,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      backgroundColor: theme.backgroundRoot,
+      maxHeight: 200,
+    },
+    chapterItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+
     characterCard: {
       backgroundColor: theme.backgroundRoot,
       borderRadius: 8,
@@ -223,23 +243,39 @@ export const createStyles = (theme: any) =>
       gap: Spacing.md,
       marginTop: Spacing.lg,
     },
-    cancelButton: {
-      flex: 1,
+    buttonGroup: {
+      flexDirection: 'row',
+      gap: Spacing.md,
+      marginTop: Spacing.lg,
+    },
+    actionButton: {
       paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
       borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+    },
+    cancelButton: {
+      backgroundColor: theme.backgroundRoot,
       borderWidth: 1,
       borderColor: theme.border,
-      alignItems: 'center',
     },
     confirmButton: {
-      flex: 2,
-      paddingVertical: Spacing.md,
-      borderRadius: 8,
       backgroundColor: '#C8102E',
-      alignItems: 'center',
+      flex: 2,
     },
     confirmButtonDisabled: {
       backgroundColor: theme.border,
+    },
+    importProgressSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: Spacing.md,
+      paddingVertical: Spacing.md,
+      backgroundColor: theme.backgroundRoot,
+      borderRadius: 8,
     },
     loadingContainer: {
       flexDirection: 'row',
