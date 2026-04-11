@@ -98,13 +98,14 @@ router.post('/analyze', upload.single('file'), async (req: Request, res: Respons
     // 提取小说标题（从文件名或内容中）
     const titleFromFilename = req.file.originalname.replace(/\.(txt|doc|docx)$/i, '');
 
-    // 使用AI分析内容，识别角色
-    const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
+   // 使用AI分析内容，识别角色
+const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record);
 const config = new Config({
   apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
   baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
+  modelBaseUrl: process.env.COZE_INTEGRATION_MODEL_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
 });
-    const client = new LLMClient(config, customHeaders);
+const client = new LLMClient(config, customHeaders);
 
     // 第一步：AI分析角色和主题（使用前10万字）
     const maxContentLength = 100000;
@@ -374,14 +375,14 @@ router.post('/generate-avatars', async (req: Request, res: Response) => {
   }
 
   try {
-    const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config({
+const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record);
+const config = new Config({
   apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
   baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
+  modelBaseUrl: process.env.COZE_INTEGRATION_MODEL_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
 });
-    const imageClient = new ImageGenerationClient(config, customHeaders);
-
-    const results: { name: string; avatarUrl?: string; error?: string }[] = [];
+const imageClient = new ImageGenerationClient(config, customHeaders);
+const results: { name: string; avatarUrl?: string; error?: string }[] = [];
 
     // 逐个生成头像（避免并发过多）
     for (const character of characters.slice(0, 5)) { // 最多生成5个头像
