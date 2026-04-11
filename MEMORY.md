@@ -1,0 +1,200 @@
+# 项目进展记录
+
+## 项目名称
+**旁观叙事App**（又名：齐思秒说）
+
+---
+
+## 当前状态（2026年4月11日晚）
+- ✅ 后端已成功部署到 Render：https://kylinai-1.onrender.com
+- ✅ API 测试正常（/api/v1/health 返回 OK）
+- ✅ APK 已构建完成
+- ⚠️ 小说导入功能：短文件可用，长文件（34万字）处理超时
+- ❌ 角色生成器：401 认证错误，环境变量配置问题待修复
+
+---
+
+## 部署信息
+
+### 后端
+- **平台**: Render
+- **地址**: https://kylinai-1.onrender.com
+- **健康检查**: /api/v1/health
+- **服务名称**: KylinAI-1
+- **构建命令**: `npm install --legacy-peer-deps && npm run build`
+- **启动命令**: `NODE_ENV=production PORT=${PORT:-5000} node dist/index.js`
+
+### 前端
+- **框架**: Expo / React Native
+- **构建方式**: EAS Build
+- **项目名**: kylin_0424 / myapp
+
+### 代码仓库
+- **GitHub**: https://github.com/Kylin0424/KylinAI
+- **本地路径**: `C:\projects\`
+
+---
+
+## AI 服务配置
+
+### 火山引擎方舟（当前使用）
+- **API Key**: `8ac43f1d-8e8b-462a-b6fc-e94b7a3567d6`
+- **Base URL**: `https://ark.cn-beijing.volces.com/api/v3`
+- **推理接入点ID**: `ep-20260411122808-27xnp`
+- **模型**: Doubao-1.5-pro-32k
+- **免费额度**: 50万 tokens
+- **当前剩余**: 约 3.3 万 tokens（2026年4月11日）
+- **充值金额**: 1 元人民币
+
+### 扣子 Bot（备选方案）
+- **Bot ID**: 7627341821664559146
+- **Bot URL**: https://www.coze.cn/space/7622475756576505862/bot/7627341821664559146
+- **项目名称**: 旁观叙事APP(最终版)
+- **项目地址**: https://code.coze.cn/p/7627398218137206830
+
+---
+
+## Render 环境变量配置
+
+```
+ARK_API_KEY=8ac43f1d-8e8b-462a-b6fc-e94b7a3567d6
+ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+ARK_MODEL=ep-20260411122808-27xnp
+COZE_CODING_API_KEY=pat_PONYNLuPSNNBeDMeqqMF3Idq61VtGIVxT8oOFFuQWaaB78xKpx7Kz70SXUZV89Wx
+COZE_CODING_BASE_URL=https://api.coze.cn
+COZE_CODING_MODEL_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+COZE_INTEGRATION_BASE_URL=https://api.coze.cn
+COZE_INTEGRATION_MODEL_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+COZE_WORKLOAD_IDENTITY_API_KEY=pat_PONYNLuPSNNBeDMeqqMF3Idq61VtGIVxT8oOFFuQWaaB78xKpx7Kz70SXUZV89Wx
+OPENAI_API_KEY=placeholder  # 需要改成火山引擎 API Key
+OPENAI_BASE_URL=https://api.openai.com/v1  # 需要改成火山引擎地址
+OPENAI_MODEL_BASE_URL=https://api.openai.com/v1
+OPEN_API_BASE=https://api.openai.com/v1
+```
+
+### 待修复的环境变量
+角色生成器使用 `@langchain/openai`，读取 `OPENAI_API_KEY` 和 `OPENAI_BASE_URL`，需要修改为：
+```
+OPENAI_API_KEY=8ac43f1d-8e8b-462a-b6fc-e94b7a3567d6
+OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+OPENAI_MODEL_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+OPEN_API_BASE=https://ark.cn-beijing.volces.com/api/v3
+```
+
+---
+
+## 核心功能
+
+### 1. 小说导入（/api/v1/import/analyze）
+- 支持格式：TXT、DOCX
+- 功能：章节识别、角色识别、关系网络
+- 当前问题：长文件处理超时（34万字约需8分钟）
+
+### 2. 角色生成（/api/v1/character/generate）
+- 功能：AI 生成角色设定
+- 当前问题：401 认证错误，环境变量未正确配置
+
+### 3. AI 续写
+- 基于锁定的角色设定续写
+- 保持人设一致性
+
+---
+
+## 待解决问题
+
+### 优先级1：修复角色生成器
+- 去 Render → Environment
+- 把 `OPENAI_API_KEY` 改成火山引擎的 Key
+- 把 `OPENAI_BASE_URL` 等改成火山引擎地址
+
+### 优先级2：优化 Token 消耗
+- 当前方案：处理一部34万字小说约消耗46万 tokens
+- 省钱方案：
+  1. 换更便宜的模型（Doubao-1.5-lite，价格是 pro 的 1/10）
+  2. 半自动章节标记（用户手动标记，不消耗 token）
+  3. 只处理前 10-20 万字
+
+### 优先级3：长文件超时
+- 方案1：改前端超时时间（2分钟→10分钟）
+- 方案2：后台异步处理，完成后通知
+
+---
+
+## 软件架构
+
+### 前端交互流程
+```
+前端-交互界面 → 打开动画 → 主页面
+                            ↓
+            ┌───────────────┴───────────────┐
+            ↓                               ↓
+        导入小说                          角色生成
+            ↓                               ↓
+        显示导入小说                    角色信息 + 世界背景
+            ↓                               ↓
+        确定章节（半自动标记）          角色设定确认
+            ↓                               ↓
+            └───────────────┬───────────────┘
+                            ↓
+                        小说编辑页面
+                            ↓
+                        AI续写（保持人设一致）
+                            ↓
+                        续写完成
+                            ↓
+                ┌───────────┴───────────┐
+                ↓                       ↓
+            导出文本                生成标准剧本
+```
+
+### 后台服务架构
+```
+中转站-AI
+    ↓
+火山引擎方舟 ←→ 扣子API（备选）
+    ↓
+章节识别 | 角色识别 | 关系网络
+    ↓
+API & KEY 配置
+    ↓
+数据库
+    ↓
+角色库（锁定的角色设定）
+```
+
+---
+
+## 技术架构
+
+| 组件 | 技术 |
+|------|------|
+| 前端框架 | Expo / React Native |
+| 后端框架 | Express.js (Node.js) |
+| AI SDK | OpenAI SDK、LangChain |
+| 文件解析 | Mammoth (DOCX) |
+| 部署平台 | Render (后端) / EAS Build (APK) |
+
+---
+
+## 重要提醒
+
+### 代码变更后检查清单
+每次修改代码并 git push 后，必须确认：
+1. **GitHub 仓库**：是否已更新（检查 commit ID）
+2. **Render 后端**：是否自动部署了最新代码（检查部署时间和 commit ID）
+
+### 常用操作
+- 热更新（仅 JS/TS 代码修改）：`eas update --branch preview`
+- 本地拉取最新代码：`git pull`
+- 检查 Render 部署：https://dashboard.render.com/web/srv-d7bjmb7afjfc73f0qttg
+
+---
+
+## 已完成里程碑
+
+1. ✅ 注册 Render 账号并绑定 Visa 卡
+2. ✅ 后端部署到 Render
+3. ✅ 配置火山引擎方舟 API
+4. ✅ 小说导入 API 调用成功
+5. ✅ APK 构建
+6. ✅ 软件架构图绘制
