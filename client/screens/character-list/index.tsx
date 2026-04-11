@@ -34,6 +34,8 @@ export default function CharacterListScreen() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<CharacterTab>('permanent');
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -90,35 +92,33 @@ export default function CharacterListScreen() {
     console.log('[CharacterList] Character name:', character.name);
     console.log('[CharacterList] Character ID:', character.id);
     console.log('[CharacterList] Character novelId:', character.novelId);
-    console.log('[CharacterList] Character full object:', JSON.stringify(character, null, 2));
     console.log('========================================');
 
-    // 使用setTimeout确保在下一个事件循环中执行
-    setTimeout(() => {
-      Alert.alert(
-        '确认删除',
-        `确定要删除角色"${character.name}"吗？相关的角色关系也会被删除。`,
-        [
-          { text: '取消', style: 'cancel', onPress: () => console.log('[CharacterList] Delete cancelled') },
-          {
-            text: '删除',
-            style: 'destructive',
-            onPress: async () => {
-              console.log('[CharacterList] Delete confirmed for:', character.name);
-              try {
-                await deleteCharacter(character.id);
-                console.log('[CharacterList] Character deleted successfully');
-                loadData();
-              } catch (error) {
-                console.error('[CharacterList] Error deleting character:', error);
-                Alert.alert('错误', '删除失败，请重试');
-              }
-            },
-          },
-        ],
-        { onDismiss: () => console.log('[CharacterList] Alert dismissed') }
-      );
-    }, 100);
+    // 使用Modal显示确认对话框
+    setCharacterToDelete(character);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!characterToDelete) return;
+
+    console.log('[CharacterList] Delete confirmed for:', characterToDelete.name);
+    try {
+      await deleteCharacter(characterToDelete.id);
+      console.log('[CharacterList] Character deleted successfully');
+      loadData();
+      setDeleteModalVisible(false);
+      setCharacterToDelete(null);
+    } catch (error) {
+      console.error('[CharacterList] Error deleting character:', error);
+      Alert.alert('错误', '删除失败，请重试');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('[CharacterList] Delete cancelled');
+    setDeleteModalVisible(false);
+    setCharacterToDelete(null);
   };
 
   const getCharacterRelations = (charId: string): CharacterRelation[] => {
@@ -360,6 +360,47 @@ export default function CharacterListScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* 删除确认Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelDelete}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={handleCancelDelete}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <ThemedText variant="h3" color={theme.textPrimary} style={styles.modalTitle}>
+              确认删除
+            </ThemedText>
+            <ThemedText variant="body" color={theme.textSecondary} style={styles.modalMessage}>
+              确定要删除角色"{characterToDelete?.name}"吗？相关的角色关系也会被删除。
+            </ThemedText>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={handleCancelDelete}
+              >
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                  取消
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.deleteConfirmButton]}
+                onPress={handleConfirmDelete}
+              >
+                <ThemedText variant="smallMedium" color="#FFFFFF">
+                  删除
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <FloatingBall />
     </Screen>

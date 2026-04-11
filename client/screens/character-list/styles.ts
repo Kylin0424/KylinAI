@@ -220,5 +220,52 @@ export const createStyles = (theme: Theme) => {
     lockedNovelName: {
       fontStyle: 'italic',
     },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: Spacing.lg,
+    },
+    modalContent: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      padding: Spacing.xl,
+      width: '100%',
+      maxWidth: 320,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: Spacing.md,
+      textAlign: 'center',
+    },
+    modalMessage: {
+      marginBottom: Spacing.xl,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: Spacing.md,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: Spacing.md,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelButton: {
+      backgroundColor: '#F5F5F5',
+    },
+    deleteConfirmButton: {
+      backgroundColor: '#C8102E',
+    },
   });
 };
