@@ -101,9 +101,9 @@ router.post('/analyze', upload.single('file'), async (req: Request, res: Respons
    // 使用AI分析内容，识别角色
 const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record);
 const config = new Config({
-  apiKey: process.env.COZE_WORKLOAD_IDENTITY_API_KEY,
-  baseUrl: process.env.COZE_INTEGRATION_BASE_URL || 'https://api.coze.cn',
-  modelBaseUrl: process.env.COZE_INTEGRATION_MODEL_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+  modelBaseUrl: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
 });
 const client = new LLMClient(config, customHeaders);
 
@@ -179,7 +179,7 @@ ${truncatedContent}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.3,
     });
 
@@ -285,7 +285,7 @@ ${segmentContent}
         const chapterResponse = await client.invoke([
           { role: 'user' as const, content: chapterPrompt }
         ], {
-          model: 'doubao-seed-1-8-251228',
+          model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
           temperature: 0.1,
         });
 
