@@ -52,6 +52,7 @@ export default function CharacterScreen() {
   const [heightInput, setHeightInput] = useState('');
   const [weightInput, setWeightInput] = useState('');
   const [groupInput, setGroupInput] = useState('');
+  const [positionInput, setPositionInput] = useState('');
   const [occupation, setOccupation] = useState('');
   const [customOccupation, setCustomOccupation] = useState('');
   const [education, setEducation] = useState('');
@@ -156,8 +157,8 @@ export default function CharacterScreen() {
     // 处理性别
     const finalGender = gender === GENDER_CUSTOM_OPTION ? customGender.trim() || '未设定' : gender.trim() || '未设定';
 
-    // 处理体重
-    const finalWeight = weightInput.trim() || '未设定';
+    // 处理体重，添加单位
+    const finalWeight = weightInput.trim() ? `${weightInput.trim()}kg` : '未设定';
 
     // 处理团体信息，加入社会经历
     let finalSocialExperience = socialExperience.trim();
@@ -168,6 +169,16 @@ export default function CharacterScreen() {
         finalSocialExperience = `所属团体：${groupInput.trim()}`;
       }
     }
+    
+    // 处理职位信息
+    if (positionInput.trim()) {
+      if (finalSocialExperience) {
+        finalSocialExperience += ` 职位：${positionInput.trim()}`;
+      } else {
+        finalSocialExperience = `职位：${positionInput.trim()}`;
+      }
+    }
+    
     if (!finalSocialExperience) {
       finalSocialExperience = '未设定';
     }
@@ -177,9 +188,10 @@ export default function CharacterScreen() {
       name: name.trim(),
       gender: finalGender,
       age: ageInput.trim() || '25',
-      height: heightInput.trim() || '170cm',
+      height: heightInput.trim() ? `${heightInput.trim()}cm` : '170cm',
       weight: finalWeight,
       group: groupInput.trim() || '未设定',
+      position: positionInput.trim() || '未设定',
       occupation: occupation === OCCUPATION_CUSTOM_OPTION ? customOccupation.trim() || '未设定' : occupation.trim() || '未设定',
       education: education === '手动输入' ? customEducation.trim() || '未设定' : education.trim() || '未设定',
       memberCount: memberCount.toString(),
@@ -349,9 +361,10 @@ export default function CharacterScreen() {
                 style={styles.textInput}
                 placeholder="25"
                 placeholderTextColor={theme.textMuted}
-                value={ageInput}
-                onChangeText={setAgeInput}
+                value={ageInput.replace(/[^0-9]/g, '')}
+                onChangeText={(text) => setAgeInput(text.replace(/[^0-9]/g, ''))}
                 keyboardType="numeric"
+                maxLength={3}
               />
             </View>
           </View>
@@ -363,35 +376,45 @@ export default function CharacterScreen() {
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 身高
               </ThemedText>
-              <TextInput
-                style={styles.textInput}
-                placeholder="170cm"
-                placeholderTextColor={theme.textMuted}
-                value={heightInput}
-                onChangeText={setHeightInput}
-              />
+              <View style={styles.inputWithSuffix}>
+                <TextInput
+                  style={styles.textInputWithSuffix}
+                  placeholder="170"
+                  placeholderTextColor={theme.textMuted}
+                  value={heightInput.replace(/[^0-9]/g, '')}
+                  onChangeText={(text) => setHeightInput(text.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  maxLength={3}
+                />
+                <ThemedText variant="caption" color={theme.textMuted} style={styles.suffixText}>cm</ThemedText>
+              </View>
             </View>
             {/* 体重 - 预留4个汉字位置 */}
             <View style={[styles.inputGroup, styles.weightInputGroup]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 体重
               </ThemedText>
-              <TextInput
-                style={styles.textInput}
-                placeholder="60kg"
-                placeholderTextColor={theme.textMuted}
-                value={weightInput}
-                onChangeText={setWeightInput}
-              />
+              <View style={styles.inputWithSuffix}>
+                <TextInput
+                  style={styles.textInputWithSuffix}
+                  placeholder="60"
+                  placeholderTextColor={theme.textMuted}
+                  value={weightInput.replace(/[^0-9]/g, '')}
+                  onChangeText={(text) => setWeightInput(text.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  maxLength={3}
+                />
+                <ThemedText variant="caption" color={theme.textMuted} style={styles.suffixText}>kg</ThemedText>
+              </View>
             </View>
             {/* 团体 - 占剩余空间 */}
-            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+            <View style={[styles.inputGroup, { flex: 0.5, marginLeft: 8 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 团体
               </ThemedText>
               <TextInput
                 style={styles.textInput}
-                placeholder="军团/教派/公会/公司等"
+                placeholder="军团/教派"
                 placeholderTextColor={theme.textMuted}
                 value={groupInput}
                 onChangeText={setGroupInput}
@@ -399,9 +422,22 @@ export default function CharacterScreen() {
             </View>
           </View>
 
-          {/* Education and Occupation Row */}
+          {/* 第三行：职位、学历、职业 */}
           <View style={styles.inputRow}>
-            {/* Education Selection - Left side, larger */}
+            {/* 职位 - 手动输入 */}
+            <View style={[styles.inputGroup, { flex: 0.8, marginRight: 8 }]}>
+              <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
+                职位
+              </ThemedText>
+              <TextInput
+                style={styles.textInput}
+                placeholder="如：队长、长老"
+                placeholderTextColor={theme.textMuted}
+                value={positionInput}
+                onChangeText={setPositionInput}
+              />
+            </View>
+            {/* 学历 Selection - Left side, larger */}
             <View style={[styles.inputGroup, { flex: 1.2, marginRight: 8 }]}>
               <ThemedText variant="caption" color={theme.textMuted} style={styles.inputLabel}>
                 学历

@@ -79,6 +79,26 @@ export const createStyles = (theme: Theme) => {
       borderWidth: 1,
       borderColor: theme.border,
     },
+    inputWithSuffix: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    textInputWithSuffix: {
+      flex: 1,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      fontSize: 14,
+      color: theme.textPrimary,
+    },
+    suffixText: {
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      fontSize: 12,
+    },
     occupationSelector: {
       backgroundColor: theme.backgroundTertiary,
       borderRadius: 6,
