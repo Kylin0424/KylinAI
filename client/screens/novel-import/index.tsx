@@ -415,7 +415,13 @@ export default function NovelImportScreen() {
       setProgressText('分析完成');
       setProgress(100);
       setAnalysisResult(data);
-      setStep('result');
+
+      // 跳转到预览页面进行手动章节标记
+      router.push('/novel-preview', {
+        filename: file.name,
+        content: data.originalContent || '',
+        characters: JSON.stringify(data.characters || []),
+      });
 
     } catch (err) {
       console.error('Upload/Analysis error:', err);
