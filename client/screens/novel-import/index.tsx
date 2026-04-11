@@ -389,10 +389,6 @@ export default function NovelImportScreen() {
       setProgressText('正在上传文件...');
       setProgress(30);
 
-      // 设置60秒超时
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
       /**
        * 服务端文件：server/src/routes/import.ts
        * 接口：POST /api/v1/import/analyze
@@ -401,10 +397,7 @@ export default function NovelImportScreen() {
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/import/analyze`, {
         method: 'POST',
         body: formData,
-        signal: controller.signal,
       });
-
-      clearTimeout(timeoutId);
 
       setProgressText('AI正在分析角色和章节...');
       setProgress(60);
@@ -426,13 +419,7 @@ export default function NovelImportScreen() {
 
     } catch (err) {
       console.error('Upload/Analysis error:', err);
-      const errorMsg = err instanceof Error ? err.message : '分析失败，请重试';
-      // 区分超时错误
-      if (errorMsg.includes('abort') || errorMsg.includes('canceled')) {
-        setError('上传超时，请重试或选择较小的文件');
-      } else {
-        setError(errorMsg);
-      }
+      setError(err instanceof Error ? err.message : '分析失败，请重试');
       setStep('error');
     }
   };

@@ -17,11 +17,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     "newArchEnabled": true,
     "extra": {
       "eas": {
-        "projectId": projectId || "7623399502308851747"
+        "projectId": "b1ab58e0-ddf5-4e17-8067-63e071a164ba"
       }
     },
     "updates": {
-      "url": `https://u.expo.dev/${projectId || '7623399502308851747'}`
+      "url": "https://u.expo.dev/b1ab58e0-ddf5-4e17-8067-63e071a164ba"
     },
     "runtimeVersion": {
       "policy": "appVersion"
@@ -42,6 +42,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enablePngCrunchInReleaseBuilds": false
+          }
+        }
+      ],
       process.env.EXPO_PUBLIC_BACKEND_BASE_URL ? [
         "expo-router",
         {

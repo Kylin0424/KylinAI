@@ -6,27 +6,11 @@ import searchRouter from "./routes/search";
 import usageRouter from "./routes/usage";
 import importRouter from "./routes/import";
 
-// 超时中间件
-const requestTimeout = 120000; // 120秒
-
 const app = express();
 const port = process.env.PORT || 9091;
 
-// 超时处理中间件
-const timeoutMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  // 设置响应超时
-  res.setTimeout(requestTimeout, () => {
-    console.log('[TIMEOUT] Request timeout');
-    if (!res.headersSent) {
-      res.status(504).json({ error: '请求超时，请重试' });
-    }
-  });
-  next();
-};
-
 // Middleware
 app.use(cors());
-app.use(timeoutMiddleware);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

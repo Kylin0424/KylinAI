@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://kylinai-1.onrender.com"
       }
     },
     "preview": {
@@ -19,7 +19,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://kylinai-1.onrender.com"
       },
       "channel": "preview"
     },
@@ -28,7 +28,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://6966db31-e32f-4352-afc9-4c7b3a3cbd27.dev.coze.site"
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "https://kylinai-1.onrender.com"
       },
       "channel": "production"
     }
