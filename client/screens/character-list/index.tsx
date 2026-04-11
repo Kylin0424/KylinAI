@@ -43,6 +43,18 @@ export default function CharacterListScreen() {
     setCharacters(chars);
     setRelations(rels);
     setNovels(novelList);
+
+    // 调试：打印所有角色信息
+    console.log('[CharacterList] ========== 角色列表 ==========');
+    chars.forEach((char, index) => {
+      console.log(`[CharacterList] 角色 ${index + 1}:`);
+      console.log(`  名字: ${char.name}`);
+      console.log(`  ID: ${char.id}`);
+      console.log(`  novelId: ${char.novelId || '无'}`);
+      console.log(`  性别: ${char.gender}, 年龄: ${char.age}, 职业: ${char.occupation}`);
+    });
+    console.log('[CharacterList] =============================');
+
     setIsLoading(false);
   };
 
@@ -73,21 +85,40 @@ export default function CharacterListScreen() {
   };
 
   const handleDeleteCharacter = (character: Character) => {
-    Alert.alert(
-      '确认删除',
-      `确定要删除角色"${character.name}"吗？相关的角色关系也会被删除。`,
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteCharacter(character.id);
-            loadData();
+    console.log('========================================');
+    console.log('[CharacterList] handleDeleteCharacter called');
+    console.log('[CharacterList] Character name:', character.name);
+    console.log('[CharacterList] Character ID:', character.id);
+    console.log('[CharacterList] Character novelId:', character.novelId);
+    console.log('[CharacterList] Character full object:', JSON.stringify(character, null, 2));
+    console.log('========================================');
+
+    // 使用setTimeout确保在下一个事件循环中执行
+    setTimeout(() => {
+      Alert.alert(
+        '确认删除',
+        `确定要删除角色"${character.name}"吗？相关的角色关系也会被删除。`,
+        [
+          { text: '取消', style: 'cancel', onPress: () => console.log('[CharacterList] Delete cancelled') },
+          {
+            text: '删除',
+            style: 'destructive',
+            onPress: async () => {
+              console.log('[CharacterList] Delete confirmed for:', character.name);
+              try {
+                await deleteCharacter(character.id);
+                console.log('[CharacterList] Character deleted successfully');
+                loadData();
+              } catch (error) {
+                console.error('[CharacterList] Error deleting character:', error);
+                Alert.alert('错误', '删除失败，请重试');
+              }
+            },
           },
-        },
-      ]
-    );
+        ],
+        { onDismiss: () => console.log('[CharacterList] Alert dismissed') }
+      );
+    }, 100);
   };
 
   const getCharacterRelations = (charId: string): CharacterRelation[] => {
@@ -283,8 +314,12 @@ export default function CharacterListScreen() {
                     </View>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDeleteCharacter(char)}
+                      onPress={() => {
+                        console.log('[CharacterList] Delete button pressed for:', char.name);
+                        handleDeleteCharacter(char);
+                      }}
                       disabled={isLocked}
+                      activeOpacity={0.7}
                     >
                       <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
                     </TouchableOpacity>
