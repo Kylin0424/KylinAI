@@ -1562,6 +1562,41 @@ export default function CharacterScreen() {
         </View>
       </Modal>
 
+            {/* 家庭成员自定义职业输入 Modal */}
+      <Modal
+        visible={showMemberCustomOccupationInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMemberCustomOccupationInput(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.customInputModalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                手动输入职业
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowMemberCustomOccupationInput(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.customInputField}
+              placeholder="请输入职业"
+              placeholderTextColor={theme.textMuted}
+              value={memberCustomOccupation}
+              onChangeText={setMemberCustomOccupation}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.customInputConfirmButton}
+              onPress={handleConfirmMemberCustomOccupation}
+            >
+              <ThemedText variant="smallMedium" color="#FFFFFF">确认</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* 家庭成员自定义学历输入 Modal */}
       <Modal
         visible={showMemberCustomEducationInput}
