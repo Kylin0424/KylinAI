@@ -598,11 +598,11 @@ router.post('/script', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/v1/novel/prologue
- * 生成楔子（第零章）
- * Body: { 
- *   worldName: string, 
- *   eraBackground: string, 
+ * POST /api/v1/novel/chapter-opening
+ * 生成第一章开头（世界观和起始剧情）
+ * Body: {
+ *   worldName: string,
+ *   eraBackground: string,
  *   seasonSetting: string,
  *   protagonistDoing: string,
  *   region: string,
@@ -612,7 +612,7 @@ router.post('/script', async (req: Request, res: Response) => {
  *   femaleCharacter?: object
  * }
  */
-router.post('/prologue', async (req: Request, res: Response) => {
+router.post('/chapter-opening', async (req: Request, res: Response) => {
   const { worldName, eraBackground, seasonSetting, protagonistDoing, region, cityLocation, title, maleCharacter, femaleCharacter } = req.body;
 
   if (!worldName) {
@@ -631,7 +631,7 @@ router.post('/prologue', async (req: Request, res: Response) => {
 
     const systemPrompt = `你是一位专业的小说作家，擅长以第三人称旁观者视角进行叙述。
 你的叙述风格客观、细腻，善于描绘宏大的世界观和细腻的人物情感。
-你创作的楔子能够引人入胜，让读者对故事世界产生强烈的好奇心。
+你创作的开头能够引人入胜，让读者对故事世界产生强烈的好奇心。
 
 【核心创作原则 - 必须严格遵守】
 
@@ -656,7 +656,7 @@ router.post('/prologue', async (req: Request, res: Response) => {
     }
 
     // 构建主角活动描述
-    const protagonistActivity = protagonistDoing 
+    const protagonistActivity = protagonistDoing
       ? `\n【主角初始状态】\n主角当前正在：${protagonistDoing}\n`
       : '';
 
@@ -673,7 +673,7 @@ router.post('/prologue', async (req: Request, res: Response) => {
     const cityDesc = cityLocation ? `\n- 具体地点：${cityLocation}` : '';
     const locationDesc = (region || cityLocation) ? `\n【地理位置】${regionDesc}${cityDesc}` : '';
 
-    const userPrompt = `请为小说《${title || '未命名'}》创作第零章-楔子。
+    const userPrompt = `请为小说《${title || '未命名'}》创作第一章的开头内容。
 
 【世界设定】
 - 世界名称：${worldName}
@@ -698,7 +698,7 @@ ${region ? '6' : '5'}. 字数要求：500字以上。
 
 ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述，细节生动。
 
-请直接输出楔子内容，不需要标题和章节号：`;
+这是第一章的开头内容，请直接输出，不需要标题和章节号：`;
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
@@ -721,8 +721,8 @@ ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
-    console.error('Prologue generation error:', error);
-    res.write(`data: ${JSON.stringify({ error: '生成楔子失败，请重试' })}\n\n`);
+    console.error('Chapter opening generation error:', error);
+    res.write(`data: ${JSON.stringify({ error: '生成第一章开头失败，请重试' })}\n\n`);
     res.end();
   }
 });

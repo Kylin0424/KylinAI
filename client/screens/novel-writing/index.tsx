@@ -250,11 +250,11 @@ export default function NovelWritingScreen() {
 
       // 如果当前没有选中的章节
       if (!currentChapterId) {
-        // 如果有章节，自动选中第一个章节（通常是楔子）
+        // 如果有章节，自动选中第一个章节
         if (novelData.chapters.length > 0) {
           const firstChapter = novelData.chapters[0];
           setCurrentChapterId(firstChapter.id);
-          setCurrentChapterName(firstChapter.isPrologue ? '楔子' : firstChapter.title);
+          setCurrentChapterName(firstChapter.title);
           setContent(firstChapter.content || '');
         } else {
           // 没有章节时，显示小说主内容
@@ -270,7 +270,7 @@ export default function NovelWritingScreen() {
           if (novelData.chapters.length > 0) {
             const firstChapter = novelData.chapters[0];
             setCurrentChapterId(firstChapter.id);
-            setCurrentChapterName(firstChapter.isPrologue ? '楔子' : firstChapter.title);
+            setCurrentChapterName(firstChapter.title);
             setContent(firstChapter.content || '');
           } else {
             setContent(novelData.content);
@@ -349,7 +349,7 @@ export default function NovelWritingScreen() {
     fetchAiUsage();
   }, []);
 
-  // 自动生成楔子
+  // 自动生成第一章开头
   useEffect(() => {
     if (
       params.autoGeneratePrologue === 'true' &&
@@ -358,19 +358,19 @@ export default function NovelWritingScreen() {
       !hasGeneratedPrologue.current
     ) {
       hasGeneratedPrologue.current = true;
-      generatePrologue();
+      generateFirstChapterOpening();
     }
   }, [params.autoGeneratePrologue, params.worldName, novel]);
 
-  // 生成楔子
-  const generatePrologue = async () => {
+  // 生成第一章开头
+  const generateFirstChapterOpening = async () => {
     if (!novel || !params.worldName) return;
 
     setIsGeneratingPrologue(true);
     setPrologueContent('');
 
     try {
-      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/prologue`;
+      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/chapter-opening`;
       const body = JSON.stringify({
         worldName: params.worldName,
         eraBackground: params.eraBackground || '现代社会',
@@ -393,16 +393,16 @@ export default function NovelWritingScreen() {
 
       sse.addEventListener('message', async (event) => {
         if (event.data === '[DONE]') {
-          // 生成完成，保存楔子章节（isPrologue: true）
+          // 生成完成，保存第一章（isPrologue: false）
           if (fullContent) {
-            const chapter = await addChapter(novel.id, '楔子', true);
+            const chapter = await addChapter(novel.id, '第一章', false);
             await updateChapter(novel.id, chapter.id, { content: fullContent });
             // 更新小说数据
             const updatedNovel = await getNovelById(novel.id);
             setNovel(updatedNovel);
-            // 自动选中楔子章节
+            // 自动选中第一章
             setCurrentChapterId(chapter.id);
-            setCurrentChapterName('楔子');
+            setCurrentChapterName('第一章');
             setContent(fullContent);
           }
           sse.close();
@@ -425,12 +425,12 @@ export default function NovelWritingScreen() {
         console.error('SSE error:', error);
         sse.close();
         setIsGeneratingPrologue(false);
-        Alert.alert('错误', '生成楔子失败，请重试');
+        Alert.alert('错误', '生成第一章开头失败，请重试');
       });
     } catch (error) {
-      console.error('Prologue generation error:', error);
+      console.error('First chapter opening generation error:', error);
       setIsGeneratingPrologue(false);
-      Alert.alert('错误', '生成楔子失败，请重试');
+      Alert.alert('错误', '生成第一章开头失败，请重试');
     }
   };
 
@@ -895,12 +895,10 @@ export default function NovelWritingScreen() {
             roleType: c.roleType
           })),
           // 传递之前章节的内容作为上下文，用于检测上下文一致性冲突
-          previousChapters: novel.chapters
-            .filter(ch => !ch.isPrologue)
-            .map(ch => ({
-              title: ch.title,
-              content: ch.content || ''
-            }))
+          previousChapters: novel.chapters.map(ch => ({
+            title: ch.title,
+            content: ch.content || ''
+          }))
         })
       });
 
@@ -1098,12 +1096,10 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             education: femaleCharacter.education,
           } : null,
           // 传递之前章节的内容作为上下文
-          previousChapters: novel.chapters
-            .filter(ch => !ch.isPrologue) // 过滤掉楔子
-            .map(ch => ({
-              title: ch.title,
-              content: ch.content || ''
-            }))
+          previousChapters: novel.chapters.map(ch => ({
+            title: ch.title,
+            content: ch.content || ''
+          })),
         }),
       });
 
@@ -1126,9 +1122,8 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
   const handleAddChapter = async () => {
     if (!novel) return;
     setShowChapterInput(true);
-    // 计算下一个章节号：只计算正文章节（排除楔子）
-    const normalChapters = novel.chapters.filter(c => !c.isPrologue);
-    const nextChapterNum = normalChapters.length + 1;
+    // 计算下一个章节号
+    const nextChapterNum = novel.chapters.length + 1;
     setNewChapterName(`第${nextChapterNum}章 `);
   };
 
@@ -1267,9 +1262,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             <ScrollView style={styles.chapterDropdownList}>
               {novel.chapters.map((chapter, index) => {
                 // 计算显示标题：楔子显示"楔子"，正文显示"第X章"
-                const displayTitle = chapter.isPrologue 
-                  ? '楔子' 
-                  : `第${chapter.order}章 ${chapter.title}`;
+                const displayTitle = `第${chapter.order}章 ${chapter.title}`;
                 return (
                   <TouchableOpacity
                     key={chapter.id}
@@ -1299,7 +1292,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             <View style={styles.prologueHeader}>
               <ActivityIndicator size="small" color="#C8102E" />
               <ThemedText variant="small" color="#C8102E" style={styles.prologueHeaderText}>
-                正在生成第零章-楔子...
+                正在生成第一章开头...
               </ThemedText>
             </View>
             <View style={styles.prologueContentBox}>

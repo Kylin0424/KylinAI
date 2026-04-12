@@ -284,7 +284,7 @@ export default function HomeScreen() {
       
       if (fullNovel.chapters.length > 0) {
         fullNovel.chapters.forEach((chapter, index) => {
-          const chapterTitle = chapter.isPrologue ? '楔子' : `第${index + 1}章 ${chapter.title}`;
+          const chapterTitle = `第${chapter.order}章 ${chapter.title}`;
           txtContent += `${chapterTitle}\n\n`;
           // 添加章节内容，移除格式标记
           if (chapter.content) {
@@ -1424,7 +1424,7 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
             <View style={styles.worldSettingHint}>
               <Feather name="info" size={16} color="#C8102E" />
               <ThemedText variant="small" color={theme.textSecondary} style={styles.hintText}>
-                请输入故事发生的世界背景信息，AI将根据您的设定自动生成楔子
+                请输入故事发生的世界背景信息，AI将根据您的设定自动生成第一章开头
               </ThemedText>
             </View>
 
@@ -1606,7 +1606,7 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
                   textAlignVertical="top"
                 />
                 <ThemedText variant="caption" color={theme.textMuted} style={styles.fieldHint}>
-                  描述主角的初始状态和活动，AI将据此创作楔子
+                  描述主角的初始状态和活动，AI将据此创作第一章开头
                 </ThemedText>
               </View>
             </ScrollView>
