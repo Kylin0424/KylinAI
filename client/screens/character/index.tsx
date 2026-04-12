@@ -125,7 +125,7 @@ export default function CharacterScreen() {
   const [showMemberCountModal, setShowMemberCountModal] = useState(false);
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [selectedRelationCategory, setSelectedRelationCategory] = useState<string | null>(null);
-
+  const [showMemberOccupationModal, setShowMemberOccupationModal] = useState(false);
   // 关系分类列表
   const relationCategories = useMemo(() => {
     const categories = new Set<string>();
@@ -331,7 +331,16 @@ export default function CharacterScreen() {
     }
     setShowOccupationModal(false);
   };
-
+  
+      // 家庭成员职业选择
+  const handleSelectMemberOccupation = (occ: string) => {
+    if (occ === OCCUPATION_CUSTOM_OPTION) {
+      setMemberOccupation(occ);
+    } else {
+      setMemberOccupation(occ);
+    }
+    setShowMemberOccupationModal(false);
+  };
   const handleConfirmCustomOccupation = () => {
     setOccupation(customOccupation.trim() || '未设定');
     setShowCustomOccupationInput(false);
@@ -1316,7 +1325,7 @@ export default function CharacterScreen() {
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.selectorButton}
-                    onPress={() => setShowOccupationModal(true)}
+                    onPress={() => setShowMemberOccupationModal(true)}
                   >
                     <ThemedText
                       variant="small"
@@ -1425,6 +1434,89 @@ export default function CharacterScreen() {
         </View>
       </Modal>
 
+            {/* 家庭成员职业选择 Modal */}
+      <Modal
+        visible={showMemberOccupationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMemberOccupationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                选择职业
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowMemberOccupationModal(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Category Tabs */}
+            <View style={{ maxHeight: 50 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryTabs}>
+                <TouchableOpacity
+                  style={[styles.categoryTab, !selectedCategory && styles.categoryTabActive]}
+                  onPress={() => setSelectedCategory(null)}
+                >
+                  <ThemedText
+                    variant="small"
+                    color={!selectedCategory ? '#C8102E' : theme.textMuted}
+                  >
+                    全部
+                  </ThemedText>
+                </TouchableOpacity>
+                {OCCUPATION_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.name}
+                    style={[styles.categoryTab, selectedCategory === cat.name && styles.categoryTabActive]}
+                    onPress={() => setSelectedCategory(cat.name)}
+                  >
+                    <ThemedText
+                      variant="small"
+                      color={selectedCategory === cat.name ? '#C8102E' : theme.textMuted}
+                    >
+                      {cat.name}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Occupation List */}
+            <FlatList
+              data={
+                selectedCategory
+                  ? OCCUPATION_CATEGORIES.find(c => c.name === selectedCategory)?.occupations || []
+                  : [OCCUPATION_CUSTOM_OPTION, ...OCCUPATION_CATEGORIES.flatMap(c => c.occupations)]
+              }
+              keyExtractor={(item, index) => `${item}-${index}`}
+              numColumns={2}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.occupationItem,
+                    memberOccupation === item && styles.occupationItemSelected,
+                    item === OCCUPATION_CUSTOM_OPTION && styles.occupationCustomItem,
+                  ]}
+                  onPress={() => handleSelectMemberOccupation(item)}
+                >
+                  <ThemedText
+                    variant="small"
+                    color={memberOccupation === item ? '#C8102E' : theme.textPrimary}
+                    numberOfLines={1}
+                  >
+                    {item}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+              style={styles.occupationList}
+              contentContainerStyle={styles.occupationListContent}
+            />
+          </View>
+        </View>
+      </Modal>
+      
       <FloatingBall />
     </Screen>
   );
