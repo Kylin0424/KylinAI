@@ -67,7 +67,11 @@ router.post('/generate', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     // 解析滑块值
@@ -145,7 +149,7 @@ ${basicInfo}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.8,
     });
 
@@ -231,7 +235,7 @@ ${basicInfo}
               { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色的详细档案。必须严格遵守所有基本信息约束。' },
               { role: 'user' as const, content: memberPrompt }
             ], {
-              model: 'doubao-seed-1-8-251228',
+              model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
               temperature: 0.7,
             });
 
@@ -330,7 +334,7 @@ ${basicInfo}
             { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色。每个家庭成员都应该有独特的性格和经历。必须严格遵守性别、年龄、姓氏等所有约束条件。' },
             { role: 'user' as const, content: memberPrompt }
           ], {
-            model: 'doubao-seed-1-8-251228',
+            model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
             temperature: 0.7, // 降低温度以提高准确性和遵守约束
           });
 
@@ -371,7 +375,11 @@ router.post('/generate-npc', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const relationTypeMap: Record<string, string> = {
@@ -444,7 +452,7 @@ router.post('/generate-npc', async (req: Request, res: Response) => {
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.8,
     });
 
@@ -494,7 +502,11 @@ router.post('/generate-avatar', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const imageClient = new ImageGenerationClient(config, customHeaders);
 
     // 构建头像生成提示词
