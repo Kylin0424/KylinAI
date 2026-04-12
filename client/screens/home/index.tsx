@@ -1620,12 +1620,12 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
               {isCreatingNovel ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Feather name="feather" size={16} color="#FFFFFF" />
                   <ThemedText variant="smallMedium" color="#FFFFFF" style={styles.buttonText}>
                     开始创作
                   </ThemedText>
-                </>
+                </View>
               )}
             </TouchableOpacity>
           </View>
