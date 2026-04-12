@@ -1512,7 +1512,7 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
                     { key: '东部', icon: 'sunrise', desc: '沿海繁华' },
                     { key: '南部', icon: 'thermometer', desc: '湿热热带' },
                     { key: '西部', icon: 'wind', desc: '荒凉壮美' },
-                    { key: '北部', icon: 'snow', desc: '寒冷冰雪' },
+                    { key: '北部', icon: 'cloud-snow', desc: '寒冷冰雪' },
                     { key: '中部', icon: 'home', desc: '腹地秀美' },
                   ].map((item) => (
                     <TouchableOpacity
