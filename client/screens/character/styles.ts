@@ -498,5 +498,91 @@ export const createStyles = (theme: Theme) => {
       borderStyle: 'dashed',
       borderColor: '#C8102E',
     },
+    // 性别选项（用于家庭成员设置）
+    genderOptions: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      marginBottom: Spacing.sm,
+    },
+    genderOption: {
+      flex: 1,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'transparent',
+      alignItems: 'center',
+    },
+    genderOptionSelected: {
+      backgroundColor: theme.backgroundDefault,
+      borderColor: '#C8102E',
+    },
+    // 家庭成员设置弹窗
+    familyMemberModalContent: {
+      flex: 1,
+      backgroundColor: theme.backgroundRoot,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      marginTop: 100,
+      maxHeight: '80%',
+    },
+    familyMemberModalBody: {
+      flex: 1,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+    },
+    familyMemberModalFooter: {
+      flexDirection: 'row',
+      gap: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+    },
+    formSection: {
+      marginBottom: Spacing.md,
+    },
+    formLabel: {
+      marginBottom: Spacing.xs,
+    },
+    inputField: {
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 8,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: 16,
+      color: theme.textPrimary,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    selectorButton: {
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 8,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.border,
+      minHeight: 44,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: Spacing.sm,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    cancelButton: {
+      backgroundColor: theme.backgroundTertiary,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    submitButton: {
+      backgroundColor: '#C8102E',
+    },
   });
 };

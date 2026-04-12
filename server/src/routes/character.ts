@@ -46,18 +46,19 @@ const RELATION_INFERENCE: Record<string, {
  * 根据滑块值和基本信息生成角色（支持宗族系统多角色生成）
  */
 router.post('/generate', async (req: Request, res: Response) => {
-  const { 
-    sliders, 
-    name, 
-    gender, 
-    age, 
-    height, 
+  const {
+    sliders,
+    name,
+    gender,
+    age,
+    height,
     occupation,
     education,
     memberCount,
     familyRelation,
     familyBackground,
-    socialExperience
+    socialExperience,
+    familyMembersData // 新增：用户手动设置的家庭成员数据
   } = req.body;
 
   if (!sliders || typeof sliders !== 'object') {
@@ -178,24 +179,103 @@ ${basicInfo}
     // 如果需要生成宗族成员
     const familyMembers: any[] = [];
     const memberCountNum = parseInt(memberCount) || 0;
-    
+
+    // 获取家庭背景
+    const familyBg = familyBackground || characterData.familyBackground || '';
+
+    // 检查是否有用户手动设置的家庭成员数据
+    const hasCustomFamilyMembers = familyMembersData && Array.isArray(familyMembersData) && familyMembersData.length > 0;
+
     if (memberCountNum > 1 && familyRelation) {
-      // 解析关系列表（格式如："父亲、母亲" 或 "父亲,母亲"）
-      const relations = familyRelation.split(/[、,，]/).map((r: string) => r.trim()).filter((r: string) => r);
-      
-      // 获取姓氏
-      const surname = characterData.name?.charAt(0) || '李';
-      const familyBg = familyBackground || characterData.familyBackground || '';
-      const protagonistAge = parseInt(characterData.age) || 25;
-      
-      // 为每个关系生成对应的家庭成员
-      for (let i = 0; i < relations.length && i < 10; i++) {
-        const relationName = relations[i];
-        const inference = RELATION_INFERENCE[relationName] || {
-          gender: '任意',
-          ageOffset: [-10, 10],
-          description: `主角的${relationName}`
-        };
+      if (hasCustomFamilyMembers) {
+        // 使用用户手动设置的家庭成员数据
+        for (const memberData of familyMembersData) {
+          try {
+            // 为每个家庭成员生成详细描述（性格、经历、外貌等）
+            const memberPrompt = `请根据以下基本信息，生成一个家庭成员角色的详细档案。
+
+【基本信息】
+姓名：${memberData.name}
+性别：${memberData.gender}
+年龄：${memberData.age}岁
+身高：${memberData.height}
+体重：${memberData.weight}
+职业：${memberData.occupation}
+学历：${memberData.education}
+与主角的关系：${memberData.relation}
+
+【主角信息】
+姓名：${characterData.name}
+性别：${characterData.gender}
+年龄：${characterData.age}岁
+职业：${characterData.occupation}
+家庭背景：${familyBg}
+
+【生成要求 - 必须严格遵守】
+请生成一个包含以下信息的家庭成员档案（以JSON格式返回）：
+1. name: 姓名（必须是：${memberData.name}，不能更改）
+2. gender: 性别（必须是：${memberData.gender}，不能更改）
+3. age: 年龄（必须是：${memberData.age}，不能更改）
+4. height: 身高（必须是：${memberData.height}，不能更改）
+5. occupation: 职业（必须是：${memberData.occupation}，不能更改）
+6. education: 学历（根据职业推断合理学历，考虑年龄）
+7. personality: 性格特点（80-150字，根据年龄、职业、学历推断）
+8. experience: 人生经历（100-200字，要体现与主角的互动）
+9. familyBackground: 家庭背景（与主角一致）
+10. appearance: 外貌特征（50-100字）
+11. relationToProtagonist: 与主角的关系（${memberData.relation}）
+
+请只返回JSON，不要有其他文字。`;
+
+            const memberResponse = await client.invoke([
+              { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色的详细档案。必须严格遵守所有基本信息约束。' },
+              { role: 'user' as const, content: memberPrompt }
+            ], {
+              model: 'doubao-seed-1-8-251228',
+              temperature: 0.7,
+            });
+
+            const memberContent = memberResponse.content;
+            const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
+            if (memberJsonMatch) {
+              const memberFullData = JSON.parse(memberJsonMatch[0]);
+              familyMembers.push(memberFullData);
+            }
+          } catch (memberError) {
+            console.error('Failed to generate family member detail:', memberError);
+            // 如果生成失败，使用基本信息创建一个简单的记录
+            familyMembers.push({
+              name: memberData.name,
+              gender: memberData.gender,
+              age: memberData.age,
+              height: memberData.height,
+              occupation: memberData.occupation,
+              education: memberData.education,
+              personality: '待完善',
+              experience: '待完善',
+              familyBackground: familyBg,
+              appearance: '待完善',
+              relationToProtagonist: memberData.relation,
+            });
+          }
+        }
+      } else {
+        // 原有逻辑：使用AI生成家庭成员
+        // 解析关系列表（格式如："父亲、母亲" 或 "父亲,母亲"）
+        const relations = familyRelation.split(/[、,，]/).map((r: string) => r.trim()).filter((r: string) => r);
+
+        // 获取姓氏
+        const surname = characterData.name?.charAt(0) || '李';
+        const protagonistAge = parseInt(characterData.age) || 25;
+
+        // 为每个关系生成对应的家庭成员
+        for (let i = 0; i < relations.length && i < 10; i++) {
+          const relationName = relations[i];
+          const inference = RELATION_INFERENCE[relationName] || {
+            gender: '任意',
+            ageOffset: [-10, 10],
+            description: `主角的${relationName}`
+          };
         
         // 计算年龄范围
         const [minOffset, maxOffset] = inference.ageOffset;
@@ -265,7 +345,8 @@ ${basicInfo}
           console.error('Failed to generate family member:', memberError);
         }
       }
-    }
+      } // 结束else分支：AI生成家庭成员
+    } // 结束if：memberCountNum > 1 && familyRelation
 
     res.json({
       protagonist: characterData,

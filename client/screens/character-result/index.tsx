@@ -63,6 +63,7 @@ export default function CharacterResultScreen() {
     familyMembersBrief: string;
     familyBackground: string;
     socialExperience: string;
+    familyMembersData: string; // 新增：用户手动设置的家庭成员数据
   }>();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -113,7 +114,7 @@ export default function CharacterResultScreen() {
        * Body 参数：sliders: object, name: string, gender: string, age: string, height: string,
        *          weight: string, group: string, occupation: string, education: string,
        *          memberCount: string, familyRelation: string, familyMembersBrief: string,
-       *          familyBackground: string, socialExperience: string
+       *          familyBackground: string, socialExperience: string, familyMembersData: array
        */
       const response = await fetch(`${API_BASE_URL}/character/generate`, {
         method: 'POST',
@@ -135,6 +136,7 @@ export default function CharacterResultScreen() {
           familyMembersBrief: params.familyMembersBrief,
           familyBackground: params.familyBackground,
           socialExperience: params.socialExperience,
+          familyMembersData: params.familyMembersData ? JSON.parse(params.familyMembersData) : undefined,
         }),
       });
 

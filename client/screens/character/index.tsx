@@ -7,6 +7,8 @@ import {
   TextInput,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Feather } from '@expo/vector-icons';
@@ -64,7 +66,24 @@ export default function CharacterScreen() {
   const [familyMembersBrief, setFamilyMembersBrief] = useState(''); // 家庭成员简述
   const [familyBackground, setFamilyBackground] = useState('');
   const [socialExperience, setSocialExperience] = useState('');
-  
+
+  // 家庭成员设置流程
+  const [showFamilyMemberSetupModal, setShowFamilyMemberSetupModal] = useState(false); // 是否显示家庭成员设置弹窗
+  const [currentMemberIndex, setCurrentMemberIndex] = useState(0); // 当前正在设置的家庭成员索引
+  const [currentRelationType, setCurrentRelationType] = useState(''); // 当前正在设置的关系类型
+  const [stagedFamilyMembers, setStagedFamilyMembers] = useState<any[]>([]); // 已暂存的家庭成员信息
+
+  // 当前家庭成员设置的基本信息
+  const [memberName, setMemberName] = useState('');
+  const [memberGender, setMemberGender] = useState('');
+  const [memberAge, setMemberAge] = useState('');
+  const [memberHeight, setMemberHeight] = useState('');
+  const [memberWeight, setMemberWeight] = useState('');
+  const [memberOccupation, setMemberOccupation] = useState('');
+  const [memberEducation, setMemberEducation] = useState('');
+  const [memberEducationCustom, setMemberEducationCustom] = useState('');
+  const [showMemberEducationModal, setShowMemberEducationModal] = useState(false);
+
   // 最多可选的关系数 = 家庭成员人数 - 1（减去自己）
   const maxRelations = memberCount - 1;
   
@@ -146,6 +165,20 @@ export default function CharacterScreen() {
       return;
     }
 
+    // 如果有需要设置的家庭成员，先弹出设置弹窗
+    if (selectedRelations.length > 0) {
+      setCurrentMemberIndex(0);
+      setCurrentRelationType(selectedRelations[0]);
+      setStagedFamilyMembers([]);
+      setShowFamilyMemberSetupModal(true);
+      return;
+    }
+
+    // 如果没有家庭成员，直接生成
+    proceedToGeneration();
+  };
+
+  const proceedToGeneration = () => {
     setIsGenerating(true);
 
     // 将滑块值和基本信息转换为参数
@@ -169,7 +202,7 @@ export default function CharacterScreen() {
         finalSocialExperience = `所属团体：${groupInput.trim()}`;
       }
     }
-    
+
     // 处理职位信息
     if (positionInput.trim()) {
       if (finalSocialExperience) {
@@ -178,10 +211,22 @@ export default function CharacterScreen() {
         finalSocialExperience = `职位：${positionInput.trim()}`;
       }
     }
-    
+
     if (!finalSocialExperience) {
       finalSocialExperience = '未设定';
     }
+
+    // 将已暂存的家庭成员信息转换为字符串
+    const familyMembersData = stagedFamilyMembers.map(member => ({
+      relation: member.relation,
+      name: member.name,
+      gender: member.gender,
+      age: member.age,
+      height: member.height,
+      weight: member.weight,
+      occupation: member.occupation,
+      education: member.education,
+    }));
 
     router.push('/character-result', {
       sliders: JSON.stringify(sliderValues),
@@ -199,9 +244,80 @@ export default function CharacterScreen() {
       familyMembersBrief: familyMembersBrief.trim() || '未设定',
       familyBackground: familyBackground.trim() || '未设定',
       socialExperience: finalSocialExperience,
+      familyMembersData: JSON.stringify(familyMembersData), // 传递已设置的家庭成员数据
     });
 
     setIsGenerating(false);
+  };
+
+  const handleSaveFamilyMember = () => {
+    // 验证必填字段
+    if (!memberName.trim()) {
+      alert('请输入姓名');
+      return;
+    }
+    if (!memberGender) {
+      alert('请选择性别');
+      return;
+    }
+    if (!memberAge.trim()) {
+      alert('请输入年龄');
+      return;
+    }
+    if (!memberHeight.trim()) {
+      alert('请输入身高');
+      return;
+    }
+    if (!memberWeight.trim()) {
+      alert('请输入体重');
+      return;
+    }
+    if (!memberOccupation) {
+      alert('请选择职业');
+      return;
+    }
+    if (!memberEducation) {
+      alert('请选择学历');
+      return;
+    }
+
+    // 保存当前家庭成员信息
+    const member = {
+      relation: currentRelationType,
+      name: memberName.trim(),
+      gender: memberGender,
+      age: memberAge.trim(),
+      height: `${memberHeight.trim()}cm`,
+      weight: `${memberWeight.trim()}kg`,
+      occupation: memberOccupation,
+      education: memberEducation === '手动输入' ? memberEducationCustom.trim() || '未设定' : memberEducation,
+    };
+
+    const updatedMembers = [...stagedFamilyMembers, member];
+    setStagedFamilyMembers(updatedMembers);
+
+    // 检查是否还有下一个家庭成员需要设置
+    if (currentMemberIndex < selectedRelations.length - 1) {
+      // 有下一个，清空当前表单，设置下一个关系
+      setCurrentMemberIndex(currentMemberIndex + 1);
+      setCurrentRelationType(selectedRelations[currentMemberIndex + 1]);
+      setMemberName('');
+      setMemberGender('');
+      setMemberAge('');
+      setMemberHeight('');
+      setMemberWeight('');
+      setMemberOccupation('');
+      setMemberEducation('');
+      setMemberEducationCustom('');
+    } else {
+      // 没有下一个了，关闭弹窗，继续生成
+      setShowFamilyMemberSetupModal(false);
+      proceedToGeneration();
+    }
+  };
+
+  const handleCancelFamilyMemberSetup = () => {
+    setShowFamilyMemberSetupModal(false);
   };
 
   const handleSelectOccupation = (occ: string) => {
@@ -1075,6 +1191,235 @@ export default function CharacterScreen() {
                 );
               }}
               style={styles.relationList}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Family Member Setup Modal */}
+      <Modal
+        visible={showFamilyMemberSetupModal}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCancelFamilyMemberSetup}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.familyMemberModalContent}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <ThemedText variant="h3" color={theme.textPrimary}>
+                    设置家庭成员
+                  </ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>
+                    {currentRelationType} ({currentMemberIndex + 1}/{selectedRelations.length})
+                  </ThemedText>
+                </View>
+                <TouchableOpacity onPress={handleCancelFamilyMemberSetup}>
+                  <Feather name="x" size={24} color={theme.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.familyMemberModalBody}>
+                {/* 姓名 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    姓名 *
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入姓名"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberName}
+                    onChangeText={setMemberName}
+                  />
+                </View>
+
+                {/* 性别 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    性别 *
+                  </ThemedText>
+                  <View style={styles.genderOptions}>
+                    {['男', '女'].map((g) => (
+                      <TouchableOpacity
+                        key={g}
+                        style={[
+                          styles.genderOption,
+                          memberGender === g && styles.genderOptionSelected,
+                        ]}
+                        onPress={() => setMemberGender(g)}
+                      >
+                        <ThemedText
+                          variant="small"
+                          color={memberGender === g ? '#C8102E' : theme.textPrimary}
+                        >
+                          {g}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* 年龄 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    年龄 *
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入年龄"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberAge}
+                    onChangeText={setMemberAge}
+                    keyboardType="number-pad"
+                  />
+                </View>
+
+                {/* 身高 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    身高 *
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入身高（cm）"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberHeight}
+                    onChangeText={setMemberHeight}
+                    keyboardType="number-pad"
+                  />
+                </View>
+
+                {/* 体重 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    体重 *
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入体重（kg）"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberWeight}
+                    onChangeText={setMemberWeight}
+                    keyboardType="number-pad"
+                  />
+                </View>
+
+                {/* 职业 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    职业 *
+                  </ThemedText>
+                  <TouchableOpacity
+                    style={styles.selectorButton}
+                    onPress={() => setShowOccupationModal(true)}
+                  >
+                    <ThemedText
+                      variant="small"
+                      color={memberOccupation ? theme.textPrimary : theme.textMuted}
+                    >
+                      {memberOccupation || '请选择职业'}
+                    </ThemedText>
+                    <Feather name="chevron-right" size={20} color={theme.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 学历 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    学历 *
+                  </ThemedText>
+                  <TouchableOpacity
+                    style={styles.selectorButton}
+                    onPress={() => setShowMemberEducationModal(true)}
+                  >
+                    <ThemedText
+                      variant="small"
+                      color={memberEducation ? theme.textPrimary : theme.textMuted}
+                    >
+                      {memberEducation || '请选择学历'}
+                    </ThemedText>
+                    <Feather name="chevron-right" size={20} color={theme.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+
+              <View style={styles.familyMemberModalFooter}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={handleCancelFamilyMemberSetup}
+                >
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>取消</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.submitButton]}
+                  onPress={handleSaveFamilyMember}
+                >
+                  <ThemedText variant="smallMedium" color="#FFFFFF">
+                    {currentMemberIndex === selectedRelations.length - 1 ? '完成并生成' : '下一个'}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Family Member Education Modal */}
+      <Modal
+        visible={showMemberEducationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMemberEducationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                选择学历
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowMemberEducationModal(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={Object.entries(getEducationByCategory())}
+              keyExtractor={([categoryKey]) => categoryKey}
+              renderItem={({ item: [categoryKey, category] }) => (
+                <View style={styles.educationCategorySection}>
+                  <ThemedText variant="caption" color={theme.textMuted} style={styles.educationCategoryLabel}>
+                    {category.name}
+                  </ThemedText>
+                  <View style={styles.educationOptionsGrid}>
+                    {category.options.map((option) => (
+                      <TouchableOpacity
+                        key={option.id}
+                        style={[
+                          styles.educationOptionItem,
+                          memberEducation === option.name && styles.educationOptionItemSelected,
+                        ]}
+                        onPress={() => {
+                          setMemberEducation(option.name);
+                          setShowMemberEducationModal(false);
+                        }}
+                      >
+                        <ThemedText
+                          variant="small"
+                          color={memberEducation === option.name ? '#C8102E' : theme.textPrimary}
+                        >
+                          {option.name}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+              style={styles.educationList}
             />
           </View>
         </View>
