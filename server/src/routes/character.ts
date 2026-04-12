@@ -187,13 +187,23 @@ ${basicInfo}
     // 获取家庭背景
     const familyBg = familyBackground || characterData.familyBackground || '';
 
-    // 检查是否有用户手动设置的家庭成员数据
-    const hasCustomFamilyMembers = familyMembersData && Array.isArray(familyMembersData) && familyMembersData.length > 0;
+    // 检查是否有用户手动设置的家庭成员数据（前端传的是JSON字符串，需要解析）
+let parsedFamilyMembersData = null;
+if (familyMembersData && typeof familyMembersData === 'string') {
+  try {
+    parsedFamilyMembersData = JSON.parse(familyMembersData);
+  } catch (e) {
+    console.error('Failed to parse familyMembersData:', e);
+  }
+} else if (Array.isArray(familyMembersData)) {
+  parsedFamilyMembersData = familyMembersData;
+}
+const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFamilyMembersData) && parsedFamilyMembersData.length > 0;
 
-    if (memberCountNum > 1 && familyRelation) {
-      if (hasCustomFamilyMembers) {
-        // 使用用户手动设置的家庭成员数据
-        for (const memberData of familyMembersData) {
+    // 优先使用用户手动设置的家庭成员数据
+  if (hasCustomFamilyMembers) {
+    // 使用用户手动设置的家庭成员数据
+        for (const memberData of parsedFamilyMembersData) {
           try {
             // 为每个家庭成员生成详细描述（性格、经历、外貌等）
             const memberPrompt = `请根据以下基本信息，生成一个家庭成员角色的详细档案。
