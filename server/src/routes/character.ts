@@ -20,6 +20,8 @@ const RELATION_INFERENCE: Record<string, {
   '姐姐': { gender: '女', ageOffset: [1, 10], description: '主角的姐姐' },
   '妹妹': { gender: '女', ageOffset: [-10, -1], description: '主角的妹妹' },
   '配偶': { gender: '任意', ageOffset: [-5, 5], description: '主角的配偶' },
+  '丈夫': { gender: '男', ageOffset: [-5, 5], description: '主角的丈夫' },
+  '妻子': { gender: '女', ageOffset: [-5, 5], description: '主角的妻子' },
   '儿子': { gender: '男', ageOffset: [-30, -15], description: '主角的儿子' },
   '女儿': { gender: '女', ageOffset: [-30, -15], description: '主角的女儿' },
   '伯父': { gender: '男', ageOffset: [15, 30], description: '主角的伯父' },
@@ -84,47 +86,55 @@ router.post('/generate', async (req: Request, res: Response) => {
 你需要生成一个完整的角色档案，包括基本信息和详细的背景故事。
 请确保角色的各项特征与给定的参数相符。`;
 
-    const basicInfo = name ? `已确定的基本信息：
-- 姓名：${name}
-- 性别：${gender || '未设定'}
-- 年龄：${age || '未设定'}
-- 身高：${height || '未设定'}
-- 职业：${occupation || '未设定'}
-- 学历：${education || '未设定'}
-- 家庭背景：${familyBackground || '未设定'}
-- 社会经历：${socialExperience || '未设定'}
+    const basicInfo = name ? `【用户已确定的基本信息 - 必须严格遵守】
+- 姓名：${name}（必须使用这个姓名，不能更改）
+- 性别：${gender || '未设定'}（如果已设定，必须遵守）
+- 年龄：${age || '未设定'}岁（如果已设定，必须使用这个年龄）
+- 身高：${height || '未设定'}（如果已设定，必须使用这个身高）
+- 职业：${occupation || '未设定'}（如果已设定，必须使用这个职业）
+- 学历：${education || '未设定'}（如果已设定，必须使用这个学历）
+- 家庭背景：${familyBackground || '未设定'}（如果已设定，必须保持一致）
+- 社会经历：${socialExperience || '未设定'}（如果已设定，必须保持一致）
 
-请根据以上基本信息和滑块参数生成角色。如果基本信息已设定，请保持不变；如果未设定，请根据滑块参数推断合理的值。` : '';
+【特别警告】
+- 绝对不能更改用户已确定的姓名
+- 绝对不能更改用户已确定的性别、年龄、身高
+- 绝对不能更改用户已确定的职业、学历
+- 对于未设定的项目，请根据滑块参数推断合理的值` : '';
 
-    const userPrompt = `请根据以下参数生成一个小说角色的完整设定：
+    const userPrompt = `请根据以下参数生成一个小说角色的完整设定。
 
 ${basicInfo}
 
+【性格参数】
 性格倾向：${introversion < 30 ? '非常内向' : introversion < 50 ? '较内向' : introversion < 70 ? '较外向' : '非常外向'}（内向-外向：${introversion}%）
 思维方式：${rational < 30 ? '非常感性' : rational < 50 ? '偏感性' : rational < 70 ? '偏理性' : '非常理性'}（感性-理性：${rational}%）
 生活态度：${conservative < 30 ? '非常保守' : conservative < 50 ? '较保守' : conservative < 70 ? '较开放' : '非常开放'}（保守-开放：${conservative}%）
 心态倾向：${optimistic < 30 ? '非常悲观' : optimistic < 50 ? '偏悲观' : optimistic < 70 ? '偏乐观' : '非常乐观'}（悲观-乐观：${optimistic}%）
 
+【能力参数】
 智慧程度：${intelligence < 30 ? '单纯朴实' : intelligence < 50 ? '一般' : intelligence < 70 ? '聪明' : '睿智过人'}（${intelligence}%）
 勇气指数：${courage < 30 ? '非常谨慎' : courage < 50 ? '较谨慎' : courage < 70 ? '较勇敢' : '非常勇敢'}（${courage}%）
 魅力值：${charisma < 30 ? '平凡' : charisma < 50 ? '一般' : charisma < 70 ? '有魅力' : '非常迷人'}（${charisma}%）
 运气值：${luck < 30 ? '倒霉' : luck < 50 ? '一般' : luck < 70 ? '较幸运' : '非常幸运'}（${luck}%）
 
+【社会参数】
 社会地位：${socialStatus < 30 ? '底层' : socialStatus < 50 ? '中下层' : socialStatus < 70 ? '中产阶级' : '上流社会'}（${socialStatus}%）
 财富程度：${wealth < 30 ? '贫困' : wealth < 50 ? '普通' : wealth < 70 ? '富裕' : '非常富有'}（${wealth}%）
 
+【生成要求 - 必须严格遵守】
 请生成一个包含以下信息的角色档案（以JSON格式返回）：
-1. name: 姓名（${name || '请创造一个合适的中文姓名'}）
-2. gender: 性别（${gender || '男/女'}）
-3. age: 年龄（具体数字，${age || '根据设定推断'}）
-4. height: 身高（${height || '根据性别推断合理身高'}）
-5. occupation: 职业（${occupation || '根据角色特征推断合适的职业'}）
-6. education: 学历（${education || '根据职业和社会地位推断合理学历'}）
+1. name: 姓名（${name ? '必须使用：' + name : '请创造一个合适的中文姓名'}${name ? '，不能更改' : ''}）
+2. gender: 性别（${gender ? '必须使用：' + gender : '男/女'}${gender ? '，不能更改' : ''}）
+3. age: 年龄（${age ? '必须使用：' + age : '具体数字，根据设定推断'}${age ? '，不能更改' : ''}）
+4. height: 身高（${height ? '必须使用：' + height : '根据性别推断合理身高'}${height ? '，不能更改' : ''}）
+5. occupation: 职业（${occupation ? '必须使用：' + occupation : '根据角色特征推断合适的职业'}${occupation ? '，不能更改' : ''}）
+6. education: 学历（${education ? '必须使用：' + education : '根据职业和社会地位推断合理学历'}${education ? '，不能更改' : ''}）
 7. personality: 性格特点（100-200字，要符合给定的性格参数，同时要考虑学历对表达方式的影响）
-7. experience: 人生经历（150-250字，要体现智慧、勇气、运气等参数）
-8. familyBackground: 家庭背景（100-200字，要符合社会地位和财富参数）
-9. appearance: 外貌特征（80-150字）
-10. specialTraits: 特殊特质或技能（50-100字，如有）
+8. experience: 人生经历（150-250字，要体现智慧、勇气、运气等参数）
+9. familyBackground: 家庭背景（${familyBackground ? '保持一致：' + familyBackground : '100-200字，要符合社会地位和财富参数'}）
+10. appearance: 外貌特征（80-150字）
+11. specialTraits: 特殊特质或技能（50-100字，如有）
 
 请只返回JSON，不要有其他文字。`;
 
@@ -198,7 +208,7 @@ ${basicInfo}
           memberGender = Math.random() > 0.5 ? '男' : '女';
         }
         
-        const memberPrompt = `请根据以下主角信息，生成一个家庭成员角色：
+        const memberPrompt = `请根据以下主角信息，生成一个家庭成员角色。
 
 【主角信息】
 姓名：${characterData.name}
@@ -209,17 +219,22 @@ ${basicInfo}
 社会地位：${socialStatus < 30 ? '底层' : socialStatus < 50 ? '中下层' : socialStatus < 70 ? '中产阶级' : '上流社会'}
 财富程度：${wealth < 30 ? '贫困' : wealth < 50 ? '普通' : wealth < 70 ? '富裕' : '非常富有'}
 
-【家庭成员要求】
+【家庭成员要求 - 必须严格遵守】
 - 与主角的关系：${relationName}
 - 姓氏要求：${memberGender === '女' && ['配偶', '母亲', '祖母', '外祖母', '姑妈', '姨妈', '岳母', '婆婆'].includes(relationName) ? '可以是不同姓氏' : `必须姓${surname}`}
-- 推断性别：${memberGender}
-- 推断年龄范围：${minAge}-${maxAge}岁
+- 性别（强制）：必须为${memberGender}
+- 年龄范围（强制）：必须在${minAge}-${maxAge}岁之间（具体数字，不能超出范围）
 - 家庭背景：必须与主角的家庭背景保持一致
+
+【特别警告】
+- 绝对不能生成超出年龄范围的年龄
+- 绝对不能使用与性别要求不符的性别
+- 绝对不能使用与姓氏要求不符的姓氏
 
 请生成一个包含以下信息的家庭成员档案（以JSON格式返回）：
 1. name: 姓名
-2. gender: 性别（${memberGender}）
-3. age: 年龄（具体数字，要在${minAge}-${maxAge}岁范围内）
+2. gender: 性别（必须是：${memberGender}）
+3. age: 年龄（必须在${minAge}-${maxAge}岁之间）
 4. height: 身高（根据性别推断合理身高）
 5. occupation: 职业（要符合年龄和时代背景）
 6. personality: 性格特点（80-150字，可以有独特性格）
@@ -232,11 +247,11 @@ ${basicInfo}
 
         try {
           const memberResponse = await client.invoke([
-            { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色。每个家庭成员都应该有独特的性格和经历。' },
+            { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色。每个家庭成员都应该有独特的性格和经历。必须严格遵守性别、年龄、姓氏等所有约束条件。' },
             { role: 'user' as const, content: memberPrompt }
           ], {
             model: 'doubao-seed-1-8-251228',
-            temperature: 0.9, // 提高温度增加多样性
+            temperature: 0.7, // 降低温度以提高准确性和遵守约束
           });
 
           const memberContent = memberResponse.content;
