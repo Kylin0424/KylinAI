@@ -126,6 +126,9 @@ export default function CharacterScreen() {
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [selectedRelationCategory, setSelectedRelationCategory] = useState<string | null>(null);
   const [showMemberOccupationModal, setShowMemberOccupationModal] = useState(false);
+  const [memberCustomOccupation, setMemberCustomOccupation] = useState('');
+  const [showMemberCustomOccupationInput, setShowMemberCustomOccupationInput] = useState(false);
+  const [showMemberCustomEducationInput, setShowMemberCustomEducationInput] = useState(false);
   // 关系分类列表
   const relationCategories = useMemo(() => {
     const categories = new Set<string>();
@@ -336,14 +339,16 @@ export default function CharacterScreen() {
   const handleSelectMemberOccupation = (occ: string) => {
     if (occ === OCCUPATION_CUSTOM_OPTION) {
       setMemberOccupation(occ);
+      setShowMemberCustomOccupationInput(true);
     } else {
       setMemberOccupation(occ);
+      setMemberCustomOccupation('');
     }
     setShowMemberOccupationModal(false);
   };
-  const handleConfirmCustomOccupation = () => {
-    setOccupation(customOccupation.trim() || '未设定');
-    setShowCustomOccupationInput(false);
+  const handleConfirmMemberCustomOccupation = () => {
+    setMemberOccupation(memberCustomOccupation.trim() || '未设定');
+    setShowMemberCustomOccupationInput(false);
   };
 
   const handleSelectEducation = (edu: string) => {
@@ -1413,7 +1418,12 @@ export default function CharacterScreen() {
                           memberEducation === option.name && styles.educationOptionItemSelected,
                         ]}
                         onPress={() => {
-                          setMemberEducation(option.name);
+                          if (option.name === '手动输入') {
+                            setMemberEducation(option.name);
+                            setShowMemberCustomEducationInput(true);
+                          } else {
+                            setMemberEducation(option.name);
+                          }
                           setShowMemberEducationModal(false);
                         }}
                       >
@@ -1513,6 +1523,79 @@ export default function CharacterScreen() {
               style={styles.occupationList}
               contentContainerStyle={styles.occupationListContent}
             />
+          </View>
+        </View>
+      </Modal>
+
+            {/* 家庭成员自定义职业输入 Modal */}
+      <Modal
+        visible={showMemberCustomOccupationInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMemberCustomOccupationInput(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.customInputModalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                手动输入职业
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowMemberCustomOccupationInput(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.customInputField}
+              placeholder="请输入职业"
+              placeholderTextColor={theme.textMuted}
+              value={memberCustomOccupation}
+              onChangeText={setMemberCustomOccupation}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.customInputConfirmButton}
+              onPress={handleConfirmMemberCustomOccupation}
+            >
+              <ThemedText variant="smallMedium" color="#FFFFFF">确认</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 家庭成员自定义学历输入 Modal */}
+      <Modal
+        visible={showMemberCustomEducationInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMemberCustomEducationInput(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.customInputModalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                手动输入学历
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowMemberCustomEducationInput(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.customInputField}
+              placeholder="请输入学历"
+              placeholderTextColor={theme.textMuted}
+              value={memberEducationCustom}
+              onChangeText={setMemberEducationCustom}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.customInputConfirmButton}
+              onPress={() => {
+                setMemberEducation(memberEducationCustom.trim() || '未设定');
+                setShowMemberCustomEducationInput(false);
+              }}
+            >
+              <ThemedText variant="smallMedium" color="#FFFFFF">确认</ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
