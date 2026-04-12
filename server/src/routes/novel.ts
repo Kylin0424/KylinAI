@@ -646,13 +646,21 @@ router.post('/chapter-opening', async (req: Request, res: Response) => {
 
 请严格遵守每个角色的学历设定，确保人物形象真实可信。`;
 
-    // 构建角色信息
+    // 构建角色信息，并确定主角
     let characterInfo = '';
+    let protagonistName = '';
     if (maleCharacter) {
       characterInfo += `男主角：${(maleCharacter as any).name || '未知'}，${(maleCharacter as any).age || '未知'}岁，${(maleCharacter as any).occupation || '未知'}，性格：${(maleCharacter as any).personality || '未知'}。\n`;
     }
     if (femaleCharacter) {
       characterInfo += `女主角：${(femaleCharacter as any).name || '未知'}，${(femaleCharacter as any).age || '未知'}岁，${(femaleCharacter as any).occupation || '未知'}，性格：${(femaleCharacter as any).personality || '未知'}。\n`;
+    }
+
+    // 确定主角：优先选择女主角，如果没有女主角则选择男主角
+    if (femaleCharacter) {
+      protagonistName = (femaleCharacter as any).name || '未知';
+    } else if (maleCharacter) {
+      protagonistName = (maleCharacter as any).name || '未知';
     }
 
     // 构建主角活动描述
@@ -683,6 +691,11 @@ ${locationDesc}
 【主要角色】
 ${characterInfo || '暂无特定角色设定'}
 ${protagonistActivity}
+
+【重要提示】
+本故事的主角是：${protagonistName || '待定'}。
+请务必在章节开头中引入主角，并使用主角的真实名字"${protagonistName}"，不要使用其他名字。
+
 【创作要求】
 1. 开篇必须先介绍世界：描述${worldName}的宏大背景，包括它在宇宙/世界中的位置、存在的历史、独特的特征等。例如："在茫茫宇宙中，${worldName}......"
 
@@ -692,7 +705,7 @@ ${protagonistActivity}
 
 ${region ? `4. 地域特色描写：故事发生在${region}地区，请根据该地域的特点（${regionDescriptions[region] || '独特的地理和人文特征'}）来描绘环境，让读者身临其境。${cityLocation ? `具体地点是${cityLocation}，请结合这个城市的特色来描写。` : ''}` : ''}
 
-${region ? '5' : '4'}. 引入主角：在介绍完世界背景后，自然地带入主角的出场。${protagonistDoing ? `主角当前正在"${protagonistDoing}"，请将这个活动自然地融入故事开场，展现主角的状态和处境。` : '展现主角的初步形象和处境。'}
+${region ? '5' : '4'}. 引入主角：在介绍完世界背景后，自然地带入主角"${protagonistName}"的出场。${protagonistDoing ? `主角当前正在"${protagonistDoing}"，请将这个活动自然地融入故事开场，展现主角的状态和处境。` : '展现主角的初步形象和处境。'}**切记：必须使用主角名字"${protagonistName}"，不要创造其他名字。**
 
 ${region ? '6' : '5'}. 字数要求：500字以上。
 
