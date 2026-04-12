@@ -334,6 +334,11 @@ export default function CharacterScreen() {
     }
     setShowOccupationModal(false);
   };
+
+  const handleConfirmCustomOccupation = () => {
+  setOccupation(customOccupation.trim() || '未设定');
+  setShowCustomOccupationInput(false);
+};
   
       // 家庭成员职业选择
   const handleSelectMemberOccupation = (occ: string) => {
