@@ -181,8 +181,10 @@ export default function CharacterScreen() {
     proceedToGeneration();
   };
 
-  const proceedToGeneration = () => {
+  const proceedToGeneration = (finalMembers?: any[]) => {
     setIsGenerating(true);
+    // 如果传入了最终成员列表，使用它；否则使用 state
+    const membersToUse = finalMembers || stagedFamilyMembers;
 
     // 将滑块值和基本信息转换为参数
     const sliderValues: Record<string, number> = {};
@@ -220,7 +222,7 @@ export default function CharacterScreen() {
     }
 
     // 将已暂存的家庭成员信息转换为字符串
-    const familyMembersData = stagedFamilyMembers.map(member => ({
+    const familyMembersData = membersToUse.map(member => ({
       relation: member.relation,
       name: member.name,
       gender: member.gender,
@@ -243,7 +245,7 @@ export default function CharacterScreen() {
       occupation: occupation === OCCUPATION_CUSTOM_OPTION ? customOccupation.trim() || '未设定' : occupation.trim() || '未设定',
       education: education === '手动输入' ? customEducation.trim() || '未设定' : education.trim() || '未设定',
       memberCount: memberCount.toString(),
-      familyRelation: selectedRelations.join('、') || '未设定',
+      familyRelation: membersToUse.map(m => m.relation).join('、') || '未设定',
       familyMembersBrief: familyMembersBrief.trim() || '未设定',
       familyBackground: familyBackground.trim() || '未设定',
       socialExperience: finalSocialExperience,
@@ -315,7 +317,7 @@ export default function CharacterScreen() {
     } else {
       // 没有下一个了，关闭弹窗，继续生成
       setShowFamilyMemberSetupModal(false);
-      proceedToGeneration();
+      proceedToGeneration(updatedMembers);
     }
   };
 
