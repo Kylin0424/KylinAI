@@ -25,9 +25,7 @@ import {
   generateId,
 } from '@/utils/characterStorage';
 
-// 使用相对路径，通过Metro代理到后端
-const API_BASE_URL = '/api/v1';
-console.log('Character result page - API Base URL:', API_BASE_URL);
+const EXPO_PUBLIC_BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || '';
 
 // 关系类型定义
 const RELATION_TYPES = [
@@ -63,7 +61,6 @@ export default function CharacterResultScreen() {
     familyMembersBrief: string;
     familyBackground: string;
     socialExperience: string;
-    familyMembersData: string; // 新增：用户手动设置的家庭成员数据
   }>();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -114,9 +111,9 @@ export default function CharacterResultScreen() {
        * Body 参数：sliders: object, name: string, gender: string, age: string, height: string,
        *          weight: string, group: string, occupation: string, education: string,
        *          memberCount: string, familyRelation: string, familyMembersBrief: string,
-       *          familyBackground: string, socialExperience: string, familyMembersData: array
+       *          familyBackground: string, socialExperience: string
        */
-      const response = await fetch(`${API_BASE_URL}/character/generate`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +133,6 @@ export default function CharacterResultScreen() {
           familyMembersBrief: params.familyMembersBrief,
           familyBackground: params.familyBackground,
           socialExperience: params.socialExperience,
-          familyMembersData: params.familyMembersData ? JSON.parse(params.familyMembersData) : undefined,
         }),
       });
 
@@ -156,7 +152,6 @@ export default function CharacterResultScreen() {
         height: protagonistData.height || params.height || '170cm',
         weight: params.weight || '未设定',
         group: params.group || '未设定',
-        position: params.position || '未设定',
         occupation: protagonistData.occupation || '未设定',
         education: params.education || '未设定',
         personality: protagonistData.personality || '',
@@ -175,7 +170,7 @@ export default function CharacterResultScreen() {
          * Body 参数：name: string, gender: string, age: string, height: string, weight: string,
          *          occupation: string, appearance: string, personality: string
          */
-        const avatarResponse = await fetch(`${API_BASE_URL}/character/generate-avatar`, {
+        const avatarResponse = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate-avatar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -291,7 +286,7 @@ export default function CharacterResultScreen() {
     setShowRelationModal(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/character/generate-npc`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate-npc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -578,7 +573,7 @@ export default function CharacterResultScreen() {
                         {member.name}
                       </ThemedText>
                       <ThemedText variant="caption" color={theme.textMuted}>
-                        {member.relationToProtagonist || params.familyRelation}
+                        {params.name}的{member.relationToProtagonist || '家庭成员'}
                       </ThemedText>
                     </View>
                     
