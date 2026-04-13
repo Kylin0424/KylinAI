@@ -273,7 +273,7 @@ const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFa
             });
           }
         }
-      } else {
+      } else if (familyRelation) {
         // 原有逻辑：使用AI生成家庭成员
         // 解析关系列表（格式如："父亲、母亲" 或 "父亲,母亲"）
         const relations = familyRelation.split(/[、,，]/).map((r: string) => r.trim()).filter((r: string) => r);
@@ -290,19 +290,19 @@ const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFa
             ageOffset: [-10, 10],
             description: `主角的${relationName}`
           };
-        
-        // 计算年龄范围
-        const [minOffset, maxOffset] = inference.ageOffset;
-        const minAge = Math.max(1, protagonistAge + minOffset);
-        const maxAge = Math.max(minAge + 1, protagonistAge + maxOffset);
-        
-        // 确定性别
-        let memberGender = inference.gender;
-        if (memberGender === '任意') {
-          memberGender = Math.random() > 0.5 ? '男' : '女';
-        }
-        
-        const memberPrompt = `请根据以下主角信息，生成一个家庭成员角色。
+
+          // 计算年龄范围
+          const [minOffset, maxOffset] = inference.ageOffset;
+          const minAge = Math.max(1, protagonistAge + minOffset);
+          const maxAge = Math.max(minAge + 1, protagonistAge + maxOffset);
+
+          // 确定性别
+          let memberGender = inference.gender;
+          if (memberGender === '任意') {
+            memberGender = Math.random() > 0.5 ? '男' : '女';
+          }
+
+          const memberPrompt = `请根据以下主角信息，生成一个家庭成员角色。
 
 【主角信息】
 姓名：${characterData.name}
@@ -339,28 +339,27 @@ const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFa
 
 请只返回JSON，不要有其他文字。`;
 
-        try {
-          const memberResponse = await client.invoke([
-            { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色。每个家庭成员都应该有独特的性格和经历。必须严格遵守性别、年龄、姓氏等所有约束条件。' },
-            { role: 'user' as const, content: memberPrompt }
-          ], {
-            model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
-            temperature: 0.7, // 降低温度以提高准确性和遵守约束
-          });
+          try {
+            const memberResponse = await client.invoke([
+              { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色。每个家庭成员都应该有独特的性格和经历。必须严格遵守性别、年龄、姓氏等所有约束条件。' },
+              { role: 'user' as const, content: memberPrompt }
+            ], {
+              model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
+              temperature: 0.7, // 降低温度以提高准确性和遵守约束
+            });
 
-          const memberContent = memberResponse.content;
-          const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
-          if (memberJsonMatch) {
-            const memberData = JSON.parse(memberJsonMatch[0]);
-            memberData.relationToProtagonist = relationName;
-            familyMembers.push(memberData);
+            const memberContent = memberResponse.content;
+            const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
+            if (memberJsonMatch) {
+              const memberData = JSON.parse(memberJsonMatch[0]);
+              memberData.relationToProtagonist = relationName;
+              familyMembers.push(memberData);
+            }
+          } catch (memberError) {
+            console.error('Failed to generate family member:', memberError);
           }
-        } catch (memberError) {
-          console.error('Failed to generate family member:', memberError);
         }
       }
-      } // 结束else分支：AI生成家庭成员
-    } // 结束if：memberCountNum > 1 && familyRelation
 
     res.json({
       protagonist: characterData,
