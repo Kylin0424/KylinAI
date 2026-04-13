@@ -187,26 +187,28 @@ ${basicInfo}
     // 获取家庭背景
     const familyBg = familyBackground || characterData.familyBackground || '';
 
+
     // 检查是否有用户手动设置的家庭成员数据（前端传的是JSON字符串，需要解析）
-let parsedFamilyMembersData = null;
-if (familyMembersData && typeof familyMembersData === 'string') {
-  try {
-    parsedFamilyMembersData = JSON.parse(familyMembersData);
-  } catch (e) {
-    console.error('Failed to parse familyMembersData:', e);
-  }
-} else if (Array.isArray(familyMembersData)) {
-  parsedFamilyMembersData = familyMembersData;
-}
-const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFamilyMembersData) && parsedFamilyMembersData.length > 0;
+    let parsedFamilyMembersData = null;
+    if (familyMembersData && typeof familyMembersData === 'string') {
+      try {
+        parsedFamilyMembersData = JSON.parse(familyMembersData);
+      } catch (e) {
+        console.error('Failed to parse familyMembersData:', e);
+      }
+    } else if (Array.isArray(familyMembersData)) {
+      parsedFamilyMembersData = familyMembersData;
+    }
+
+    const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFamilyMembersData) && parsedFamilyMembersData.length > 0;
 
     // 优先使用用户手动设置的家庭成员数据
-  if (hasCustomFamilyMembers) {
-    // 使用用户手动设置的家庭成员数据
-        for (const memberData of parsedFamilyMembersData) {
-          try {
-            // 为每个家庭成员生成详细描述（性格、经历、外貌等）
-            const memberPrompt = `请根据以下基本信息，生成一个家庭成员角色的详细档案。
+    if (hasCustomFamilyMembers) {
+      // 使用用户手动设置的家庭成员数据
+      for (const memberData of parsedFamilyMembersData) {
+        try {
+          // 为每个家庭成员生成详细描述（性格、经历、外貌等）
+          const memberPrompt = `请根据以下基本信息，生成一个家庭成员角色的详细档案。
 
 【基本信息】
 姓名：${memberData.name}
@@ -241,42 +243,42 @@ const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFa
 
 请只返回JSON，不要有其他文字。`;
 
-            const memberResponse = await client.invoke([
-              { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色的详细档案。必须严格遵守所有基本信息约束。' },
-              { role: 'user' as const, content: memberPrompt }
-            ], {
-              model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
-              temperature: 0.7,
-            });
+          const memberResponse = await client.invoke([
+            { role: 'system' as const, content: '你是一位专业的人物设定师，擅长生成家庭成员角色的详细档案。必须严格遵守所有基本信息约束。' },
+            { role: 'user' as const, content: memberPrompt }
+          ], {
+            model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
+            temperature: 0.7,
+          });
 
-            const memberContent = memberResponse.content;
-            const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
-            if (memberJsonMatch) {
-              const memberFullData = JSON.parse(memberJsonMatch[0]);
-              familyMembers.push(memberFullData);
-            }
-          } catch (memberError) {
-            console.error('Failed to generate family member detail:', memberError);
-            // 如果生成失败，使用基本信息创建一个简单的记录
-            familyMembers.push({
-              name: memberData.name,
-              gender: memberData.gender,
-              age: memberData.age,
-              height: memberData.height,
-              occupation: memberData.occupation,
-              education: memberData.education,
-              personality: '待完善',
-              experience: '待完善',
-              familyBackground: familyBg,
-              appearance: '待完善',
-              relationToProtagonist: memberData.relation,
-            });
+          const memberContent = memberResponse.content;
+          const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
+          if (memberJsonMatch) {
+            const memberFullData = JSON.parse(memberJsonMatch[0]);
+            familyMembers.push(memberFullData);
           }
+        } catch (memberError) {
+          console.error('Failed to generate family member detail:', memberError);
+          // 如果生成失败，使用基本信息创建一个简单的记录
+          familyMembers.push({
+            name: memberData.name,
+            gender: memberData.gender,
+            age: memberData.age,
+            height: memberData.height,
+            occupation: memberData.occupation,
+            education: memberData.education,
+            personality: '待完善',
+            experience: '待完善',
+            familyBackground: familyBg,
+            appearance: '待完善',
+            relationToProtagonist: memberData.relation,
+          });
         }
-      } else if (familyRelation) {
-        // 原有逻辑：使用AI生成家庭成员
-        // 解析关系列表（格式如："父亲、母亲" 或 "父亲,母亲"）
-        const relations = familyRelation.split(/[、,，]/).map((r: string) => r.trim()).filter((r: string) => r);
+      }
+    } else if (familyRelation) {
+      // 原有逻辑：使用AI生成家庭成员
+      // 解析关系列表（格式如："父亲、母亲" 或 "父亲,母亲"）
+      const relations = familyRelation.split(/[、,，]/).map((r: string) => r.trim()).filter((r: string) => r);
 
         // 获取姓氏
         const surname = characterData.name?.charAt(0) || '李';
