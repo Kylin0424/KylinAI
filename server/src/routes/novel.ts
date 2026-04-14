@@ -25,7 +25,11 @@ router.post('/generate', async (req: Request, res: Response) => {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
 
     // 初始化 LLM 客户端
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     // 构建提示词
@@ -55,7 +59,7 @@ ${plot ? `情节走向：${plot}` : ''}
 
     // 使用流式生成
     const stream = client.stream(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.9,
     });
 
@@ -96,7 +100,11 @@ router.post('/check-conflict', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     // 构建角色信息
@@ -199,7 +207,7 @@ ${continueDirection}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.3, // 较低的温度以确保一致性
     });
 
@@ -241,7 +249,11 @@ router.post('/extract-context', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const systemPrompt = `你是一位专业的小说内容分析助手，负责从小说内容中提取关键的上下文信息。
@@ -296,7 +308,7 @@ ${content.substring(0, 3000)}${content.length > 3000 ? '...(内容过长，已�
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.2,
     });
 
@@ -338,7 +350,11 @@ router.post('/enrich-temp-character', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const previousInfo = previousAppearances && previousAppearances.length > 0
@@ -389,7 +405,7 @@ ${newPlotContext}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.7,
     });
 
@@ -434,7 +450,11 @@ router.post('/continue', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     // 构建上下文一致性提示
@@ -525,7 +545,7 @@ ${contextPrompt}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.85,
     });
 
@@ -550,7 +570,11 @@ router.post('/script', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const systemPrompt = `你是一位资深的短剧编剧，拥有丰富的影视剧本创作经验。你擅长将小说内容改编为专业的短剧剧本，你的剧本具有以下特点：
@@ -586,7 +610,7 @@ router.post('/script', async (req: Request, res: Response) => {
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.8,
     });
 
@@ -598,11 +622,11 @@ router.post('/script', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/v1/novel/chapter-opening
- * 生成第一章开头（世界观和起始剧情）
- * Body: {
- *   worldName: string,
- *   eraBackground: string,
+ * POST /api/v1/novel/prologue
+ * 生成楔子（第零章）
+ * Body: { 
+ *   worldName: string, 
+ *   eraBackground: string, 
  *   seasonSetting: string,
  *   protagonistDoing: string,
  *   region: string,
@@ -612,7 +636,7 @@ router.post('/script', async (req: Request, res: Response) => {
  *   femaleCharacter?: object
  * }
  */
-router.post('/chapter-opening', async (req: Request, res: Response) => {
+router.post('/prologue', async (req: Request, res: Response) => {
   const { worldName, eraBackground, seasonSetting, protagonistDoing, region, cityLocation, title, maleCharacter, femaleCharacter } = req.body;
 
   if (!worldName) {
@@ -626,12 +650,16 @@ router.post('/chapter-opening', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const systemPrompt = `你是一位专业的小说作家，擅长以第三人称旁观者视角进行叙述。
 你的叙述风格客观、细腻，善于描绘宏大的世界观和细腻的人物情感。
-你创作的开头能够引人入胜，让读者对故事世界产生强烈的好奇心。
+你创作的楔子能够引人入胜，让读者对故事世界产生强烈的好奇心。
 
 【核心创作原则 - 必须严格遵守】
 
@@ -646,9 +674,8 @@ router.post('/chapter-opening', async (req: Request, res: Response) => {
 
 请严格遵守每个角色的学历设定，确保人物形象真实可信。`;
 
-    // 构建角色信息，并确定主角
+    // 构建角色信息
     let characterInfo = '';
-    let protagonistName = '';
     if (maleCharacter) {
       characterInfo += `男主角：${(maleCharacter as any).name || '未知'}，${(maleCharacter as any).age || '未知'}岁，${(maleCharacter as any).occupation || '未知'}，性格：${(maleCharacter as any).personality || '未知'}。\n`;
     }
@@ -656,15 +683,8 @@ router.post('/chapter-opening', async (req: Request, res: Response) => {
       characterInfo += `女主角：${(femaleCharacter as any).name || '未知'}，${(femaleCharacter as any).age || '未知'}岁，${(femaleCharacter as any).occupation || '未知'}，性格：${(femaleCharacter as any).personality || '未知'}。\n`;
     }
 
-    // 确定主角：优先选择女主角，如果没有女主角则选择男主角
-    if (femaleCharacter) {
-      protagonistName = (femaleCharacter as any).name || '未知';
-    } else if (maleCharacter) {
-      protagonistName = (maleCharacter as any).name || '未知';
-    }
-
     // 构建主角活动描述
-    const protagonistActivity = protagonistDoing
+    const protagonistActivity = protagonistDoing 
       ? `\n【主角初始状态】\n主角当前正在：${protagonistDoing}\n`
       : '';
 
@@ -681,7 +701,7 @@ router.post('/chapter-opening', async (req: Request, res: Response) => {
     const cityDesc = cityLocation ? `\n- 具体地点：${cityLocation}` : '';
     const locationDesc = (region || cityLocation) ? `\n【地理位置】${regionDesc}${cityDesc}` : '';
 
-    const userPrompt = `请为小说《${title || '未命名'}》创作第一章的开头内容。
+    const userPrompt = `请为小说《${title || '未命名'}》创作第零章-楔子。
 
 【世界设定】
 - 世界名称：${worldName}
@@ -691,11 +711,6 @@ ${locationDesc}
 【主要角色】
 ${characterInfo || '暂无特定角色设定'}
 ${protagonistActivity}
-
-【重要提示】
-本故事的主角是：${protagonistName || '待定'}。
-请务必在章节开头中引入主角，并使用主角的真实名字"${protagonistName}"，不要使用其他名字。
-
 【创作要求】
 1. 开篇必须先介绍世界：描述${worldName}的宏大背景，包括它在宇宙/世界中的位置、存在的历史、独特的特征等。例如："在茫茫宇宙中，${worldName}......"
 
@@ -705,13 +720,13 @@ ${protagonistActivity}
 
 ${region ? `4. 地域特色描写：故事发生在${region}地区，请根据该地域的特点（${regionDescriptions[region] || '独特的地理和人文特征'}）来描绘环境，让读者身临其境。${cityLocation ? `具体地点是${cityLocation}，请结合这个城市的特色来描写。` : ''}` : ''}
 
-${region ? '5' : '4'}. 引入主角：在介绍完世界背景后，自然地带入主角"${protagonistName}"的出场。${protagonistDoing ? `主角当前正在"${protagonistDoing}"，请将这个活动自然地融入故事开场，展现主角的状态和处境。` : '展现主角的初步形象和处境。'}**切记：必须使用主角名字"${protagonistName}"，不要创造其他名字。**
+${region ? '5' : '4'}. 引入主角：在介绍完世界背景后，自然地带入主角的出场。${protagonistDoing ? `主角当前正在"${protagonistDoing}"，请将这个活动自然地融入故事开场，展现主角的状态和处境。` : '展现主角的初步形象和处境。'}
 
 ${region ? '6' : '5'}. 字数要求：500字以上。
 
 ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述，细节生动。
 
-这是第一章的开头内容，请直接输出，不需要标题和章节号：`;
+请直接输出楔子内容，不需要标题和章节号：`;
 
     const messages = [
       { role: 'system' as const, content: systemPrompt },
@@ -720,7 +735,7 @@ ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述
 
     // 使用流式生成
     const stream = client.stream(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.9,
     });
 
@@ -734,8 +749,8 @@ ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
-    console.error('Chapter opening generation error:', error);
-    res.write(`data: ${JSON.stringify({ error: '生成第一章开头失败，请重试' })}\n\n`);
+    console.error('Prologue generation error:', error);
+    res.write(`data: ${JSON.stringify({ error: '生成楔子失败，请重试' })}\n\n`);
     res.end();
   }
 });
@@ -1215,7 +1230,11 @@ router.post('/create-temp-character', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const systemPrompt = `你是一位专业的小说角色设计师，擅长根据上下文创建合理的角色设定。
@@ -1243,7 +1262,7 @@ ${context ? `相关上下文：${context}` : ''}
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.7,
     });
 
@@ -1302,7 +1321,11 @@ router.post('/analyze-characters', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const existingNames = existingCharacters?.map((c: any) => c.name).join('、') || '无';
@@ -1331,7 +1354,7 @@ router.post('/analyze-characters', async (req: Request, res: Response) => {
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.3,
     });
 
@@ -1369,7 +1392,11 @@ router.post('/identify-relations', async (req: Request, res: Response) => {
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
-    const config = new Config();
+    const config = new Config({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseUrl: process.env.OPENAI_BASE_URL,
+  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+});
     const client = new LLMClient(config, customHeaders);
 
     const systemPrompt = `你是一位专业的小说角色关系分析师，擅长根据角色信息和小说背景识别角色之间可能存在的关系。
@@ -1418,7 +1445,7 @@ ${existingCharacters.map((c: any) => `- ${c.name}（${c.gender}，${c.age}岁，
     ];
 
     const response = await client.invoke(messages, {
-      model: 'doubao-seed-1-8-251228',
+      model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.3,
     });
 
