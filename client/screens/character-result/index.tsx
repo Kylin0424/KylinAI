@@ -167,7 +167,9 @@ export default function CharacterResultScreen() {
         createdAt: Date.now(),
       };
 
-      // 生成角色头像
+      // 生成角色头像（暂时禁用，避免404错误影响核心功能）
+      // TODO: 修复图片生成API配置后重新启用
+      /*
       try {
         /**
          * 服务端文件：server/src/routes/character.ts
@@ -202,6 +204,7 @@ export default function CharacterResultScreen() {
         console.warn('Avatar generation failed, using default:', avatarError);
         // 头像生成失败不影响角色生成流程
       }
+      */
 
       // 保存主角到本地存储
       await saveCharacter(newCharacter);
