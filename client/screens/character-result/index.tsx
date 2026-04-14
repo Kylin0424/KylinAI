@@ -54,6 +54,7 @@ export default function CharacterResultScreen() {
     height: string;
     weight: string;
     group: string;
+    position: string; // 职位
     occupation: string;
     education: string;
     memberCount: string;
@@ -71,7 +72,7 @@ export default function CharacterResultScreen() {
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [relations, setRelations] = useState<CharacterRelation[]>([]);
   const [selectedFamilyMember, setSelectedFamilyMember] = useState<Character | null>(null);
-  
+
   // 添加关系相关状态
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [selectedRelationType, setSelectedRelationType] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export default function CharacterResultScreen() {
        * 服务端文件：server/src/routes/character.ts
        * 接口：POST /api/v1/character/generate
        * Body 参数：sliders: object, name: string, gender: string, age: string, height: string,
-       *          weight: string, group: string, occupation: string, education: string,
+       *          weight: string, group: string, position: string, occupation: string, education: string,
        *          memberCount: string, familyRelation: string, familyMembersBrief: string,
        *          familyBackground: string, socialExperience: string, familyMembersData: string
        */
@@ -127,6 +128,7 @@ export default function CharacterResultScreen() {
           height: params.height,
           weight: params.weight,
           group: params.group,
+          position: params.position, // 职位
           occupation: params.occupation,
           education: params.education,
           memberCount: params.memberCount,
@@ -143,7 +145,7 @@ export default function CharacterResultScreen() {
       }
 
       const data = await response.json();
-      
+
       // 创建主角对象
       const protagonistData = data.protagonist || data;
       const newCharacter: Character = {
@@ -154,6 +156,7 @@ export default function CharacterResultScreen() {
         height: protagonistData.height || params.height || '170cm',
         weight: params.weight || '未设定',
         group: params.group || '未设定',
+        position: params.position || '未设定', // 职位
         occupation: protagonistData.occupation || '未设定',
         education: params.education || '未设定',
         personality: protagonistData.personality || '',
@@ -203,7 +206,7 @@ export default function CharacterResultScreen() {
       // 保存主角到本地存储
       await saveCharacter(newCharacter);
       setCharacter(newCharacter);
-      
+
       // 处理家庭成员
       const savedFamilyMembers: Character[] = [];
       if (data.familyMembers && Array.isArray(data.familyMembers)) {
@@ -214,6 +217,9 @@ export default function CharacterResultScreen() {
             gender: memberData.gender,
             age: parseInt(memberData.age) || 25,
             height: memberData.height || '170cm',
+            weight: memberData.weight || '未设定', // 体重
+            group: '未设定', // 家庭成员暂时不支持所属团体设置
+            position: '未设定', // 家庭成员暂时不支持职位设置
             occupation: memberData.occupation || '未设定',
             personality: memberData.personality || '',
             experience: memberData.experience || '',
@@ -224,7 +230,7 @@ export default function CharacterResultScreen() {
           };
           await saveCharacter(familyMember);
           savedFamilyMembers.push(familyMember);
-          
+
           // 创建关系
           const relation: CharacterRelation = {
             id: generateId(),
@@ -238,7 +244,7 @@ export default function CharacterResultScreen() {
         }
         setFamilyMembers(savedFamilyMembers);
       }
-      
+
       // 更新角色列表
       setAllCharacters([...existingChars, newCharacter, ...savedFamilyMembers]);
       setIsGenerating(false);
@@ -264,12 +270,12 @@ export default function CharacterResultScreen() {
         `是否自动生成${relationType.label}角色？`,
         [
           { text: '取消', style: 'cancel' },
-          { 
-            text: '自动生成', 
+          {
+            text: '自动生成',
             onPress: () => generateNPCCharacter(relationKey)
           },
-          { 
-            text: '选择已有角色', 
+          {
+            text: '选择已有角色',
             onPress: () => {
               setSelectedRelationType(relationKey);
             }
@@ -283,7 +289,7 @@ export default function CharacterResultScreen() {
 
   const generateNPCCharacter = async (relationKey: string) => {
     if (!character) return;
-    
+
     setIsGeneratingNPC(true);
     setShowRelationModal(false);
 
@@ -304,7 +310,7 @@ export default function CharacterResultScreen() {
       }
 
       const npcData = await response.json();
-      
+
       // 创建NPC角色
       const npcCharacter: Character = {
         id: generateId(),
@@ -323,7 +329,7 @@ export default function CharacterResultScreen() {
 
       // 保存NPC角色
       await saveCharacter(npcCharacter);
-      
+
       // 创建关系
       const relation: CharacterRelation = {
         id: generateId(),
@@ -338,7 +344,7 @@ export default function CharacterResultScreen() {
       // 更新状态
       setAllCharacters(prev => [...prev, npcCharacter]);
       await loadRelations();
-      
+
       Alert.alert('成功', `已生成${npcCharacter.name}作为${character.name}的${RELATION_TYPES.find(r => r.key === relationKey)?.label}`);
     } catch (err) {
       console.error('NPC generation error:', err);
@@ -374,8 +380,8 @@ export default function CharacterResultScreen() {
 
   const getRelatedCharacterName = (relation: CharacterRelation) => {
     if (!character) return '';
-    const relatedId = relation.characterId === character.id 
-      ? relation.relatedCharacterId 
+    const relatedId = relation.characterId === character.id
+      ? relation.relatedCharacterId
       : relation.characterId;
     const relatedChar = allCharacters.find(c => c.id === relatedId);
     return relatedChar?.name || '未知角色';
@@ -523,7 +529,7 @@ export default function CharacterResultScreen() {
 
             {/* Relations Section */}
             <View style={styles.sectionDivider} />
-            
+
             <View style={styles.infoSection}>
               <View style={styles.sectionTitleRow}>
                 <Feather name="users" size={16} color="#C8102E" />
@@ -531,7 +537,7 @@ export default function CharacterResultScreen() {
                   角色关系
                 </ThemedText>
               </View>
-              
+
               {relations.length > 0 ? (
                 relations.map(relation => (
                   <View key={relation.id} style={styles.relationItem}>
@@ -563,10 +569,10 @@ export default function CharacterResultScreen() {
                   </ThemedText>
                   <View style={styles.decorativeLine} />
                 </View>
-                
+
                 {familyMembers.map((member, index) => (
-                  <TouchableOpacity 
-                    key={member.id} 
+                  <TouchableOpacity
+                    key={member.id}
                     style={styles.familyMemberCard}
                     onPress={() => setSelectedFamilyMember(member)}
                   >
@@ -578,13 +584,13 @@ export default function CharacterResultScreen() {
                         {params.name}的{member.relationToProtagonist || '家庭成员'}
                       </ThemedText>
                     </View>
-                    
+
                     <View style={styles.familyMemberInfo}>
                       <ThemedText variant="small" color={theme.textSecondary}>
                         {member.gender} · {member.age}岁 · {member.occupation}
                       </ThemedText>
                     </View>
-                    
+
                     <ThemedText variant="body" color={theme.textSecondary} numberOfLines={2}>
                       {member.personality}
                     </ThemedText>
@@ -649,11 +655,11 @@ export default function CharacterResultScreen() {
                     返回选择关系类型
                   </ThemedText>
                 </TouchableOpacity>
-                
+
                 <ThemedText variant="small" color={theme.textMuted} style={styles.modalLabel}>
                   选择已有角色作为{getRelationTypeName(selectedRelationType)}
                 </ThemedText>
-                
+
                 <ScrollView>
                   {allCharacters
                     .filter(c => c.id !== character?.id)
@@ -697,4 +703,3 @@ export default function CharacterResultScreen() {
     </Screen>
   );
 }
-

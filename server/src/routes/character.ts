@@ -52,12 +52,15 @@ router.post('/generate', async (req: Request, res: Response) => {
     gender,
     age,
     height,
+    weight, // 新增：体重
     occupation,
     education,
     memberCount,
     familyRelation,
     familyBackground,
     socialExperience,
+    group, // 新增：所属团体
+    position, // 新增：职位
     familyMembersData // 新增：用户手动设置的家庭成员数据
   } = req.body;
 
@@ -96,15 +99,18 @@ router.post('/generate', async (req: Request, res: Response) => {
 - 性别：${gender || '未设定'}（如果已设定，必须遵守）
 - 年龄：${age || '未设定'}岁（如果已设定，必须使用这个年龄）
 - 身高：${height || '未设定'}（如果已设定，必须使用这个身高）
+- 体重：${weight || '未设定'}（如果已设定，必须使用这个体重）
 - 职业：${occupation || '未设定'}（如果已设定，必须使用这个职业）
 - 学历：${education || '未设定'}（如果已设定，必须使用这个学历）
+- 所属团体：${group || '未设定'}（如果已设定，必须使用这个团体）
+- 职位：${position || '未设定'}（如果已设定，必须使用这个职位）
 - 家庭背景：${familyBackground || '未设定'}（如果已设定，必须保持一致）
 - 社会经历：${socialExperience || '未设定'}（如果已设定，必须保持一致）
 
 【特别警告】
 - 绝对不能更改用户已确定的姓名
-- 绝对不能更改用户已确定的性别、年龄、身高
-- 绝对不能更改用户已确定的职业、学历
+- 绝对不能更改用户已确定的性别、年龄、身高、体重
+- 绝对不能更改用户已确定的职业、学历、所属团体、职位
 - 对于未设定的项目，请根据滑块参数推断合理的值` : '';
 
     const userPrompt = `请根据以下参数生成一个小说角色的完整设定。
@@ -133,13 +139,16 @@ ${basicInfo}
 2. gender: 性别（${gender ? '必须使用：' + gender : '男/女'}${gender ? '，不能更改' : ''}）
 3. age: 年龄（${age ? '必须使用：' + age : '具体数字，根据设定推断'}${age ? '，不能更改' : ''}）
 4. height: 身高（${height ? '必须使用：' + height : '根据性别推断合理身高'}${height ? '，不能更改' : ''}）
-5. occupation: 职业（${occupation ? '必须使用：' + occupation : '根据角色特征推断合适的职业'}${occupation ? '，不能更改' : ''}）
-6. education: 学历（${education ? '必须使用：' + education : '根据职业和社会地位推断合理学历'}${education ? '，不能更改' : ''}）
-7. personality: 性格特点（100-200字，要符合给定的性格参数，同时要考虑学历对表达方式的影响）
-8. experience: 人生经历（150-250字，要体现智慧、勇气、运气等参数）
-9. familyBackground: 家庭背景（${familyBackground ? '保持一致：' + familyBackground : '100-200字，要符合社会地位和财富参数'}）
-10. appearance: 外貌特征（80-150字）
-11. specialTraits: 特殊特质或技能（50-100字，如有）
+5. weight: 体重（${weight ? '必须使用：' + weight : '根据身高和年龄推断合理体重'}${weight ? '，不能更改' : ''}）
+6. occupation: 职业（${occupation ? '必须使用：' + occupation : '根据角色特征推断合适的职业'}${occupation ? '，不能更改' : ''}）
+7. education: 学历（${education ? '必须使用：' + education : '根据职业和社会地位推断合理学历'}${education ? '，不能更改' : ''}）
+8. group: 所属团体（${group ? '必须使用：' + group : '根据职业和社会经历推断'}${group ? '，不能更改' : ''}）
+9. position: 职位（${position ? '必须使用：' + position : '根据职业推断'}${position ? '，不能更改' : ''}）
+10. personality: 性格特点（100-200字，要符合给定的性格参数，同时要考虑学历对表达方式的影响）
+11. experience: 人生经历（150-250字，要体现智慧、勇气、运气等参数）
+12. familyBackground: 家庭背景（${familyBackground ? '保持一致：' + familyBackground : '100-200字，要符合社会地位和财富参数'}）
+13. appearance: 外貌特征（80-150字）
+14. specialTraits: 特殊特质或技能（50-100字，如有）
 
 请只返回JSON，不要有其他文字。`;
 
@@ -202,6 +211,12 @@ ${basicInfo}
 
     const hasCustomFamilyMembers = parsedFamilyMembersData && Array.isArray(parsedFamilyMembersData) && parsedFamilyMembersData.length > 0;
 
+    console.log('===== 家庭成员调试信息 =====');
+    console.log('familyMembersData 原始值:', familyMembersData);
+    console.log('parsedFamilyMembersData:', JSON.stringify(parsedFamilyMembersData));
+    console.log('hasCustomFamilyMembers:', hasCustomFamilyMembers);
+    console.log('===========================');
+
     // 优先使用用户手动设置的家庭成员数据
     if (hasCustomFamilyMembers) {
       // 使用用户手动设置的家庭成员数据
@@ -235,11 +250,12 @@ ${basicInfo}
 4. height: 身高（必须是：${memberData.height}，不能更改）
 5. occupation: 职业（必须是：${memberData.occupation}，不能更改）
 6. education: 学历（根据职业推断合理学历，考虑年龄）
-7. personality: 性格特点（80-150字，根据年龄、职业、学历推断）
-8. experience: 人生经历（100-200字，要体现与主角的互动）
-9. familyBackground: 家庭背景（与主角一致）
-10. appearance: 外貌特征（50-100字）
-11. relationToProtagonist: 与主角的关系（${memberData.relation}）
+7. weight: 体重（必须是：${memberData.weight}，不能更改）
+8. personality: 性格特点（80-150字，根据年龄、职业、学历推断）
+9. experience: 人生经历（100-200字，要体现与主角的互动）
+10. familyBackground: 家庭背景（与主角一致）
+11. appearance: 外貌特征（50-100字）
+12. relationToProtagonist: 与主角的关系（必须是：${memberData.relation}，只返回这一个关系，不要重复）
 
 请只返回JSON，不要有其他文字。`;
 
@@ -255,6 +271,8 @@ ${basicInfo}
           const memberJsonMatch = memberContent.match(/\{[\s\S]*\}/);
           if (memberJsonMatch) {
             const memberFullData = JSON.parse(memberJsonMatch[0]);
+            // 强制使用传入的关系值，确保不重复
+            memberFullData.relationToProtagonist = memberData.relation;
             familyMembers.push(memberFullData);
           }
         } catch (memberError) {
@@ -265,6 +283,7 @@ ${basicInfo}
             gender: memberData.gender,
             age: memberData.age,
             height: memberData.height,
+            weight: memberData.weight,
             occupation: memberData.occupation,
             education: memberData.education,
             personality: '待完善',
@@ -554,23 +573,23 @@ Style requirements:
     const helper = imageClient.getResponseHelper(response);
 
     if (helper.success && helper.imageUrls.length > 0) {
-      res.json({ 
-        success: true, 
-        avatarUrl: helper.imageUrls[0] 
+      res.json({
+        success: true,
+        avatarUrl: helper.imageUrls[0]
       });
     } else {
       console.error('Avatar generation failed:', helper.errorMessages);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         error: '头像生成失败',
-        details: helper.errorMessages 
+        details: helper.errorMessages
       });
     }
   } catch (error) {
     console.error('Avatar generation error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: '生成头像时发生错误' 
+    res.status(500).json({
+      success: false,
+      error: '生成头像时发生错误'
     });
   }
 });
