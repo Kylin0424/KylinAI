@@ -370,7 +370,7 @@ export default function NovelWritingScreen() {
     setPrologueContent('');
 
     try {
-      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/chapter-opening`;
+      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/prologue`;
       const body = JSON.stringify({
         worldName: params.worldName,
         eraBackground: params.eraBackground || '现代社会',
