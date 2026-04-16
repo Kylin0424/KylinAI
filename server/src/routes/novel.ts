@@ -26,9 +26,8 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     // 初始化 LLM 客户端
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -101,9 +100,8 @@ router.post('/check-conflict', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -250,9 +248,8 @@ router.post('/extract-context', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -351,9 +348,8 @@ router.post('/enrich-temp-character', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -451,9 +447,8 @@ router.post('/continue', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -571,9 +566,8 @@ router.post('/script', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -651,9 +645,8 @@ router.post('/prologue', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -1231,9 +1224,8 @@ router.post('/create-temp-character', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -1322,9 +1314,8 @@ router.post('/analyze-characters', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
@@ -1393,9 +1384,8 @@ router.post('/identify-relations', async (req: Request, res: Response) => {
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
     const config = new Config({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseUrl: process.env.OPENAI_BASE_URL,
-  modelBaseUrl: process.env.OPENAI_MODEL_BASE_URL,
+  apiKey: process.env.ARK_API_KEY,
+  baseUrl: process.env.ARK_BASE_URL,
 });
     const client = new LLMClient(config, customHeaders);
 
