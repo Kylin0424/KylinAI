@@ -4,6 +4,9 @@ const appName = process.env.COZE_PROJECT_NAME || process.env.EXPO_PUBLIC_COZE_PR
 const projectId = process.env.COZE_PROJECT_ID || process.env.EXPO_PUBLIC_COZE_PROJECT_ID;
 const slugAppName = projectId ? `app${projectId}` : 'myapp';
 
+// 强制使用Render后端地址，忽略环境变量中的代理地址
+const BACKEND_URL = 'https://kylinai-1.onrender.com';
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
@@ -50,13 +53,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }
         }
       ],
-      // 临时使用线上代理地址
-      process.env.EXPO_PUBLIC_BACKEND_BASE_URL ? [
+      [
         "expo-router",
         {
-          "origin": process.env.EXPO_PUBLIC_BACKEND_BASE_URL
+          "origin": BACKEND_URL
         }
-      ] : 'expo-router',
+      ],
       [
         "expo-splash-screen",
         {
@@ -70,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "expo-image-picker",
         {
           "photosPermission": `允许旁观叙事App访问您的相册，以便您上传或保存图片。`,
-          "cameraPermission": `允许旁观叙事App使用您的相机，以便您直接拍摄照片上传。`,
+          "cameraPermission": `允许旁观叙事App使用相机，以便您直接拍摄照片上传。`,
           "microphonePermission": `允许旁观叙事App访问您的麦克风，以便您拍摄带有声音的视频。`
         }
       ],
