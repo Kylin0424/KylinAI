@@ -78,6 +78,8 @@ export default function NovelWritingScreen() {
     region?: string;
     cityLocation?: string;
     autoGeneratePrologue?: string;
+    maleCharacterId?: string;
+    femaleCharacterId?: string;
   }>();
 
   const [novel, setNovel] = useState<Novel | null>(null);
@@ -238,15 +240,18 @@ export default function NovelWritingScreen() {
     setNovel(novelData);
 
     if (novelData) {
-      // 加载角色
-      if (novelData.maleCharacterId) {
-        const male = await getCharacterById(novelData.maleCharacterId);
-        setMaleCharacter(male);
-      }
-      if (novelData.femaleCharacterId) {
-        const female = await getCharacterById(novelData.femaleCharacterId);
-        setFemaleCharacter(female);
-      }
+      // 加载角色：优先使用参数传递的主角ID，其次使用小说数据中的ID
+      const maleId = params.maleCharacterId || novelData.maleCharacterId;
+      const femaleId = params.femaleCharacterId || novelData.femaleCharacterId;
+
+    if (maleId) {
+    const male = await getCharacterById(maleId);
+    setMaleCharacter(male);
+}
+if (femaleId) {
+  const female = await getCharacterById(femaleId);
+  setFemaleCharacter(female);
+}
 
       // 如果当前没有选中的章节
       if (!currentChapterId) {

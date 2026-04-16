@@ -244,6 +244,8 @@ export default function HomeScreen() {
         protagonistDoing: protagonistDoing.trim(),
         region: region.trim(),
         cityLocation: `${provinceInput.trim()}${cityInput.trim()}${districtInput.trim()}`,
+        maleCharacterId: maleCharacter?.id,
+        femaleCharacterId: femaleCharacter?.id,
         autoGeneratePrologue: 'true'
       });
     } catch (error) {
