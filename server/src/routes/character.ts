@@ -179,11 +179,14 @@ ${basicInfo}
         gender: gender || '男',
         age: parseInt(age) || 28,
         height: height || '175cm',
-        occupation: '软件工程师',
+        weight: weight || '70kg',
+        occupation: occupation || '软件工程师',
         education: education || '大本',
+        group: group || '未设定',
+        position: position || '未设定',
         personality: '性格内向沉稳，做事认真负责。',
         experience: '大学毕业后进入一家科技公司工作。',
-        familyBackground: '出身普通家庭，父母都是教师。',
+        familyBackground: familyBackground || '出身普通家庭，父母都是教师。',
         appearance: '身材中等，戴眼镜，给人一种斯文的感觉。',
         specialTraits: '擅长编程，对技术有独特的见解。'
       };

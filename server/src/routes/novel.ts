@@ -452,6 +452,29 @@ router.post('/continue', async (req: Request, res: Response) => {
 });
     const client = new LLMClient(config, customHeaders);
 
+    // 构建主要角色信息
+    let charactersInfo = '';
+    if (maleCharacter) {
+      charactersInfo += `男主角：${maleCharacter.name}，${maleCharacter.age || '?'}岁，${maleCharacter.occupation || '未知'}`;
+      if (maleCharacter.personality) {
+        charactersInfo += `，性格：${maleCharacter.personality.substring(0, 100)}`;
+      }
+      if (maleCharacter.education) {
+        charactersInfo += `，学历：${maleCharacter.education}`;
+      }
+      charactersInfo += '\n';
+    }
+    if (femaleCharacter) {
+      charactersInfo += `女主角：${femaleCharacter.name}，${femaleCharacter.age || '?'}岁，${femaleCharacter.occupation || '未知'}`;
+      if (femaleCharacter.personality) {
+        charactersInfo += `，性格：${femaleCharacter.personality.substring(0, 100)}`;
+      }
+      if (femaleCharacter.education) {
+        charactersInfo += `，学历：${femaleCharacter.education}`;
+      }
+      charactersInfo += '\n';
+    }
+
     // 构建上下文一致性提示
     let contextPrompt = '';
     if (previousChapters && previousChapters.length > 0) {
@@ -509,23 +532,28 @@ ${contextPrompt}
 
 【核心创作原则 - 必须严格遵守】
 
-1. 学历决定认知：
+1. **必须使用设定的主角**：
+   - 如果设定了男主角和/或女主角，续写内容中必须使用这些角色
+   - 不能自己创造新的主角替代用户设定的角色
+   - 续写内容中必须体现主角的性格、学历、职业等设定
+
+2. 学历决定认知：
    - 角色的学历直接决定了他们的知识水平、表达方式和分析能力
    - 低学历角色（小学/初中）说话简单直白，不会使用专业术语，不会进行复杂的分析和推理
    - 高学历角色（大本/硕士/博士）表达专业、有逻辑，善于分析问题，但也不会超出其专业范围
 
-2. 禁止学历违和：
+3. 禁止学历违和：
    - 绝对不能让初中学历的角色说出大学级别的知识
    - 绝对不能让低学历角色进行复杂的理论分析
    - 绝对不能让高学历角色表现得什么都不懂
    - 角色的每一句话、每一个行为都必须与其学历相符
 
-3. 知识一致性：
+4. 知识一致性：
    - 角色说的话必须在其认知范围内
    - 角色做的事必须符合其能力水平
    - 角色的反应必须符合其性格和学历
 
-4. 上下文一致性（极其重要！）：
+5. 上下文一致性（极其重要！）：
    - 地点必须连贯：角色不能突然从一个地方"瞬移"到另一个地方
    - 状态必须连贯：受伤的角色不能突然痊愈，疲劳的角色不能突然精神焕发
    - 时间必须连贯：时间推进要合理，不能出现时间混乱
@@ -534,9 +562,15 @@ ${contextPrompt}
 
 请严格遵守每个角色的学历设定和故事上下文，确保人物形象真实可信，故事发展逻辑连贯。`;
 
+    // 在用户prompt的开头添加主角信息
+    const fullPrompt = `【主要角色】
+${charactersInfo || '暂无特定角色设定'}
+
+${prompt}`;
+
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      { role: 'user' as const, content: prompt }
+      { role: 'user' as const, content: fullPrompt }
     ];
 
     const response = await client.invoke(messages, {
