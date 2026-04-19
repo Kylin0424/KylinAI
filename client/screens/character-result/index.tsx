@@ -42,6 +42,23 @@ const RELATION_TYPES = [
   { key: 'student', label: '学生', reverseKey: 'mentor', generateNPC: false },
 ];
 
+// 将中文关系映射到英文key
+const mapRelationToKey = (relationStr: string): string => {
+  const relation = relationStr.trim();
+  if (relation.includes('父亲') || relation.includes('爸爸')) return 'father';
+  if (relation.includes('母亲') || relation.includes('妈妈')) return 'mother';
+  if (relation.includes('妻子') || relation.includes('老公') || relation.includes('配偶')) return 'spouse';
+  if (relation.includes('女儿') || relation.includes('儿子') || relation.includes('子女')) return 'child';
+  if (relation.includes('哥哥') || relation.includes('姐姐') || relation.includes('弟弟') || relation.includes('妹妹') || relation.includes('兄弟') || relation.includes('姐妹')) return 'sibling';
+  if (relation.includes('朋友')) return 'friend';
+  if (relation.includes('敌人') || relation.includes('仇人')) return 'enemy';
+  if (relation.includes('同事')) return 'colleague';
+  if (relation.includes('恋人') || relation.includes('情人')) return 'lover';
+  if (relation.includes('导师') || relation.includes('老师')) return 'mentor';
+  if (relation.includes('学生') || relation.includes('徒弟')) return 'student';
+  return 'family'; // 默认为family
+};
+
 export default function CharacterResultScreen() {
   const { theme, isDark } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -237,7 +254,7 @@ export default function CharacterResultScreen() {
             id: generateId(),
             characterId: newCharacter.id,
             relatedCharacterId: familyMember.id,
-            relationType: 'family',
+            relationType: mapRelationToKey(memberData.relationToProtagonist || params.familyRelation || '家庭成员'),
             description: memberData.relationToProtagonist || params.familyRelation || '家庭成员',
             createdAt: Date.now(),
           };

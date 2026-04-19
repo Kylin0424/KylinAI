@@ -83,6 +83,11 @@ export default function CharacterScreen() {
   const [memberEducation, setMemberEducation] = useState('');
   const [memberEducationCustom, setMemberEducationCustom] = useState('');
   const [showMemberEducationModal, setShowMemberEducationModal] = useState(false);
+  const [memberGroup, setMemberGroup] = useState(''); // 所属团体
+  const [memberPosition, setMemberPosition] = useState(''); // 职位
+  const [showMemberOccupationModal, setShowMemberOccupationModal] = useState(false);
+  const [memberCustomOccupation, setMemberCustomOccupation] = useState('');
+  const [showMemberCustomOccupationInput, setShowMemberCustomOccupationInput] = useState(false);
 
   // 最多可选的关系数 = 家庭成员人数 - 1（减去自己）
   const maxRelations = memberCount - 1;
@@ -296,6 +301,8 @@ export default function CharacterScreen() {
       weight: `${memberWeight.trim()}kg`,
       occupation: memberOccupation,
       education: memberEducation === '手动输入' ? memberEducationCustom.trim() || '未设定' : memberEducation,
+      group: memberGroup.trim() || '未设定',
+      position: memberPosition.trim() || '未设定',
     };
 
     const updatedMembers = [...stagedFamilyMembers, member];
@@ -314,6 +321,8 @@ export default function CharacterScreen() {
       setMemberOccupation('');
       setMemberEducation('');
       setMemberEducationCustom('');
+      setMemberGroup('');
+      setMemberPosition('');
     } else {
       // 没有下一个了，关闭弹窗，继续生成
       setShowFamilyMemberSetupModal(false);
@@ -1366,6 +1375,34 @@ export default function CharacterScreen() {
                     </ThemedText>
                     <Feather name="chevron-right" size={20} color={theme.textMuted} />
                   </TouchableOpacity>
+                </View>
+
+                {/* 所属团体 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    所属团体
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入所属团体（可选）"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberGroup}
+                    onChangeText={setMemberGroup}
+                  />
+                </View>
+
+                {/* 职位 */}
+                <View style={styles.formSection}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary} style={styles.formLabel}>
+                    职位
+                  </ThemedText>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="请输入职位（可选）"
+                    placeholderTextColor={theme.textMuted}
+                    value={memberPosition}
+                    onChangeText={setMemberPosition}
+                  />
                 </View>
               </ScrollView>
 

@@ -176,6 +176,12 @@ export const createStyles = (theme: Theme) => {
       borderRadius: BorderRadius.full,
       gap: 4,
     },
+    addCharacterChip: {
+      borderWidth: 1,
+      borderColor: '#C8102E',
+      backgroundColor: 'transparent',
+      justifyContent: 'center',
+    },
     controlBar: {
       flexDirection: 'row',
       alignItems: 'center',

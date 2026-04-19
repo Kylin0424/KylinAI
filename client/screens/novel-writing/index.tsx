@@ -1584,7 +1584,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
           {/* 角色信息栏 - 缩小 */}
           <View style={styles.characterBar}>
             {maleCharacter && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.characterChip}
                 onPress={() => {
                   setSelectedCharacter(maleCharacter);
@@ -1599,7 +1599,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
               </TouchableOpacity>
             )}
             {femaleCharacter && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.characterChip}
                 onPress={() => {
                   setSelectedCharacter(femaleCharacter);
@@ -1613,6 +1613,14 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                 <Feather name="info" size={12} color={theme.textMuted} style={{ marginLeft: 2 }} />
               </TouchableOpacity>
             )}
+
+            {/* 配角信息加号 */}
+            <TouchableOpacity
+              style={[styles.characterChip, styles.addCharacterChip]}
+              onPress={() => router.push('/character')}
+            >
+              <Feather name="plus" size={16} color="#C8102E" />
+            </TouchableOpacity>
           </View>
 
           {/* 输入控制栏 */}
