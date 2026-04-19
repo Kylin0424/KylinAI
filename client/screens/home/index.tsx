@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
@@ -300,18 +301,32 @@ export default function HomeScreen() {
       txtContent += `由"齐思秒说"生成\n`;
 
       // 创建文件并分享
-      const docDir = getDocumentDirectory();
-      const fileUri = `${docDir}${fullNovel.title}.txt`;
-      await (FileSystem as any).writeAsStringAsync(fileUri, txtContent, { encoding: 'utf8' });
-      
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/plain',
-          dialogTitle: '导出小说',
-          UTI: 'public.plain-text',
-        });
-      } else {
+      if (Platform.OS === 'web') {
+        // Web环境下使用浏览器下载
+        const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fullNovel.title}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         Alert.alert('成功', '小说已导出');
+      } else {
+        const docDir = getDocumentDirectory();
+        const fileUri = `${docDir}${fullNovel.title}.txt`;
+        await (FileSystem as any).writeAsStringAsync(fileUri, txtContent, { encoding: 'utf8' });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/plain',
+            dialogTitle: '导出小说',
+            UTI: 'public.plain-text',
+          });
+        } else {
+          Alert.alert('成功', '小说已导出');
+        }
       }
     } catch (error) {
       console.error('Export error:', error);

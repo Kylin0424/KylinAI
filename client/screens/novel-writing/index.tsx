@@ -85,6 +85,8 @@ export default function NovelWritingScreen() {
   const [novel, setNovel] = useState<Novel | null>(null);
   const [maleCharacter, setMaleCharacter] = useState<Character | null>(null);
   const [femaleCharacter, setFemaleCharacter] = useState<Character | null>(null);
+  const [sideCharacters, setSideCharacters] = useState<Character[]>([]); // 配角列表
+  const [showAddSideCharacterModal, setShowAddSideCharacterModal] = useState(false); // 显示添加配角选择框
   const [content, setContent] = useState('');
   const [currentChapterId, setCurrentChapterId] = useState<string | null>(null);
   const [currentChapterName, setCurrentChapterName] = useState('');
@@ -1123,6 +1125,18 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
     }
   };
 
+  // 添加配角
+  const addSideCharacter = (character: Character) => {
+    if (!sideCharacters.find(c => c.id === character.id)) {
+      setSideCharacters([...sideCharacters, character]);
+    }
+  };
+
+  // 移除配角
+  const removeSideCharacter = (characterId: string) => {
+    setSideCharacters(sideCharacters.filter(c => c.id !== characterId));
+  };
+
   // 添加章节
   const handleAddChapter = async () => {
     if (!novel) return;
@@ -1617,7 +1631,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             {/* 配角信息加号 */}
             <TouchableOpacity
               style={[styles.characterChip, styles.addCharacterChip]}
-              onPress={() => router.push('/character')}
+              onPress={() => setShowAddSideCharacterModal(true)}
             >
               <Feather name="plus" size={16} color="#C8102E" />
             </TouchableOpacity>
@@ -2387,6 +2401,72 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                 onPress={() => setShowWordCountAlert(false)}
               >
                 <ThemedText variant="body" color="#FFFFFF">继续创作</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 添加配角选择框 */}
+      <Modal
+        visible={showAddSideCharacterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddSideCharacterModal(false)}
+      >
+        <View style={styles.addSideCharacterModalOverlay}>
+          <View style={styles.addSideCharacterModalContent}>
+            <View style={styles.addSideCharacterModalHeader}>
+              <ThemedText variant="h3" color={theme.textPrimary}>
+                添加配角
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowAddSideCharacterModal(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.addSideCharacterModalBody}>
+              <TouchableOpacity
+                style={styles.addSideCharacterOption}
+                onPress={() => {
+                  setShowAddSideCharacterModal(false);
+                  router.push('/character');
+                }}
+              >
+                <View style={styles.addSideCharacterOptionIcon}>
+                  <Feather name="plus-circle" size={32} color="#C8102E" />
+                </View>
+                <View style={styles.addSideCharacterOptionContent}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                    生成新角色
+                  </ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>
+                    生成后会自动绑定到本小说
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={20} color={theme.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.addSideCharacterOption}
+                onPress={() => {
+                  setShowAddSideCharacterModal(false);
+                  // TODO: 跳转到角色库选择页面
+                  router.push('/character-library?mode=select');
+                }}
+              >
+                <View style={styles.addSideCharacterOptionIcon}>
+                  <Feather name="users" size={32} color="#C8102E" />
+                </View>
+                <View style={styles.addSideCharacterOptionContent}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                    从角色库选择
+                  </ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>
+                    选择已创建的角色
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={20} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
           </View>

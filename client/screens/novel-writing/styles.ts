@@ -764,6 +764,67 @@ export const createStyles = (theme: Theme) => {
       borderRadius: 8,
       alignItems: 'center',
     },
+    // 配角列表样式
+    sideCharacterList: {
+      flexDirection: 'row',
+      marginTop: Spacing.xs,
+      paddingHorizontal: Spacing.sm,
+    },
+    sideCharacterItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundTertiary,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 4,
+      borderRadius: BorderRadius.full,
+      marginRight: Spacing.xs,
+      gap: 4,
+    },
+    // 添加配角选择框
+    addSideCharacterModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: Spacing.xl,
+    },
+    addSideCharacterModalContent: {
+      backgroundColor: theme.backgroundDefault,
+      borderRadius: 16,
+      width: '100%',
+      maxWidth: 400,
+    },
+    addSideCharacterModalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: Spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
+    },
+    addSideCharacterModalBody: {
+      padding: Spacing.md,
+      gap: Spacing.sm,
+    },
+    addSideCharacterOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: Spacing.md,
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 12,
+      gap: Spacing.md,
+    },
+    addSideCharacterOptionIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: 'rgba(200, 16, 46, 0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    addSideCharacterOptionContent: {
+      flex: 1,
+    },
     wordCountAlertButtonSecondary: {
       flex: 1,
       backgroundColor: 'transparent',
