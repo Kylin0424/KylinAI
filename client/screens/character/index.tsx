@@ -130,9 +130,6 @@ export default function CharacterScreen() {
   const [showMemberCountModal, setShowMemberCountModal] = useState(false);
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [selectedRelationCategory, setSelectedRelationCategory] = useState<string | null>(null);
-  const [showMemberOccupationModal, setShowMemberOccupationModal] = useState(false);
-  const [memberCustomOccupation, setMemberCustomOccupation] = useState('');
-  const [showMemberCustomOccupationInput, setShowMemberCustomOccupationInput] = useState(false);
   const [showMemberCustomEducationInput, setShowMemberCustomEducationInput] = useState(false);
   // 关系分类列表
   const relationCategories = useMemo(() => {
