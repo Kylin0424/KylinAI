@@ -449,10 +449,10 @@ export default function CharacterDetailScreen() {
     <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBackButton} onPress={() => router.push('/home')}>
+        <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={theme.textPrimary} />
           <ThemedText variant="small" color={theme.textPrimary} style={styles.backText}>
-            返回首页
+            返回
           </ThemedText>
         </TouchableOpacity>
         {!isEditing && (
@@ -782,65 +782,69 @@ export default function CharacterDetailScreen() {
             )}
 
             {/* 关系网络 */}
-            {character.novelId && (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View style={styles.labelIcon}>
-                    <Feather name="users" size={14} color={theme.textPrimary} />
-                  </View>
-                  <ThemedText variant="smallMedium" color={theme.textPrimary}>关系网络</ThemedText>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.labelIcon}>
+                  <Feather name="users" size={14} color={theme.textPrimary} />
                 </View>
-                
-                {/* 已有关系列表 */}
-                {characterRelations.length > 0 ? (
-                  <View style={styles.relationList}>
-                    {characterRelations.map((rel, index) => (
-                      <View key={index} style={styles.relationItem}>
-                        <View style={styles.relationInfo}>
-                          <ThemedText variant="smallMedium" color={theme.textPrimary}>
-                            {rel.targetName}
-                          </ThemedText>
-                          <ThemedText variant="caption" color={theme.textMuted}>
-                            {rel.relationType}
-                            {rel.reverseRelation && ` (${rel.reverseRelation})`}
-                          </ThemedText>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.removeRelationButton}
-                          onPress={() => handleRemoveRelation(rel.targetId)}
-                        >
-                          <Feather name="x" size={16} color={theme.textMuted} />
-                        </TouchableOpacity>
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>关系网络</ThemedText>
+              </View>
+              
+              {/* 已有关系列表 */}
+              {characterRelations.length > 0 ? (
+                <View style={styles.relationList}>
+                  {characterRelations.map((rel, index) => (
+                    <View key={index} style={styles.relationItem}>
+                      <View style={styles.relationInfo}>
+                        <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                          {rel.targetName}
+                        </ThemedText>
+                        <ThemedText variant="caption" color={theme.textMuted}>
+                          {rel.relationType}
+                          {rel.reverseRelation && ` (${rel.reverseRelation})`}
+                        </ThemedText>
                       </View>
-                    ))}
-                  </View>
-                ) : (
-                  <View style={styles.emptyRelationContainer}>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      暂无关系记录
-                    </ThemedText>
-                  </View>
-                )}
+                      <TouchableOpacity
+                        style={styles.removeRelationButton}
+                        onPress={() => handleRemoveRelation(rel.targetId)}
+                      >
+                        <Feather name="x" size={16} color={theme.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyRelationContainer}>
+                  <ThemedText variant="caption" color={theme.textMuted}>
+                    暂无关系记录
+                  </ThemedText>
+                </View>
+              )}
+              
+              {/* 添加关系按钮 */}
+              <View style={styles.relationActions}>
+                <TouchableOpacity
+                  style={styles.addRelationButton}
+                  onPress={() => {
+                    if (availableCharacters.length > 0) {
+                      setShowAddRelationModal(true);
+                    } else {
+                      // 如果没有可选角色，跳转到角色生成器页面
+                      router.push('/character');
+                    }
+                  }}
+                >
+                  <Feather name="plus" size={14} color="#C8102E" />
+                  <ThemedText variant="small" color="#C8102E" style={{ marginLeft: 4 }}>
+                    添加关系
+                  </ThemedText>
+                </TouchableOpacity>
                 
-                {/* 添加关系按钮 */}
-                <View style={styles.relationActions}>
-                  {availableCharacters.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.addRelationButton}
-                      onPress={() => setShowAddRelationModal(true)}
-                    >
-                      <Feather name="plus" size={14} color="#C8102E" />
-                      <ThemedText variant="small" color="#C8102E" style={{ marginLeft: 4 }}>
-                        添加关系
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
-                  
-                  <TouchableOpacity
-                    style={styles.aiIdentifyButton}
-                    onPress={handleAIIdentifyRelations}
-                    disabled={isSavingRelation}
-                  >
+                <TouchableOpacity
+                  style={styles.aiIdentifyButton}
+                  onPress={handleAIIdentifyRelations}
+                  disabled={isSavingRelation}
+                >
                     {isSavingRelation ? (
                       <ActivityIndicator size="small" color="#C8102E" />
                     ) : (

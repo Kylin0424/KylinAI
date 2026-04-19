@@ -86,6 +86,7 @@ export default function CharacterScreen() {
   const [memberGroup, setMemberGroup] = useState(''); // 所属团体
   const [memberPosition, setMemberPosition] = useState(''); // 职位
   const [showMemberOccupationModal, setShowMemberOccupationModal] = useState(false);
+  const [selectedMemberOccupationCategory, setSelectedMemberOccupationCategory] = useState<string | null>(null);
   const [memberCustomOccupation, setMemberCustomOccupation] = useState('');
   const [showMemberCustomOccupationInput, setShowMemberCustomOccupationInput] = useState(false);
 

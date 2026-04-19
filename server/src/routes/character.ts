@@ -223,7 +223,7 @@ ${basicInfo}
     // 优先使用用户手动设置的家庭成员数据
     if (hasCustomFamilyMembers) {
       // 使用用户手动设置的家庭成员数据
-      for (const memberData of parsedFamilyMembersData) {
+              for (const memberData of parsedFamilyMembersData) {
         try {
           // 为每个家庭成员生成详细描述（性格、经历、外貌等）
           const memberPrompt = `请根据以下基本信息，生成一个家庭成员角色的详细档案。
@@ -236,6 +236,8 @@ ${basicInfo}
 体重：${memberData.weight}
 职业：${memberData.occupation}
 学历：${memberData.education}
+所属团体：${memberData.group || '未设定'}
+职位：${memberData.position || '未设定'}
 与主角的关系：${memberData.relation}
 
 【主角信息】
@@ -252,13 +254,20 @@ ${basicInfo}
 3. age: 年龄（必须是：${memberData.age}，不能更改）
 4. height: 身高（必须是：${memberData.height}，不能更改）
 5. occupation: 职业（必须是：${memberData.occupation}，不能更改）
-6. education: 学历（根据职业推断合理学历，考虑年龄）
+6. education: 学历（必须是：${memberData.education}，不能更改）
 7. weight: 体重（必须是：${memberData.weight}，不能更改）
-8. personality: 性格特点（80-150字，根据年龄、职业、学历推断）
-9. experience: 人生经历（100-200字，要体现与主角的互动）
-10. familyBackground: 家庭背景（与主角一致）
-11. appearance: 外貌特征（50-100字）
-12. relationToProtagonist: 与主角的关系（必须是：${memberData.relation}，只返回这一个关系，不要重复）
+8. group: 所属团体（必须是：${memberData.group || '未设定'}，不能更改）
+9. position: 职位（必须是：${memberData.position || '未设定'}，不能更改）
+10. personality: 性格特点（80-150字，根据年龄、职业、学历推断）
+11. experience: 人生经历（100-200字，要体现与主角的互动）
+12. familyBackground: 家庭背景（为该角色生成独立的家庭背景，考虑年龄、经历，不要与主角完全一致）
+13. appearance: 外貌特征（50-100字）
+14. relationToProtagonist: 与主角的关系（必须是：${memberData.relation}，只返回这一个关系，不要重复）
+
+【重要提示】
+- 家庭背景要为该角色生成独立的背景，考虑其年龄、职业和经历，不要简单复制主角的家庭背景
+- 如果角色年龄较大，可以描述其自己的家庭或婚姻状况
+- 如果关系是朋友或同事，家庭背景应该与主角不同
 
 请只返回JSON，不要有其他文字。`;
 
@@ -289,9 +298,11 @@ ${basicInfo}
             weight: memberData.weight,
             occupation: memberData.occupation,
             education: memberData.education,
+            group: memberData.group || '未设定',
+            position: memberData.position || '未设定',
             personality: '待完善',
             experience: '待完善',
-            familyBackground: familyBg,
+            familyBackground: `与${characterData.name}同家庭`,
             appearance: '待完善',
             relationToProtagonist: memberData.relation,
           });
