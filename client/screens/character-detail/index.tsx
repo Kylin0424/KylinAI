@@ -858,7 +858,6 @@ export default function CharacterDetailScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-            )}
 
             {canEdit && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
