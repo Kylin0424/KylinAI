@@ -801,7 +801,7 @@ export default function CharacterDetailScreen() {
                         </ThemedText>
                         <ThemedText variant="caption" color={theme.textMuted}>
                           {rel.relationType}
-                          {rel.reverseRelation && ` (${rel.reverseRelation})`}
+                          {rel.reverseRelation && ' (' + rel.reverseRelation + ')'}
                         </ThemedText>
                       </View>
                       <TouchableOpacity
@@ -860,7 +860,6 @@ export default function CharacterDetailScreen() {
               </View>
             )}
 
-            {/* 删除按钮 */}
             {canEdit && (
               <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
                 <Feather name="trash-2" size={16} color="#C8102E" />

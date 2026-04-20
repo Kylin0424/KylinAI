@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
@@ -377,7 +378,7 @@ export default function NovelImportScreen() {
   const handleSelectFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        type: ['text/plain'],
         copyToCacheDirectory: true,
       });
 
@@ -387,9 +388,27 @@ export default function NovelImportScreen() {
 
       const file = result.assets[0];
       setSelectedFile(file);
-      
-      // 自动开始上传分析
-      handleUploadAndAnalyze(file);
+
+      // 读取文件内容
+      if (file.mimeType === 'text/plain') {
+        try {
+          // 使用 expo-file-system 读取文本内容
+          const content = await (FileSystem as any).readAsStringAsync(file.uri, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+
+          // 跳转到文本编辑器页面
+          router.push('/novel-text-editor', {
+            fileContent: content,
+            fileName: file.name,
+          });
+        } catch (readErr) {
+          console.error('File read error:', readErr);
+          Alert.alert('错误', '读取文件内容失败，请重试');
+        }
+      } else {
+        Alert.alert('提示', '目前仅支持导入 .txt 格式的文本文件');
+      }
     } catch (err) {
       console.error('File selection error:', err);
       Alert.alert('错误', '选择文件失败，请重试');

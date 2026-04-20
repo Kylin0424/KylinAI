@@ -417,14 +417,20 @@ if (femaleId) {
           return;
         }
 
+        // 跳过空数据或非JSON数据
+        if (!event.data || event.data.trim() === '') {
+          return;
+        }
+
         try {
-          const parsed = JSON.parse(event.data || '{}');
-          if (parsed.content) {
+          const parsed = JSON.parse(event.data);
+          if (parsed.content && typeof parsed.content === 'string') {
             fullContent += parsed.content;
             setPrologueContent(fullContent);
           }
         } catch (e) {
-          // 忽略解析错误
+          // 忽略解析错误，不输出到控制台
+          // event.data可能不是有效的JSON格式（如心跳包、空格等）
         }
       });
 
