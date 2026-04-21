@@ -11,7 +11,7 @@ import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
-import { useSafeRouter } from '@/hooks/useSafeRouter';
+import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { FloatingBall } from '@/components/FloatingBall';
 import { createStyles } from './styles';
 import {
@@ -29,6 +29,12 @@ export default function CharacterListScreen() {
   const { theme, isDark } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useSafeRouter();
+  const params = useSafeSearchParams<{
+    mode?: string;
+    returnTo?: string;
+  }>();
+
+  const isSelectMode = params.mode === 'select';
 
   const [characters, setCharacters] = useState<Character[]>([]);
   const [relations, setRelations] = useState<CharacterRelation[]>([]);
@@ -163,20 +169,37 @@ export default function CharacterListScreen() {
     <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
       {/* Header with Back Button */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            if (isSelectMode) {
+              const returnTo = params.returnTo || '/home';
+              router.replace(returnTo);
+            } else {
+              router.push('/home');
+            }
+          }}
+        >
           <Feather name="arrow-left" size={20} color={theme.textPrimary} />
           <ThemedText variant="small" color={theme.textPrimary} style={styles.backText}>
-            返回首页
+            {isSelectMode ? '取消' : '返回首页'}
           </ThemedText>
         </TouchableOpacity>
-        <View style={styles.topRightButtons}>
-          <TouchableOpacity style={styles.networkButton} onPress={() => router.push('/relation-network')}>
-            <Feather name="git-branch" size={20} color="#C8102E" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={() => router.push('/character')}>
-            <Feather name="plus" size={20} color="#C8102E" />
-          </TouchableOpacity>
-        </View>
+        {!isSelectMode && (
+          <View style={styles.topRightButtons}>
+            <TouchableOpacity style={styles.networkButton} onPress={() => router.push('/relation-network')}>
+              <Feather name="git-branch" size={20} color="#C8102E" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={() => router.push('/character')}>
+              <Feather name="plus" size={20} color="#C8102E" />
+            </TouchableOpacity>
+          </View>
+        )}
+        {isSelectMode && (
+          <ThemedText variant="small" color={theme.textMuted}>
+            选择一个角色
+          </ThemedText>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -348,7 +371,16 @@ export default function CharacterListScreen() {
 
                   <TouchableOpacity
                     style={styles.viewDetailButton}
-                    onPress={() => router.push('/character-detail', { characterId: char.id })}
+                    onPress={() => {
+                      if (isSelectMode) {
+                        const returnTo = params.returnTo || '/home';
+                        router.replace(returnTo, {
+                          selectedCharacterId: char.id,
+                        });
+                      } else {
+                        router.push('/character-detail', { characterId: char.id });
+                      }
+                    }}
                   >
                     <ThemedText variant="small" color={isLocked ? theme.textMuted : "#C8102E"}>
                       {isLocked ? '查看详情' : '查看详情'}

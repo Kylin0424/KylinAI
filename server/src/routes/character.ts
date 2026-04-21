@@ -487,12 +487,16 @@ router.post('/generate-npc', async (req: Request, res: Response) => {
 2. gender: 性别（${inferredGender}）
 3. age: 年龄（具体数字，要在${inferredAgeRange}范围内）
 4. height: 身高（根据性别推断合理身高）
-5. occupation: 职业（要符合年龄和时代背景）
-6. personality: 性格特点（100-200字，可以与基础角色有一定的相似性或互补性）
-7. experience: 人生经历（150-250字，要体现与基础角色的互动）
-8. familyBackground: 家庭背景（100-200字，要与基础角色的家庭背景一致）
-9. appearance: 外貌特征（80-150字，可以体现与基础角色的相似之处）
-10. specialTraits: 特殊特质或技能（50-100字，如有）
+5. weight: 体重（根据性别和身高推断）
+6. occupation: 职业（要符合年龄和时代背景）
+7. education: 学历（要符合年龄和职业背景）
+8. group: 所属团体（根据职业和背景推断，如"无"、"某某公司"、"某某组织"等）
+9. position: 职位（根据职业和团体推断，如"无"、"员工"、"经理"、"成员"等）
+10. personality: 性格特点（100-200字，可以与基础角色有一定的相似性或互补性）
+11. experience: 人生经历（150-250字，要体现与基础角色的互动）
+12. familyBackground: 家庭背景（100-200字，要与基础角色的家庭背景一致）
+13. appearance: 外貌特征（80-150字，可以体现与基础角色的相似之处）
+14. specialTraits: 特殊特质或技能（50-100字，如有）
 
 请只返回JSON，不要有其他文字。`;
 
@@ -523,7 +527,11 @@ router.post('/generate-npc', async (req: Request, res: Response) => {
         gender: inferredGender,
         age: relationType === 'child' ? 15 : baseCharacter.age + 25,
         height: inferredGender === '男' ? '175cm' : '160cm',
+        weight: inferredGender === '男' ? '70kg' : '55kg',
         occupation: relationType === 'child' ? '学生' : '退休教师',
+        education: relationType === 'child' ? '高中在读' : '大学本科',
+        group: '无',
+        position: '无',
         personality: '性格温和，待人真诚。',
         experience: '一生勤劳朴实，养育子女。',
         familyBackground: baseCharacter.familyBackground,

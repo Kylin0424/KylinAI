@@ -83,6 +83,7 @@ export default function NovelWritingScreen() {
     maleCharacterId?: string;
     femaleCharacterId?: string;
     importData?: string;
+    selectedCharacterId?: string;
   }>();
 
   const [novel, setNovel] = useState<Novel | null>(null);
@@ -393,12 +394,48 @@ if (femaleId) {
     }
   };
 
+  // 处理从角色库选择的角色
+  const handleSelectedCharacter = async (characterId: string) => {
+    try {
+      const character = await getCharacterById(characterId);
+      if (!character) {
+        Alert.alert('错误', '角色不存在');
+        return;
+      }
+
+      // 检查是否已经在配角列表中
+      const exists = sideCharacters.some((sc) => sc.id === characterId);
+      if (exists) {
+        Alert.alert('提示', '该角色已在配角列表中');
+        return;
+      }
+
+      // 添加到配角列表
+      setSideCharacters((prev) => [...prev, character]);
+      Alert.alert('成功', `已添加角色：${character.name}`);
+    } catch (error) {
+      console.error('Handle selected character error:', error);
+      Alert.alert('错误', '添加角色失败');
+    }
+  };
+
   // 检测是否有导入数据，如果有则处理
   useEffect(() => {
     if (params.importData && !novel) {
       handleImportData();
     }
   }, [params.importData, novel]);
+
+  // 检测是否从角色库选择了角色
+  useEffect(() => {
+    if (params.selectedCharacterId && novel) {
+      handleSelectedCharacter(params.selectedCharacterId);
+      // 清除参数，避免重复处理
+      router.replace('/novel-writing', {
+        novelId: novel.id,
+      });
+    }
+  }, [params.selectedCharacterId, novel]);
 
   useFocusEffect(
     useCallback(() => {
@@ -2568,8 +2605,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                 style={styles.addSideCharacterOption}
                 onPress={() => {
                   setShowAddSideCharacterModal(false);
-                  // TODO: 跳转到角色库选择页面
-                  router.push('/character-library?mode=select');
+                  router.push('/character-list?mode=select&returnTo=/novel-writing');
                 }}
               >
                 <View style={styles.addSideCharacterOptionIcon}>

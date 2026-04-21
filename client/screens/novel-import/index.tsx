@@ -390,12 +390,20 @@ export default function NovelImportScreen() {
       setSelectedFile(file);
 
       // 读取文件内容
-      if (file.mimeType === 'text/plain') {
+      if (file.mimeType === 'text/plain' || file.name.endsWith('.txt')) {
         try {
-          // 使用 expo-file-system 读取文本内容
-          const content = await (FileSystem as any).readAsStringAsync(file.uri, {
-            encoding: 'utf8',
-          });
+          let content: string;
+
+          if (Platform.OS === 'web') {
+            // Web环境：使用fetch API读取文件
+            const response = await fetch(file.uri);
+            content = await response.text();
+          } else {
+            // 原生环境：使用expo-file-system
+            content = await (FileSystem as any).readAsStringAsync(file.uri, {
+              encoding: 'utf8',
+            });
+          }
 
           // 跳转到文本编辑器页面
           router.push('/novel-text-editor', {
@@ -404,7 +412,7 @@ export default function NovelImportScreen() {
           });
         } catch (readErr) {
           console.error('File read error:', readErr);
-          Alert.alert('错误', '读取文件内容失败，请重试');
+          Alert.alert('错误', `读取文件内容失败：${readErr instanceof Error ? readErr.message : '未知错误'}`);
         }
       } else {
         Alert.alert('提示', '目前仅支持导入 .txt 格式的文本文件');
