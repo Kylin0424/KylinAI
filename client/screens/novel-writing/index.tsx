@@ -26,6 +26,7 @@ import {
   Novel,
   getNovelById,
   updateNovelContent,
+  createNovel,
   addChapter,
   updateChapter,
 } from '@/utils/novelStorage';
@@ -34,6 +35,7 @@ import {
   getCharacterById,
   getNovelCharacters,
   saveCharacter,
+  generateId,
 } from '@/utils/characterStorage';
 import { NOVEL_THEME_TYPES } from '@/constants/occupations';
 import { getEducationConstraintsPrompt } from '@/constants/education';
@@ -80,6 +82,7 @@ export default function NovelWritingScreen() {
     autoGeneratePrologue?: string;
     maleCharacterId?: string;
     femaleCharacterId?: string;
+    importData?: string;
   }>();
 
   const [novel, setNovel] = useState<Novel | null>(null);
@@ -288,6 +291,114 @@ if (femaleId) {
 
     setIsLoading(false);
   };
+
+  // 处理导入的小说数据
+  const handleImportData = async () => {
+    const importDataStr = params.importData;
+    if (!importDataStr) return;
+
+    try {
+      setIsLoading(true);
+      const importData = JSON.parse(importDataStr) as {
+        chapters: { id: string; title: string; content: string }[];
+        identifiedCharacters: string[];
+        fileName: string;
+      };
+
+      if (!importData.chapters || importData.chapters.length === 0) {
+        Alert.alert('提示', '没有导入的章节数据');
+        setIsLoading(false);
+        return;
+      }
+
+      // 创建新的小说记录
+      const newNovel = await createNovel(
+        importData.fileName || '导入的小说',
+        importData.chapters.map(ch => ch.title).join('、'),
+        '导入',
+        undefined,
+        undefined,
+        true
+      );
+
+      // 创建角色
+      if (importData.identifiedCharacters && importData.identifiedCharacters.length > 0) {
+        for (const charName of importData.identifiedCharacters) {
+          const newCharacter: Character = {
+            id: generateId(),
+            name: charName,
+            gender: '未知',
+            age: 0,
+            height: '0cm',
+            weight: '0kg',
+            group: '',
+            position: '',
+            occupation: '未知',
+            personality: '待完善',
+            experience: '待完善',
+            familyBackground: '待完善',
+            appearance: '待完善',
+            specialTraits: '待完善',
+            createdAt: Date.now(),
+            novelId: newNovel.id,
+            roleType: 'npc',
+            isTemporary: true,
+          };
+          await saveCharacter(newCharacter);
+
+          // 不需要添加到关系网络，因为角色之间还没有明确的关系
+        }
+      }
+
+      // 保存导入的章节
+      const savedChapters = [];
+      for (let i = 0; i < importData.chapters.length; i++) {
+        const chapter = importData.chapters[i];
+        const savedChapter = await addChapter(newNovel.id, chapter.title, false, i + 1);
+        await updateChapter(newNovel.id, savedChapter.id, { content: chapter.content });
+        savedChapters.push(savedChapter);
+      }
+
+      // 添加作者更换通知章节（作为楔子）
+      const noticeChapter = await addChapter(newNovel.id, '作者更换通知', true);
+      const noticeContent = `【作者更换通知】\n\n本小说已更换作者继续创作。作者将在保持原有故事风格和人物设定的基础上，继续完善和扩展故事内容。\n\n导入时间：${new Date().toLocaleString()}\n导入章节数：${importData.chapters.length} 章\n识别角色数：${importData.identifiedCharacters?.length || 0} 个`;
+      await updateChapter(newNovel.id, noticeChapter.id, { content: noticeContent });
+
+      // 加载新创建的小说
+      const novelData = await getNovelById(newNovel.id);
+      setNovel(novelData);
+
+      // 选中第一个导入的章节
+      if (savedChapters.length > 0) {
+        setCurrentChapterId(savedChapters[0].id);
+        setCurrentChapterName(savedChapters[0].title);
+        setContent(savedChapters[0].content);
+      }
+
+      Alert.alert(
+        '导入成功',
+        `已成功导入 ${importData.chapters.length} 个章节${importData.identifiedCharacters?.length ? `和 ${importData.identifiedCharacters.length} 个角色` : ''}`,
+        [{ text: '确定' }]
+      );
+
+      // 清除importData参数，避免重复处理
+      router.replace('/novel-writing', {
+        novelId: newNovel.id,
+      });
+    } catch (error) {
+      console.error('Handle import data error:', error);
+      Alert.alert('错误', '导入小说数据失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 检测是否有导入数据，如果有则处理
+  useEffect(() => {
+    if (params.importData && !novel) {
+      handleImportData();
+    }
+  }, [params.importData, novel]);
 
   useFocusEffect(
     useCallback(() => {

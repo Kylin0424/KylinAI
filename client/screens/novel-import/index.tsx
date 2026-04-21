@@ -394,7 +394,7 @@ export default function NovelImportScreen() {
         try {
           // 使用 expo-file-system 读取文本内容
           const content = await (FileSystem as any).readAsStringAsync(file.uri, {
-            encoding: FileSystem.EncodingType.UTF8,
+            encoding: 'utf8',
           });
 
           // 跳转到文本编辑器页面

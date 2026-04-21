@@ -157,8 +157,8 @@ export const Screen = ({
   const insets = useSafeAreaInsets();
   const [keyboardShown, setKeyboardShown] = React.useState(false);
   
-  // 获取全局背景图片URL
-  const { backgroundUrl } = useThemeContext();
+  // 获取全局背景图片URL和透明度
+  const { backgroundUrl, backgroundOpacity } = useThemeContext();
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -326,17 +326,20 @@ export const Screen = ({
     if (shouldShowBackgroundImage) {
       // 根据状态栏样式判断是深色还是浅色背景
       const isDarkBackground = statusBarStyle === 'light';
-      const overlayColor = isDarkBackground 
-        ? 'rgba(0,0,0,0.6)'  // 深色背景用深色遮罩
-        : 'rgba(255,255,255,0.75)';  // 浅色背景用浅色遮罩
-      
+      // 使用用户设置的背景透明度来计算遮罩层透明度
+      // backgroundOpacity值越大，遮罩越强，背景越不清晰
+      const overlayOpacity = backgroundOpacity;
+      const overlayColor = isDarkBackground
+        ? `rgba(0,0,0,${overlayOpacity})`  // 深色背景用深色遮罩
+        : `rgba(255,255,255,${overlayOpacity})`;  // 浅色背景用浅色遮罩
+
       return (
         <ImageBackground
           source={{ uri: backgroundUrl }}
           style={styles.backgroundImage}
           resizeMode="cover"
         >
-          {/* 半透明遮罩，确保内容可读 */}
+          {/* 半透明遮罩，确保内容可读，透明度由用户设置控制 */}
           <View style={[styles.overlay, { backgroundColor: overlayColor }]} />
           {content}
         </ImageBackground>

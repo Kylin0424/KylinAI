@@ -12,6 +12,12 @@ const THEME_MODE_STORAGE_KEY = '@theme_mode';
 // 背景图片存储键
 const BACKGROUND_STORAGE_KEY = '@global_background';
 
+// 背景透明度存储键
+const BACKGROUND_OPACITY_STORAGE_KEY = '@background_opacity';
+
+// 默认背景透明度（0-1之间，值越小背景越清晰）
+const DEFAULT_BACKGROUND_OPACITY = 0.3;
+
 // 内置背景图片定义
 export interface BuiltInBackground {
   id: string;
@@ -89,6 +95,10 @@ interface ThemeContextType {
   backgroundUrl: string | null;
   // 设置背景图片
   setBackgroundUrl: (url: string | null) => Promise<void>;
+  // 当前背景透明度（0-1之间，值越小背景越清晰）
+  backgroundOpacity: number;
+  // 设置背景透明度
+  setBackgroundOpacity: (opacity: number) => Promise<void>;
   // 内置背景列表
   builtInBackgrounds: BuiltInBackground[];
 }
@@ -103,22 +113,30 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme();
   const [themeMode, setThemeModeState] = useState<ThemeMode>('follow-system');
   const [backgroundUrl, setBackgroundUrlState] = useState<string | null>(null);
+  const [backgroundOpacity, setBackgroundOpacityState] = useState<number>(DEFAULT_BACKGROUND_OPACITY);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // 从存储加载主题设置
   useEffect(() => {
     const loadThemeSettings = async () => {
       try {
-        const [savedMode, savedBackground] = await Promise.all([
+        const [savedMode, savedBackground, savedOpacity] = await Promise.all([
           AsyncStorage.getItem(THEME_MODE_STORAGE_KEY),
           AsyncStorage.getItem(BACKGROUND_STORAGE_KEY),
+          AsyncStorage.getItem(BACKGROUND_OPACITY_STORAGE_KEY),
         ]);
-        
+
         if (savedMode) {
           setThemeModeState(savedMode as ThemeMode);
         }
         if (savedBackground) {
           setBackgroundUrlState(savedBackground);
+        }
+        if (savedOpacity) {
+          const opacity = parseFloat(savedOpacity);
+          if (!isNaN(opacity) && opacity >= 0 && opacity <= 1) {
+            setBackgroundOpacityState(opacity);
+          }
         }
       } catch (error) {
         console.error('Failed to load theme settings:', error);
@@ -151,6 +169,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       setBackgroundUrlState(url);
     } catch (error) {
       console.error('Failed to save background:', error);
+    }
+  };
+
+  // 设置背景透明度
+  const setBackgroundOpacity = async (opacity: number) => {
+    try {
+      // 确保透明度在0-1之间
+      const clampedOpacity = Math.max(0, Math.min(1, opacity));
+      await AsyncStorage.setItem(BACKGROUND_OPACITY_STORAGE_KEY, clampedOpacity.toString());
+      setBackgroundOpacityState(clampedOpacity);
+    } catch (error) {
+      console.error('Failed to save background opacity:', error);
     }
   };
 
@@ -201,8 +231,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     isEyeCare,
     backgroundUrl,
     setBackgroundUrl,
+    backgroundOpacity,
+    setBackgroundOpacity,
     builtInBackgrounds: BUILT_IN_BACKGROUNDS,
-  }), [themeMode, theme, isDark, isEyeCare, backgroundUrl]);
+  }), [themeMode, theme, isDark, isEyeCare, backgroundUrl, backgroundOpacity]);
 
   // 等待初始化完成
   if (!isInitialized) {

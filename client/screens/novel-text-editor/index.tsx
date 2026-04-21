@@ -266,7 +266,7 @@ export default function NovelTextEditor() {
                         { text: '取消', style: 'cancel' },
                         {
                           text: '确定',
-                          onPress: (text) =>
+                          onPress: (text?: string) =>
                             updateChapterName(chapter.id, text || chapter.title),
                         },
                       ],

@@ -239,7 +239,7 @@ export default function NovelPreview() {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.backgroundDefault,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
     },
@@ -279,7 +279,7 @@ export default function NovelPreview() {
     savedChaptersList: {
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: theme.surface,
+      backgroundColor: theme.backgroundDefault,
       marginBottom: 8,
     },
     savedChaptersTitle: {
@@ -316,7 +316,7 @@ export default function NovelPreview() {
       marginLeft: 8,
     },
     secondaryButton: {
-      backgroundColor: theme.surface,
+      backgroundColor: theme.backgroundDefault,
       borderWidth: 1,
       borderColor: theme.border,
   },
@@ -363,7 +363,7 @@ export default function NovelPreview() {
     alignItems: 'center',
   },
   modalCancelButton: {
-    backgroundColor: theme.surface,
+    backgroundColor: theme.backgroundDefault,
     borderWidth: 1,
     borderColor: theme.border,
   },
@@ -384,7 +384,7 @@ export default function NovelPreview() {
     flexDirection: 'row',
     padding: 16,
     gap: 12,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.backgroundDefault,
     borderTopWidth: 1,
     borderTopColor: theme.border,
   },

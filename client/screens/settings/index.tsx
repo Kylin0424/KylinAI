@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import Slider from '@react-native-community/slider';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
@@ -29,6 +30,8 @@ export default function SettingsScreen() {
     isEyeCare,
     backgroundUrl,
     setBackgroundUrl,
+    backgroundOpacity,
+    setBackgroundOpacity,
     builtInBackgrounds,
   } = useThemeContext();
 
@@ -321,6 +324,44 @@ export default function SettingsScreen() {
             </View>
           )}
         </View>
+
+        {/* 背景透明度调节 */}
+        {backgroundUrl && (
+          <View style={styles.sectionHeader}>
+            <ThemedText variant="caption" color={theme.textMuted} style={styles.sectionTitle}>
+              背景透明度
+            </ThemedText>
+          </View>
+        )}
+
+        {backgroundUrl && (
+          <View style={styles.settingCard}>
+            <View style={styles.opacityContainer}>
+              <View style={styles.opacityInfo}>
+                <ThemedText variant="small" color={theme.textPrimary} style={styles.opacityLabel}>
+                  调节背景清晰度
+                </ThemedText>
+                <ThemedText variant="caption" color={theme.textMuted} style={styles.opacityValue}>
+                  {(1 - backgroundOpacity * 100).toFixed(0)}%
+                </ThemedText>
+              </View>
+              <Slider
+                style={styles.opacitySlider}
+                minimumValue={0}
+                maximumValue={1}
+                step={0.05}
+                value={backgroundOpacity}
+                onValueChange={setBackgroundOpacity}
+                minimumTrackTintColor={theme.primary}
+                maximumTrackTintColor={theme.textMuted}
+                thumbTintColor={theme.primary}
+              />
+              <ThemedText variant="tiny" color={theme.textMuted} style={styles.opacityHint}>
+                向左滑动更清晰，向右滑动内容更易读
+              </ThemedText>
+            </View>
+          </View>
+        )}
 
         {/* 预览区域 */}
         <View style={styles.previewSection}>

@@ -156,6 +156,7 @@ export default function CharacterDetailScreen() {
         height: character.height,
         weight: character.weight || '',
         group: character.group || '',
+        position: character.position || '',
         occupation: character.occupation,
         personality: character.personality,
         experience: character.experience,

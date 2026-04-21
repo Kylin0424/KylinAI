@@ -455,4 +455,32 @@ export const createStyles = (theme: Theme) =>
       borderRadius: 6,
       backgroundColor: theme.backgroundDefault,
     },
+
+    // 背景透明度调节
+    opacityContainer: {
+      padding: 16,
+    },
+    opacityInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    opacityLabel: {
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    opacityValue: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    opacitySlider: {
+      width: '100%',
+      height: 40,
+    },
+    opacityHint: {
+      fontSize: 11,
+      marginTop: 8,
+      textAlign: 'center',
+    },
   });
