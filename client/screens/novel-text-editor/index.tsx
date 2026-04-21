@@ -104,19 +104,106 @@ export default function NovelTextEditor() {
     );
   };
 
-  // 完成导入
-  const handleCompleteImport = () => {
+  // 识别角色
+  const identifyCharacters = async () => {
     if (chapters.length === 0) {
       Alert.alert('提示', '请先提取章节');
       return;
     }
 
-    // 保存章节到本地存储或传递给下一个页面
-    // 这里我们通过router传递章节数据
-    router.push('/novel', {
-      chapters: JSON.stringify(chapters),
-      fromImport: 'true',
-    });
+    try {
+      // 合并所有章节文本进行分析
+      const fullText = chapters.map((ch) => ch.content).join('\n\n');
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/analyze-characters`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: fullText,
+          novelId: 'temp',
+          existingCharacters: [],
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const { mentionedCharacters, newCharacters } = result.data;
+
+        if (newCharacters && newCharacters.length > 0) {
+          Alert.alert(
+            '识别结果',
+            `共识别到 ${newCharacters.length} 个新角色：\n${newCharacters.join('、')}\n\n点击"确定"开始创作，系统会在后续创作中自动创建这些角色。`,
+            [
+              { text: '取消', style: 'cancel' },
+              {
+                text: '确定',
+                onPress: () => {
+                  // 跳转到小说创作页面
+                  router.replace('/novel-writing', {
+                    importData: JSON.stringify({
+                      chapters,
+                      identifiedCharacters: newCharacters,
+                      fileName: params.fileName,
+                    }),
+                  });
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            '识别结果',
+            '未识别到新角色，点击"确定"开始创作。',
+            [
+              { text: '取消', style: 'cancel' },
+              {
+                text: '确定',
+                onPress: () => {
+                  router.replace('/novel-writing', {
+                    importData: JSON.stringify({
+                      chapters,
+                      identifiedCharacters: [],
+                      fileName: params.fileName,
+                    }),
+                  });
+                },
+              },
+            ]
+          );
+        }
+      } else {
+        Alert.alert('提示', '角色识别失败，将直接进入创作');
+        router.replace('/novel-writing', {
+          importData: JSON.stringify({
+            chapters,
+            identifiedCharacters: [],
+            fileName: params.fileName,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error('Identify characters error:', error);
+      Alert.alert('错误', '角色识别失败，将直接进入创作');
+      router.replace('/novel-writing', {
+        importData: JSON.stringify({
+          chapters,
+          identifiedCharacters: [],
+          fileName: params.fileName,
+        }),
+      });
+    }
+  };
+
+  // 完成导入
+  const handleCompleteImport = async () => {
+    if (chapters.length === 0) {
+      Alert.alert('提示', '请先提取章节');
+      return;
+    }
+
+    // 识别角色
+    identifyCharacters();
   };
 
   // 计算光标在TextInput中的位置

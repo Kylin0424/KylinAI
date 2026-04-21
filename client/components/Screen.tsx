@@ -206,6 +206,9 @@ export const Screen = ({
   // 强制禁用 iOS 自动调整内容区域，完全由手动 padding 控制，消除系统自动计算带来的多余空白
   const contentInsetBehaviorIOS = 'never';
 
+  // 确定是否应该显示背景图片
+  const shouldShowBackgroundImage = backgroundUrl && !disableBackgroundImage;
+
   // 确定实际使用的背景色
   // 如果有背景图片，使用透明背景；否则使用传入的背景色
   const actualBackgroundColor = shouldShowBackgroundImage ? 'transparent' : backgroundColor;
@@ -282,9 +285,6 @@ export const Screen = ({
     }
     return nodes;
   };
-
-  // 是否显示背景图片
-  const shouldShowBackgroundImage = backgroundUrl && !disableBackgroundImage;
 
   // 渲染内容
   const renderContent = () => {
