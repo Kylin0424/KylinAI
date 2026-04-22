@@ -39,48 +39,157 @@ export default function NovelTextEditor() {
   const [showInsertIndicator, setShowInsertIndicator] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedChapterIndex, setHighlightedChapterIndex] = useState<number>(-1);
-  const [matchedChapterIndices, setMatchedChapterIndices] = useState<number[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // 中文数字映射
+  const chineseNumberMap: Record<string, number> = {
+    '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
+    '六': 6, '七': 7, '八': 8, '九': 9, '十': 10
+  };
+
+  // 将数字转换为中文数字（支持1-99）
+  const numberToChinese = (num: number): string => {
+    if (num <= 10) {
+      return chineseNumberMap[num.toString()] || num.toString();
+    } else if (num < 20) {
+      return '十' + chineseNumberMap[(num % 10).toString()];
+    } else {
+      const tens = Math.floor(num / 10);
+      const ones = num % 10;
+      const tensStr = tens === 1 ? '十' : (chineseNumberMap[tens.toString()] || tens.toString()) + '十';
+      const onesStr = ones > 0 ? (chineseNumberMap[ones.toString()] || ones.toString()) : '';
+      return tensStr + onesStr;
+    }
+  };
+
+  // 解析搜索查询，提取数字或中文数字
+  const parseSearchQuery = (query: string): { number: number; isChinese: boolean; prefix: string; suffix: string } => {
+    const trimmed = query.trim();
+
+    // 尝试匹配"第X章"格式（中文）
+    const chineseChapterMatch = trimmed.match(/^(第)([一二三四五六七八九十百千万零]+)(章|回|节)/);
+    if (chineseChapterMatch) {
+      const chineseNum = chineseChapterMatch[2];
+      const num = chineseToNumber(chineseNum);
+      return {
+        number: num,
+        isChinese: true,
+        prefix: chineseChapterMatch[1],
+        suffix: chineseChapterMatch[3]
+      };
+    }
+
+    // 尝试匹配"第X章"格式（数字）
+    const numberChapterMatch = trimmed.match(/^(第)(\d+)(章|回|节)/);
+    if (numberChapterMatch) {
+      return {
+        number: parseInt(numberChapterMatch[2]),
+        isChinese: false,
+        prefix: numberChapterMatch[1],
+        suffix: numberChapterMatch[3]
+      };
+    }
+
+    // 尝试直接匹配数字
+    const numberMatch = trimmed.match(/^(\d+)$/);
+    if (numberMatch) {
+      return {
+        number: parseInt(numberMatch[1]),
+        isChinese: false,
+        prefix: '',
+        suffix: ''
+      };
+    }
+
+    // 默认返回null
+    return { number: 0, isChinese: false, prefix: '', suffix: '' };
+  };
+
+  // 将中文数字转换为数字
+  const chineseToNumber = (chineseNum: string): number => {
+    let result = 0;
+    let temp = 0;
+    let prevValue = 0;
+
+    for (let i = 0; i < chineseNum.length; i++) {
+      const char = chineseNum[i];
+      const value = chineseNumberMap[char] || 0;
+
+      if (char === '百') {
+        if (prevValue === 0) {
+          temp = 100;
+        } else {
+          temp = prevValue * 100;
+          prevValue = 0;
+        }
+      } else if (char === '千') {
+        if (prevValue === 0) {
+          temp = 1000;
+        } else {
+          temp = prevValue * 1000;
+          prevValue = 0;
+        }
+      } else if (char === '万') {
+        if (prevValue === 0) {
+          temp = 10000;
+        } else {
+          temp = prevValue * 10000;
+          prevValue = 0;
+        }
+      } else if (char === '十') {
+        if (prevValue === 0) {
+          temp = 10;
+        } else {
+          temp = prevValue * 10;
+          prevValue = 0;
+        }
+      } else {
+        if (temp === 0) {
+          prevValue = value;
+        } else {
+          prevValue += value;
+        }
+      }
+    }
+
+    result = temp + prevValue;
+    return result;
+  };
+
   // 搜索章节
-  const searchChapters = () => {
-    if (!searchQuery.trim() || chapters.length === 0) {
-      setMatchedChapterIndices([]);
+  const searchChapters = (query?: string) => {
+    const searchInput = (query || searchQuery).trim();
+    if (!searchInput || chapters.length === 0) {
       setHighlightedChapterIndex(-1);
       return;
     }
 
-    // 解析搜索查询，支持数字和"第X章"格式
-    const query = searchQuery.trim();
-    let targetNumber: number | null = null;
-
-    // 尝试匹配数字
-    const numberMatch = query.match(/\d+/);
-    if (numberMatch) {
-      targetNumber = parseInt(numberMatch[0]);
+    const parsed = parseSearchQuery(searchInput);
+    if (parsed.number === 0) {
+      // 如果解析失败，尝试模糊匹配
+      const matchedIndex = chapters.findIndex(ch => ch.title.includes(searchInput));
+      if (matchedIndex >= 0) {
+        jumpToChapter(matchedIndex);
+      } else {
+        Alert.alert('提示', '未找到匹配的章节');
+      }
+      return;
     }
 
-    // 查找所有匹配的章节索引
-    const matchedIndices: number[] = [];
-    chapters.forEach((chapter, index) => {
-      const chapterNumberMatch = chapter.title.match(/\d+/);
-      if (chapterNumberMatch) {
-        const chapterNumber = parseInt(chapterNumberMatch[0]);
-        if (targetNumber !== null && chapterNumber === targetNumber) {
-          matchedIndices.push(index);
-        } else if (chapter.title.includes(query) || query.includes(chapter.title)) {
-          matchedIndices.push(index);
-        }
+    // 查找匹配的章节
+    const matchedIndex = chapters.findIndex(ch => {
+      const chapterMatch = ch.title.match(/\d+/);
+      if (chapterMatch) {
+        const chapterNumber = parseInt(chapterMatch[0]);
+        return chapterNumber === parsed.number;
       }
+      return false;
     });
 
-    setMatchedChapterIndices(matchedIndices);
-
-    // 如果有匹配结果，高亮第一个
-    if (matchedIndices.length > 0) {
-      jumpToChapter(matchedIndices[0]);
+    if (matchedIndex >= 0) {
+      jumpToChapter(matchedIndex);
     } else {
-      Alert.alert('提示', '未找到匹配的章节');
+      Alert.alert('提示', `未找到第${parsed.number}章`);
     }
   };
 
@@ -109,40 +218,38 @@ export default function NovelTextEditor() {
     searchChapters();
   };
 
-  // 上一个搜索结果
-  const handlePreviousSearch = () => {
-    if (matchedChapterIndices.length === 0) {
-      Alert.alert('提示', '请先输入搜索内容');
+  // 上一章：递减搜索
+  const handlePreviousChapter = () => {
+    const parsed = parseSearchQuery(searchQuery);
+    if (parsed.number === 0) {
+      Alert.alert('提示', '请先输入章节号');
       return;
     }
 
-    const currentIndex = matchedChapterIndices.indexOf(highlightedChapterIndex);
-    if (currentIndex === -1) {
-      // 当前没有高亮，高亮最后一个
-      jumpToChapter(matchedChapterIndices[matchedChapterIndices.length - 1]);
-    } else {
-      // 高亮前一个（循环）
-      const prevIndex = (currentIndex - 1 + matchedChapterIndices.length) % matchedChapterIndices.length;
-      jumpToChapter(matchedChapterIndices[prevIndex]);
-    }
+    const newNumber = Math.max(1, parsed.number - 1);
+    const newQuery = parsed.isChinese
+      ? `${parsed.prefix}${numberToChinese(newNumber)}${parsed.suffix}`
+      : (parsed.prefix || '') + newNumber.toString() + (parsed.suffix || '');
+
+    setSearchQuery(newQuery);
+    searchChapters(newQuery);
   };
 
-  // 下一个搜索结果
-  const handleNextSearch = () => {
-    if (matchedChapterIndices.length === 0) {
-      Alert.alert('提示', '请先输入搜索内容');
+  // 下一章：递增搜索
+  const handleNextChapter = () => {
+    const parsed = parseSearchQuery(searchQuery);
+    if (parsed.number === 0) {
+      Alert.alert('提示', '请先输入章节号');
       return;
     }
 
-    const currentIndex = matchedChapterIndices.indexOf(highlightedChapterIndex);
-    if (currentIndex === -1) {
-      // 当前没有高亮，高亮第一个
-      jumpToChapter(matchedChapterIndices[0]);
-    } else {
-      // 高亮后一个（循环）
-      const nextIndex = (currentIndex + 1) % matchedChapterIndices.length;
-      jumpToChapter(matchedChapterIndices[nextIndex]);
-    }
+    const newNumber = parsed.number + 1;
+    const newQuery = parsed.isChinese
+      ? `${parsed.prefix}${numberToChinese(newNumber)}${parsed.suffix}`
+      : (parsed.prefix || '') + newNumber.toString() + (parsed.suffix || '');
+
+    setSearchQuery(newQuery);
+    searchChapters(newQuery);
   };
 
   // 插入分隔符 - 添加视觉提示
@@ -375,30 +482,6 @@ export default function NovelTextEditor() {
                 keyboardType="numbers-and-punctuation"
                 onSubmitEditing={handleSearchChapter}
               />
-              {/* 上箭头 */}
-              <TouchableOpacity
-                style={[styles.arrowButton, styles.arrowUpButton]}
-                onPress={handlePreviousSearch}
-                disabled={matchedChapterIndices.length === 0}
-              >
-                <Feather
-                  name="chevron-up"
-                  size={16}
-                  color={matchedChapterIndices.length > 0 ? "#C8102E" : "#CCC"}
-                />
-              </TouchableOpacity>
-              {/* 下箭头 */}
-              <TouchableOpacity
-                style={[styles.arrowButton, styles.arrowDownButton]}
-                onPress={handleNextSearch}
-                disabled={matchedChapterIndices.length === 0}
-              >
-                <Feather
-                  name="chevron-down"
-                  size={16}
-                  color={matchedChapterIndices.length > 0 ? "#C8102E" : "#CCC"}
-                />
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.searchButton}
                 onPress={handleSearchChapter}
@@ -406,17 +489,37 @@ export default function NovelTextEditor() {
                 <Text style={styles.searchButtonText}>搜索</Text>
               </TouchableOpacity>
             </View>
-            {/* 搜索结果提示 */}
-            {matchedChapterIndices.length > 0 && (
-              <View style={styles.searchResultHint}>
-                <Text style={styles.searchResultText}>
-                  找到 {matchedChapterIndices.length} 个结果
-                  {matchedChapterIndices.length > 1 &&
-                    ` (使用箭头键切换 ${highlightedChapterIndex >= 0 ? matchedChapterIndices.indexOf(highlightedChapterIndex) + 1 : 0}/${matchedChapterIndices.length})`
-                  }
+            {/* 上一章/下一章按钮 */}
+            <View style={styles.chapterNavContainer}>
+              <TouchableOpacity
+                style={styles.chapterNavButton}
+                onPress={handlePreviousChapter}
+                disabled={!searchQuery.trim()}
+              >
+                <Feather
+                  name="chevron-left"
+                  size={16}
+                  color={searchQuery.trim() ? "#C8102E" : "#CCC"}
+                />
+                <Text style={[styles.chapterNavButtonText, !searchQuery.trim() && styles.chapterNavButtonDisabled]}>
+                  上一章
                 </Text>
-              </View>
-            )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.chapterNavButton}
+                onPress={handleNextChapter}
+                disabled={!searchQuery.trim()}
+              >
+                <Text style={[styles.chapterNavButtonText, !searchQuery.trim() && styles.chapterNavButtonDisabled]}>
+                  下一章
+                </Text>
+                <Feather
+                  name="chevron-right"
+                  size={16}
+                  color={searchQuery.trim() ? "#C8102E" : "#CCC"}
+                />
+              </TouchableOpacity>
+            </View>
             <ScrollView
               style={styles.chapterList}
               horizontal
@@ -658,31 +761,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  arrowButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
-  },
-  arrowUpButton: {
-    marginRight: 2,
-  },
-  arrowDownButton: {
-    marginRight: 2,
-  },
-  searchResultHint: {
+  chapterNavContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 4,
-    backgroundColor: '#FFF5F5',
+    paddingVertical: 8,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
+    gap: 8,
   },
-  searchResultText: {
-    fontSize: 11,
+  chapterNavButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+    gap: 6,
+  },
+  chapterNavButtonText: {
+    fontSize: 13,
     color: '#C8102E',
+    fontWeight: '600',
+  },
+  chapterNavButtonDisabled: {
+    color: '#CCC',
   },
   chapterList: {
     paddingVertical: 8,
