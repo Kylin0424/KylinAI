@@ -50,13 +50,13 @@ export default function NovelTextEditor() {
   // 将数字转换为中文数字（支持1-99）
   const numberToChinese = (num: number): string => {
     if (num <= 10) {
-      return chineseNumberMap[num.toString()] || num.toString();
+      return (chineseNumberMap[num.toString()] || num.toString()) as string;
     } else if (num < 20) {
-      return '十' + chineseNumberMap[(num % 10).toString()];
+      return '十' + (chineseNumberMap[(num % 10).toString()] || '');
     } else {
       const tens = Math.floor(num / 10);
       const ones = num % 10;
-      const tensStr = tens === 1 ? '十' : (chineseNumberMap[tens.toString()] || tens.toString()) + '十';
+      const tensStr = tens === 1 ? '十' : ((chineseNumberMap[tens.toString()] || tens.toString()) + '十');
       const onesStr = ones > 0 ? (chineseNumberMap[ones.toString()] || ones.toString()) : '';
       return tensStr + onesStr;
     }

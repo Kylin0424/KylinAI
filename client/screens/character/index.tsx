@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -23,6 +23,7 @@ import { createStyles } from './styles';
 import { OCCUPATION_CATEGORIES, OCCUPATION_CUSTOM_OPTION } from '@/constants/occupations';
 import { FAMILY_RELATIONS, generateMemberCountOptions, getAllRelationsFlat, getRelationsBySubCategory } from '@/constants/familyRelations';
 import { EDUCATION_OPTIONS, getEducationByCategory } from '@/constants/education';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 生成成员人数选项
 const MEMBER_COUNT_OPTIONS = generateMemberCountOptions();
@@ -30,6 +31,9 @@ const MEMBER_COUNT_OPTIONS = generateMemberCountOptions();
 // 性别选项
 const GENDER_OPTIONS = ['男', '女', '男娘', '扶她', '人妖', '手动输入'];
 const GENDER_CUSTOM_OPTION = '手动输入';
+
+// 存储键名
+const CHARACTER_FORM_STORAGE_KEY = 'character_form_data';
 
 interface SliderConfig {
   key: string;
@@ -95,6 +99,64 @@ export default function CharacterScreen() {
   
   // 还能选择多少个关系
   const remainingSlots = maxRelations - selectedRelations.length;
+
+  // 状态持久化：加载保存的表单数据
+  useEffect(() => {
+    loadFormData();
+  }, []);
+
+  // 状态持久化：保存表单数据
+  useEffect(() => {
+    saveFormData();
+  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience]);
+
+  // 加载保存的表单数据
+  const loadFormData = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem(CHARACTER_FORM_STORAGE_KEY);
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        if (data.name) setName(data.name);
+        if (data.gender) setGender(data.gender);
+        if (data.ageInput) setAgeInput(data.ageInput);
+        if (data.occupation) setOccupation(data.occupation);
+        if (data.memberCount !== undefined) setMemberCount(data.memberCount);
+        if (data.selectedRelations) setSelectedRelations(data.selectedRelations);
+        if (data.familyBackground) setFamilyBackground(data.familyBackground);
+        if (data.socialExperience) setSocialExperience(data.socialExperience);
+      }
+    } catch (error) {
+      console.error('[Character] Failed to load form data:', error);
+    }
+  };
+
+  // 保存表单数据
+  const saveFormData = async () => {
+    try {
+      const dataToSave = {
+        name,
+        gender,
+        ageInput,
+        occupation,
+        memberCount,
+        selectedRelations,
+        familyBackground,
+        socialExperience,
+      };
+      await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.error('[Character] Failed to save form data:', error);
+    }
+  };
+
+  // 清除保存的表单数据
+  const clearFormData = async () => {
+    try {
+      await AsyncStorage.removeItem(CHARACTER_FORM_STORAGE_KEY);
+    } catch (error) {
+      console.error('[Character] Failed to clear form data:', error);
+    }
+  };
   
   // 所有可用的关系列表
   const allRelations = useMemo(() => {
@@ -166,10 +228,13 @@ export default function CharacterScreen() {
     setSliders(prev => prev.map(s => s.key === key ? { ...s, value } : s));
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!name.trim()) {
       return;
     }
+
+    // 清除保存的表单数据
+    await clearFormData();
 
     // 如果有需要设置的家庭成员，先弹出设置弹窗
     if (selectedRelations.length > 0) {
