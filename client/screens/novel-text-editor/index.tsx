@@ -36,10 +36,20 @@ export default function NovelTextEditor() {
   const [showChapterNameModal, setShowChapterNameModal] = useState(false);
   const [chapterName, setChapterName] = useState('');
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [showInsertIndicator, setShowInsertIndicator] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [highlightedChapterIndex, setHighlightedChapterIndex] = useState<number>(-1);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // 插入分隔符
+  // 插入分隔符 - 添加视觉提示
   const insertSeparator = () => {
+    setShowInsertIndicator(true);
+    
+    // 2秒后自动隐藏提示
+    setTimeout(() => {
+      setShowInsertIndicator(false);
+    }, 2000);
+
     const separator = '\n===章节分隔符===\n';
     const newText =
       text.slice(0, cursorPosition) + separator + text.slice(cursorPosition);
@@ -102,6 +112,35 @@ export default function NovelTextEditor() {
         ch.id === chapterId ? { ...ch, title: newName } : ch
       )
     );
+  };
+
+  // 搜索章节
+  const handleSearchChapter = () => {
+    const chapterIndex = parseInt(searchQuery) - 1;
+    if (isNaN(chapterIndex) || chapterIndex < 0 || chapterIndex >= chapters.length) {
+      Alert.alert('提示', `请输入1-${chapters.length}之间的章节号`);
+      return;
+    }
+
+    setHighlightedChapterIndex(chapterIndex);
+    
+    // 滚动到指定章节
+    setTimeout(() => {
+      const chapter = chapters[chapterIndex];
+      if (chapter) {
+        // 计算滚动位置（简单估算）
+        const scrollY = chapter.startIndex * 0.5; // 每个字符约占0.5高度
+        scrollViewRef.current?.scrollTo({
+          y: scrollY,
+          animated: true,
+        });
+      }
+      
+      // 2秒后取消高亮
+      setTimeout(() => {
+        setHighlightedChapterIndex(-1);
+      }, 2000);
+    }, 100);
   };
 
   // 识别角色
@@ -249,6 +288,25 @@ export default function NovelTextEditor() {
                 已识别章节 ({chapters.length})
               </Text>
             </View>
+            {/* 搜索框 */}
+            <View style={styles.searchContainer}>
+              <Feather name="search" size={16} color="#999" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="输入章节号跳转 (如: 1)"
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                keyboardType="number-pad"
+                onSubmitEditing={handleSearchChapter}
+              />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearchChapter}
+              >
+                <Text style={styles.searchButtonText}>跳转</Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView
               style={styles.chapterList}
               horizontal
@@ -257,7 +315,10 @@ export default function NovelTextEditor() {
               {chapters.map((chapter, index) => (
                 <TouchableOpacity
                   key={chapter.id}
-                  style={styles.chapterChip}
+                  style={[
+                    styles.chapterChip,
+                    highlightedChapterIndex === index && styles.highlightedChapterChip,
+                  ]}
                   onPress={() => {
                     Alert.prompt(
                       '修改章节名',
@@ -275,7 +336,13 @@ export default function NovelTextEditor() {
                     );
                   }}
                 >
-                  <Text style={styles.chapterChipText} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.chapterChipText,
+                      highlightedChapterIndex === index && styles.highlightedChapterChipText,
+                    ]}
+                    numberOfLines={1}
+                  >
                     {chapter.title}
                   </Text>
                   <Feather name="edit-2" size={12} color="#666" />
@@ -292,6 +359,20 @@ export default function NovelTextEditor() {
             style={styles.textScrollView}
             contentContainerStyle={styles.textContentContainer}
           >
+            {/* 插入分隔符视觉提示 */}
+            {showInsertIndicator && (
+              <View style={styles.insertIndicator}>
+                <View style={styles.insertIndicatorArrow}>
+                  <View style={styles.insertIndicatorArrowTriangle} />
+                  <View style={styles.insertIndicatorLine} />
+                </View>
+                <View style={styles.insertIndicatorText}>
+                  <Feather name="scissors" size={16} color="#C8102E" />
+                  <Text style={styles.insertIndicatorLabel}>分隔符将插入此处</Text>
+                </View>
+              </View>
+            )}
+
             <TextInput
               style={styles.textInput}
               multiline
@@ -436,6 +517,36 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginLeft: 8,
+    marginRight: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+  },
+  searchButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#C8102E',
+    borderRadius: 6,
+  },
+  searchButtonText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '600',
+  },
   chapterList: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -451,11 +562,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e5e5',
   },
+  highlightedChapterChip: {
+    backgroundColor: '#FFF5F5',
+    borderColor: '#C8102E',
+    borderWidth: 2,
+  },
   chapterChipText: {
     fontSize: 13,
     color: '#333',
     marginRight: 6,
     maxWidth: 150,
+  },
+  highlightedChapterChipText: {
+    color: '#C8102E',
+    fontWeight: '600',
   },
   editorContainer: {
     flex: 1,
@@ -474,6 +594,53 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#333',
     minHeight: 400,
+  },
+  insertIndicator: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+    right: 16,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 2,
+    borderColor: '#C8102E',
+    borderRadius: 8,
+    padding: 12,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  insertIndicatorArrow: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  insertIndicatorArrowTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#C8102E',
+  },
+  insertIndicatorLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: '#C8102E',
+  },
+  insertIndicatorText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  insertIndicatorLabel: {
+    fontSize: 14,
+    color: '#C8102E',
+    fontWeight: '600',
   },
   bottomToolbar: {
     flexDirection: 'row',

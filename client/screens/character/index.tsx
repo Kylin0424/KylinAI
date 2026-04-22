@@ -234,6 +234,8 @@ export default function CharacterScreen() {
       weight: member.weight,
       occupation: member.occupation,
       education: member.education,
+      group: member.group || '未设定',
+      position: member.position || '未设定',
     }));
 
     router.push('/character-result', {

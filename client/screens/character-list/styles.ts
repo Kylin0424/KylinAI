@@ -181,6 +181,27 @@ export const createStyles = (theme: Theme) => {
       backgroundColor: '#F5F5F5',
       opacity: 0.8,
     },
+    selectedCharacterCard: {
+      borderWidth: 2,
+      borderColor: '#C8102E',
+      backgroundColor: '#FFF5F5',
+    },
+    checkboxContainer: {
+      marginRight: Spacing.sm,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderRadius: 4,
+      borderWidth: 2,
+      borderColor: '#E5E5E5',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    checkboxChecked: {
+      backgroundColor: '#C8102E',
+      borderColor: '#C8102E',
+    },
     characterNameRow: {
       flexDirection: 'row',
       alignItems: 'center',

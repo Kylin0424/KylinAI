@@ -43,6 +43,7 @@ export default function CharacterListScreen() {
   const [activeTab, setActiveTab] = useState<CharacterTab>('permanent');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -300,10 +301,26 @@ export default function CharacterListScreen() {
                                     isTemp ? '临时' : '';
               
               return (
-                <View key={char.id} style={[styles.characterCard, isLocked && styles.lockedCharacterCard, isTemp && styles.temporaryCharacterCard]}>
+                <TouchableOpacity
+                  key={char.id}
+                  style={[styles.characterCard, isLocked && styles.lockedCharacterCard, isTemp && styles.temporaryCharacterCard, isSelectMode && selectedCharacterId === char.id && styles.selectedCharacterCard]}
+                  onPress={() => {
+                    if (isSelectMode) {
+                      setSelectedCharacterId(char.id);
+                    }
+                  }}
+                  activeOpacity={isSelectMode ? 0.7 : 1}
+                >
                   <View style={styles.characterHeader}>
                     <View style={styles.characterMain}>
                       <View style={styles.characterNameRow}>
+                        {isSelectMode && (
+                          <View style={styles.checkboxContainer}>
+                            <View style={[styles.checkbox, selectedCharacterId === char.id && styles.checkboxChecked]}>
+                              {selectedCharacterId === char.id && <Feather name="check" size={14} color="#fff" />}
+                            </View>
+                          </View>
+                        )}
                         <ThemedText variant="h3" color={isLocked ? theme.textMuted : theme.textPrimary}>
                           {char.name}
                         </ThemedText>
@@ -336,17 +353,19 @@ export default function CharacterListScreen() {
                         </View>
                       )}
                     </View>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => {
-                        console.log('[CharacterList] Delete button pressed for:', char.name);
-                        handleDeleteCharacter(char);
-                      }}
-                      disabled={isLocked}
-                      activeOpacity={0.7}
-                    >
-                      <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
-                    </TouchableOpacity>
+                    {!isSelectMode && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                          console.log('[CharacterList] Delete button pressed for:', char.name);
+                          handleDeleteCharacter(char);
+                        }}
+                        disabled={isLocked}
+                        activeOpacity={0.7}
+                      >
+                        <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   {charRelations.length > 0 && (
@@ -383,11 +402,11 @@ export default function CharacterListScreen() {
                     }}
                   >
                     <ThemedText variant="small" color={isLocked ? theme.textMuted : "#C8102E"}>
-                      {isLocked ? '查看详情' : '查看详情'}
+                      {isSelectMode ? '添加到配角' : '查看详情'}
                     </ThemedText>
-                    <Feather name="chevron-right" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
+                    <Feather name={isSelectMode ? 'plus' : 'chevron-right'} size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>

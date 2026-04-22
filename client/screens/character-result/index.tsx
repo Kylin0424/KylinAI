@@ -31,9 +31,17 @@ const EXPO_PUBLIC_BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL ||
 const RELATION_TYPES = [
   { key: 'father', label: '父亲', reverseKey: 'child', generateNPC: true },
   { key: 'mother', label: '母亲', reverseKey: 'child', generateNPC: true },
+  { key: 'husband', label: '丈夫', reverseKey: 'wife', generateNPC: false },
+  { key: 'wife', label: '妻子', reverseKey: 'husband', generateNPC: false },
   { key: 'spouse', label: '配偶', reverseKey: 'spouse', generateNPC: false },
-  { key: 'sibling', label: '兄弟姐妹', reverseKey: 'sibling', generateNPC: false },
+  { key: 'son', label: '儿子', reverseKey: 'parent', generateNPC: true },
+  { key: 'daughter', label: '女儿', reverseKey: 'parent', generateNPC: true },
   { key: 'child', label: '子女', reverseKey: 'parent', generateNPC: true },
+  { key: 'brother', label: '兄弟', reverseKey: 'sibling', generateNPC: false },
+  { key: 'sister', label: '姐妹', reverseKey: 'sibling', generateNPC: false },
+  { key: 'sibling', label: '兄弟姐妹', reverseKey: 'sibling', generateNPC: false },
+  { key: 'father_in_law', label: '公公/岳父', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
+  { key: 'mother_in_law', label: '婆婆/岳母', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
   { key: 'friend', label: '朋友', reverseKey: 'friend', generateNPC: false },
   { key: 'enemy', label: '敌人', reverseKey: 'enemy', generateNPC: false },
   { key: 'colleague', label: '同事', reverseKey: 'colleague', generateNPC: false },
@@ -47,9 +55,17 @@ const mapRelationToKey = (relationStr: string): string => {
   const relation = relationStr.trim();
   if (relation.includes('父亲') || relation.includes('爸爸')) return 'father';
   if (relation.includes('母亲') || relation.includes('妈妈')) return 'mother';
-  if (relation.includes('妻子') || relation.includes('老公') || relation.includes('配偶')) return 'spouse';
-  if (relation.includes('女儿') || relation.includes('儿子') || relation.includes('子女')) return 'child';
-  if (relation.includes('哥哥') || relation.includes('姐姐') || relation.includes('弟弟') || relation.includes('妹妹') || relation.includes('兄弟') || relation.includes('姐妹')) return 'sibling';
+  if (relation.includes('丈夫') || relation.includes('老公')) return 'husband';
+  if (relation.includes('妻子') || relation.includes('老婆')) return 'wife';
+  if (relation.includes('配偶')) return 'spouse';
+  if (relation.includes('儿子')) return 'son';
+  if (relation.includes('女儿')) return 'daughter';
+  if (relation.includes('子女')) return 'child';
+  if (relation.includes('哥哥') || relation.includes('弟弟') || relation.includes('兄弟')) return 'brother';
+  if (relation.includes('姐姐') || relation.includes('妹妹') || relation.includes('姐妹')) return 'sister';
+  if (relation.includes('兄妹') || relation.includes('姐弟')) return 'sibling';
+  if (relation.includes('公公') || relation.includes('岳父')) return 'father_in_law';
+  if (relation.includes('婆婆') || relation.includes('岳母')) return 'mother_in_law';
   if (relation.includes('朋友')) return 'friend';
   if (relation.includes('敌人') || relation.includes('仇人')) return 'enemy';
   if (relation.includes('同事')) return 'colleague';
@@ -235,9 +251,9 @@ export default function CharacterResultScreen() {
             gender: memberData.gender,
             age: parseInt(memberData.age) || 25,
             height: memberData.height || '170cm',
-            weight: memberData.weight || '未设定', // 体重
-            group: '未设定', // 家庭成员暂时不支持所属团体设置
-            position: '未设定', // 家庭成员暂时不支持职位设置
+            weight: memberData.weight || '未设定',
+            group: memberData.group || '未设定',
+            position: memberData.position || '未设定',
             occupation: memberData.occupation || '未设定',
             personality: memberData.personality || '',
             experience: memberData.experience || '',
