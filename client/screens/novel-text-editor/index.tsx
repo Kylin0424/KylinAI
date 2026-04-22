@@ -39,7 +39,111 @@ export default function NovelTextEditor() {
   const [showInsertIndicator, setShowInsertIndicator] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedChapterIndex, setHighlightedChapterIndex] = useState<number>(-1);
+  const [matchedChapterIndices, setMatchedChapterIndices] = useState<number[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // 搜索章节
+  const searchChapters = () => {
+    if (!searchQuery.trim() || chapters.length === 0) {
+      setMatchedChapterIndices([]);
+      setHighlightedChapterIndex(-1);
+      return;
+    }
+
+    // 解析搜索查询，支持数字和"第X章"格式
+    const query = searchQuery.trim();
+    let targetNumber: number | null = null;
+
+    // 尝试匹配数字
+    const numberMatch = query.match(/\d+/);
+    if (numberMatch) {
+      targetNumber = parseInt(numberMatch[0]);
+    }
+
+    // 查找所有匹配的章节索引
+    const matchedIndices: number[] = [];
+    chapters.forEach((chapter, index) => {
+      const chapterNumberMatch = chapter.title.match(/\d+/);
+      if (chapterNumberMatch) {
+        const chapterNumber = parseInt(chapterNumberMatch[0]);
+        if (targetNumber !== null && chapterNumber === targetNumber) {
+          matchedIndices.push(index);
+        } else if (chapter.title.includes(query) || query.includes(chapter.title)) {
+          matchedIndices.push(index);
+        }
+      }
+    });
+
+    setMatchedChapterIndices(matchedIndices);
+
+    // 如果有匹配结果，高亮第一个
+    if (matchedIndices.length > 0) {
+      jumpToChapter(matchedIndices[0]);
+    } else {
+      Alert.alert('提示', '未找到匹配的章节');
+    }
+  };
+
+  // 跳转到指定章节
+  const jumpToChapter = (chapterIndex: number) => {
+    setHighlightedChapterIndex(chapterIndex);
+
+    const chapter = chapters[chapterIndex];
+    if (chapter) {
+      // 计算滚动位置（简单估算）
+      const scrollY = chapter.startIndex * 0.5;
+      scrollViewRef.current?.scrollTo({
+        y: scrollY,
+        animated: true,
+      });
+    }
+
+    // 2秒后取消高亮
+    setTimeout(() => {
+      setHighlightedChapterIndex(-1);
+    }, 2000);
+  };
+
+  // 处理搜索框回车
+  const handleSearchChapter = () => {
+    searchChapters();
+  };
+
+  // 上一个搜索结果
+  const handlePreviousSearch = () => {
+    if (matchedChapterIndices.length === 0) {
+      Alert.alert('提示', '请先输入搜索内容');
+      return;
+    }
+
+    const currentIndex = matchedChapterIndices.indexOf(highlightedChapterIndex);
+    if (currentIndex === -1) {
+      // 当前没有高亮，高亮最后一个
+      jumpToChapter(matchedChapterIndices[matchedChapterIndices.length - 1]);
+    } else {
+      // 高亮前一个（循环）
+      const prevIndex = (currentIndex - 1 + matchedChapterIndices.length) % matchedChapterIndices.length;
+      jumpToChapter(matchedChapterIndices[prevIndex]);
+    }
+  };
+
+  // 下一个搜索结果
+  const handleNextSearch = () => {
+    if (matchedChapterIndices.length === 0) {
+      Alert.alert('提示', '请先输入搜索内容');
+      return;
+    }
+
+    const currentIndex = matchedChapterIndices.indexOf(highlightedChapterIndex);
+    if (currentIndex === -1) {
+      // 当前没有高亮，高亮第一个
+      jumpToChapter(matchedChapterIndices[0]);
+    } else {
+      // 高亮后一个（循环）
+      const nextIndex = (currentIndex + 1) % matchedChapterIndices.length;
+      jumpToChapter(matchedChapterIndices[nextIndex]);
+    }
+  };
 
   // 插入分隔符 - 添加视觉提示
   const insertSeparator = () => {
@@ -112,35 +216,6 @@ export default function NovelTextEditor() {
         ch.id === chapterId ? { ...ch, title: newName } : ch
       )
     );
-  };
-
-  // 搜索章节
-  const handleSearchChapter = () => {
-    const chapterIndex = parseInt(searchQuery) - 1;
-    if (isNaN(chapterIndex) || chapterIndex < 0 || chapterIndex >= chapters.length) {
-      Alert.alert('提示', `请输入1-${chapters.length}之间的章节号`);
-      return;
-    }
-
-    setHighlightedChapterIndex(chapterIndex);
-    
-    // 滚动到指定章节
-    setTimeout(() => {
-      const chapter = chapters[chapterIndex];
-      if (chapter) {
-        // 计算滚动位置（简单估算）
-        const scrollY = chapter.startIndex * 0.5; // 每个字符约占0.5高度
-        scrollViewRef.current?.scrollTo({
-          y: scrollY,
-          animated: true,
-        });
-      }
-      
-      // 2秒后取消高亮
-      setTimeout(() => {
-        setHighlightedChapterIndex(-1);
-      }, 2000);
-    }, 100);
   };
 
   // 识别角色
@@ -293,20 +368,55 @@ export default function NovelTextEditor() {
               <Feather name="search" size={16} color="#999" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="输入章节号跳转 (如: 1)"
+                placeholder="搜索章节 (如: 1 或 第一章)"
                 placeholderTextColor="#999"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                keyboardType="number-pad"
+                keyboardType="numbers-and-punctuation"
                 onSubmitEditing={handleSearchChapter}
               />
+              {/* 上箭头 */}
+              <TouchableOpacity
+                style={[styles.arrowButton, styles.arrowUpButton]}
+                onPress={handlePreviousSearch}
+                disabled={matchedChapterIndices.length === 0}
+              >
+                <Feather
+                  name="chevron-up"
+                  size={16}
+                  color={matchedChapterIndices.length > 0 ? "#C8102E" : "#CCC"}
+                />
+              </TouchableOpacity>
+              {/* 下箭头 */}
+              <TouchableOpacity
+                style={[styles.arrowButton, styles.arrowDownButton]}
+                onPress={handleNextSearch}
+                disabled={matchedChapterIndices.length === 0}
+              >
+                <Feather
+                  name="chevron-down"
+                  size={16}
+                  color={matchedChapterIndices.length > 0 ? "#C8102E" : "#CCC"}
+                />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.searchButton}
                 onPress={handleSearchChapter}
               >
-                <Text style={styles.searchButtonText}>跳转</Text>
+                <Text style={styles.searchButtonText}>搜索</Text>
               </TouchableOpacity>
             </View>
+            {/* 搜索结果提示 */}
+            {matchedChapterIndices.length > 0 && (
+              <View style={styles.searchResultHint}>
+                <Text style={styles.searchResultText}>
+                  找到 {matchedChapterIndices.length} 个结果
+                  {matchedChapterIndices.length > 1 &&
+                    ` (使用箭头键切换 ${highlightedChapterIndex >= 0 ? matchedChapterIndices.indexOf(highlightedChapterIndex) + 1 : 0}/${matchedChapterIndices.length})`
+                  }
+                </Text>
+              </View>
+            )}
             <ScrollView
               style={styles.chapterList}
               horizontal
@@ -541,11 +651,38 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#C8102E',
     borderRadius: 6,
+    marginLeft: 8,
   },
   searchButtonText: {
     fontSize: 12,
     color: '#fff',
     fontWeight: '600',
+  },
+  arrowButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  arrowUpButton: {
+    marginRight: 2,
+  },
+  arrowDownButton: {
+    marginRight: 2,
+  },
+  searchResultHint: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    backgroundColor: '#FFF5F5',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  searchResultText: {
+    fontSize: 11,
+    color: '#C8102E',
   },
   chapterList: {
     paddingVertical: 8,
