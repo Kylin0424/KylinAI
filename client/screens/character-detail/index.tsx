@@ -47,6 +47,8 @@ export default function CharacterDetailScreen() {
 
   const params = useSafeSearchParams<{
     characterId: string;
+    selectedRelationCharacterId?: string;
+    selectedRelationCharacterName?: string;
   }>();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -81,6 +83,7 @@ export default function CharacterDetailScreen() {
     reverseRelation?: string;
   }[]>([]);
   const [showAddRelationModal, setShowAddRelationModal] = useState(false);
+  const [showAddRelationOptionsModal, setShowAddRelationOptionsModal] = useState(false);
   const [selectedTargetId, setSelectedTargetId] = useState<string>('');
   const [selectedRelation, setSelectedRelation] = useState<string>('');
   const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
@@ -129,9 +132,15 @@ export default function CharacterDetailScreen() {
           }
         }
         setIsLoading(false);
+
+        // 处理从角色库返回的选择
+        if (params.selectedRelationCharacterId) {
+          setSelectedTargetId(params.selectedRelationCharacterId);
+          setShowAddRelationModal(true);
+        }
       };
       loadCharacterData();
-    }, [params.characterId])
+    }, [params.characterId, params.selectedRelationCharacterId])
   );
 
   // 检查是否可编辑（未关联小说的角色可编辑）
@@ -827,12 +836,7 @@ export default function CharacterDetailScreen() {
                 <TouchableOpacity
                   style={styles.addRelationButton}
                   onPress={() => {
-                    if (availableCharacters.length > 0) {
-                      setShowAddRelationModal(true);
-                    } else {
-                      // 如果没有可选角色，跳转到角色生成器页面
-                      router.push('/character');
-                    }
+                    setShowAddRelationOptionsModal(true);
                   }}
                 >
                   <Feather name="plus" size={14} color="#C8102E" />
@@ -871,6 +875,80 @@ export default function CharacterDetailScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* 添加关系选项弹窗 */}
+      <Modal
+        visible={showAddRelationOptionsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddRelationOptionsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>添加关系</ThemedText>
+              <TouchableOpacity onPress={() => setShowAddRelationOptionsModal(false)}>
+                <Feather name="x" size={20} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <TouchableOpacity
+                style={styles.optionButton}
+                onPress={() => {
+                  setShowAddRelationOptionsModal(false);
+                  setShowAddRelationModal(true);
+                }}
+              >
+                <View style={styles.optionIcon}>
+                  <Feather name="users" size={24} color="#C8102E" />
+                </View>
+                <View style={styles.optionText}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>从当前小说角色添加</ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>
+                    {availableCharacters.length > 0 ? `${availableCharacters.length} 个可选角色` : '暂无可用角色'}
+                  </ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.optionButton}
+                onPress={() => {
+                  setShowAddRelationOptionsModal(false);
+                  router.push('/character-list?mode=select-relation&returnTo=/character-detail&characterId=' + params.characterId);
+                }}
+              >
+                <View style={styles.optionIcon}>
+                  <Feather name="database" size={24} color="#C8102E" />
+                </View>
+                <View style={styles.optionText}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>从角色库添加</ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>从已有角色库中选择</ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.optionButton}
+                onPress={() => {
+                  setShowAddRelationOptionsModal(false);
+                  router.push('/character');
+                }}
+              >
+                <View style={styles.optionIcon}>
+                  <Feather name="user-plus" size={24} color="#C8102E" />
+                </View>
+                <View style={styles.optionText}>
+                  <ThemedText variant="smallMedium" color={theme.textPrimary}>创建新角色</ThemedText>
+                  <ThemedText variant="caption" color={theme.textMuted}>生成新的关系角色</ThemedText>
+                </View>
+                <Feather name="chevron-right" size={16} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* 添加关系弹窗 */}
       <Modal

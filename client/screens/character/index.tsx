@@ -384,8 +384,13 @@ export default function CharacterScreen() {
       setMemberHeight('');
       setMemberWeight('');
       setMemberOccupation('');
+      setMemberCustomOccupation('');
+      setShowMemberCustomOccupationInput(false);
+      setShowMemberOccupationModal(false);
+      setSelectedMemberOccupationCategory(null);
       setMemberEducation('');
       setMemberEducationCustom('');
+      setShowMemberEducationModal(false);
       setMemberGroup('');
       setMemberPosition('');
     } else {

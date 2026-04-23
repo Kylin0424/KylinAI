@@ -34,7 +34,8 @@ export default function CharacterListScreen() {
     returnTo?: string;
   }>();
 
-  const isSelectMode = params.mode === 'select';
+  const isSelectMode = params.mode === 'select' || params.mode === 'select-relation';
+  const isSelectRelationMode = params.mode === 'select-relation';
 
   const [characters, setCharacters] = useState<Character[]>([]);
   const [relations, setRelations] = useState<CharacterRelation[]>([]);
@@ -391,20 +392,30 @@ export default function CharacterListScreen() {
                   <TouchableOpacity
                     style={styles.viewDetailButton}
                     onPress={() => {
-                      if (isSelectMode) {
+                      if (isSelectRelationMode) {
+                        // select-relation模式：跳转回character-detail，显示选择关系类型弹窗
+                        const returnTo = params.returnTo || '/character-detail';
+                        router.replace(returnTo, {
+                          characterId: params.characterId,
+                          selectedRelationCharacterId: char.id,
+                          selectedRelationCharacterName: char.name,
+                        });
+                      } else if (isSelectMode) {
+                        // select模式：跳转回novel-writing
                         const returnTo = params.returnTo || '/home';
                         router.replace(returnTo, {
                           selectedCharacterId: char.id,
                         });
                       } else {
+                        // 普通模式：跳转到角色详情
                         router.push('/character-detail', { characterId: char.id });
                       }
                     }}
                   >
                     <ThemedText variant="small" color={isLocked ? theme.textMuted : "#C8102E"}>
-                      {isSelectMode ? '添加到配角' : '查看详情'}
+                      {isSelectRelationMode ? '选择' : (isSelectMode ? '添加到配角' : '查看详情')}
                     </ThemedText>
-                    <Feather name={isSelectMode ? 'plus' : 'chevron-right'} size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
+                    <Feather name={isSelectRelationMode ? 'check' : (isSelectMode ? 'plus' : 'chevron-right')} size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
                   </TouchableOpacity>
                 </TouchableOpacity>
               );

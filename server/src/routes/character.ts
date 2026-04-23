@@ -262,7 +262,13 @@ ${basicInfo}
 11. experience: 人生经历（100-200字，要体现与主角的互动）
 12. familyBackground: 家庭背景（100-150字，必须完全独立，与主角家庭背景不同）
 13. appearance: 外貌特征（50-100字）
-14. relationToProtagonist: 与主角的关系（必须是：${memberData.relation}，只返回这一个关系，不要重复）
+14. relationToProtagonist: 与主角的关系（【绝对必须】必须是：${memberData.relation}，只能使用这个值，绝对不能使用"family"、"亲属"、"家人"等通用词，绝对不能使用其他任何关系名称，只能使用"${memberData.relation}"这一个值）
+
+【特别强制要求 - 关系字段】
+- relationToProtagonist字段【绝对必须】使用：${memberData.relation}
+- 禁止使用："family"、"亲属"、"家人"等通用词
+- 禁止使用：任何其他关系名称
+- 【双重确认】在返回JSON之前，请务必检查relationToProtagonist字段，确保其值完全等于"${memberData.relation}"
 
 【重要提示 - 家庭背景必须独立生成】
 - 禁止事项：绝对禁止复制、重复或简单修改主角的家庭背景

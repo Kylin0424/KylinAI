@@ -245,6 +245,28 @@ export const createStyles = (theme: Theme) => {
       alignItems: 'center',
       marginBottom: Spacing.lg,
     },
+    modalBody: {
+      gap: Spacing.md,
+    },
+    optionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: Spacing.lg,
+      borderRadius: BorderRadius.md,
+      backgroundColor: theme.backgroundDefault,
+      gap: Spacing.md,
+    },
+    optionIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: BorderRadius.md,
+      backgroundColor: 'rgba(200, 16, 46, 0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    optionText: {
+      flex: 1,
+    },
     characterList: {
       marginBottom: Spacing.sm,
     },
