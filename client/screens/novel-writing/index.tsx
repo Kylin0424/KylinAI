@@ -239,11 +239,15 @@ export default function NovelWritingScreen() {
 
   // 加载数据
   const loadData = async () => {
-    if (!params.novelId) return;
+    if (!params.novelId) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
-    const novelData = await getNovelById(params.novelId);
-    setNovel(novelData);
+    try {
+      const novelData = await getNovelById(params.novelId);
+      setNovel(novelData);
 
     if (novelData) {
       // 加载角色：优先使用参数传递的主角ID，其次使用小说数据中的ID
@@ -291,7 +295,12 @@ if (femaleId) {
     }
 
     setIsLoading(false);
-  };
+  } catch (error) {
+    console.error('Load data error:', error);
+    Alert.alert('错误', '加载数据失败');
+    setIsLoading(false);
+  }
+};
 
   // 处理导入的小说数据
   const handleImportData = async () => {
@@ -427,8 +436,11 @@ if (femaleId) {
   }, [params.importData, novel]);
 
   // 检测是否从角色库选择了角色
+  const handledCharacterIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (params.selectedCharacterId && novel) {
+    if (params.selectedCharacterId && novel && params.selectedCharacterId !== handledCharacterIdRef.current) {
+      handledCharacterIdRef.current = params.selectedCharacterId;
       handleSelectedCharacter(params.selectedCharacterId);
       // 清除参数，避免重复处理
       router.replace('/novel-writing', {

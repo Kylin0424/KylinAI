@@ -688,12 +688,16 @@ router.post('/prologue', async (req: Request, res: Response) => {
 你的叙述风格客观、细腻，善于描绘宏大的世界观和细腻的人物情感。
 你创作的楔子能够引人入胜，让读者对故事世界产生强烈的好奇心。
 
-【核心创作原则 - 必须严格遵守】
+【核心创作原则 - 绝对必须遵守】
 
-1. **必须使用设定的主角**：
-   - 如果设定了男主角和/或女主角，楔子中必须使用这些角色
-   - 不能自己创造新的主角替代用户设定的角色
-   - 楔子中必须体现主角的性格、学历、职业等设定
+1. **绝对必须使用设定的主角【最高优先级】**：
+   - ⚠️ 楔子中必须使用以下角色：${protagonistNames.join('、') || '无'}
+   - ⚠️ 绝对禁止自己创造新的主角替代用户设定的角色
+   - ⚠️ 绝对禁止使用随机生成的角色信息
+   - 楔子中必须体现主角的姓名、性别、年龄、学历、职业、性格、外貌、背景等所有设定
+   - 楔子中必须体现主角所属团体、职位等设定
+   - 每一个细节都必须与角色设定保持一致
+   - 【强制检查】在输出楔子之前，请务必检查是否使用了设定的主角姓名和特征
 
 2. 学历决定认知：
    - 角色的学历直接决定了他们的知识水平、表达方式和分析能力
@@ -704,15 +708,51 @@ router.post('/prologue', async (req: Request, res: Response) => {
    - 绝对不能让角色说出超出其学历认知范围的话
    - 角色的每一句话、每一个行为都必须与其学历相符
 
-请严格遵守每个角色的学历设定，确保人物形象真实可信。`;
+4. 角色行为一致性：
+   - 角色的所有行为必须符合其性格、背景和能力设定
+   - 不能做出与角色设定不符的行为或决策
 
-    // 构建角色信息
+请严格遵守每个角色的设定，确保人物形象真实可信，绝对不要随意创造新的角色特征。`;
+
+    // 构建角色信息（强化版）
     let characterInfo = '';
+    let protagonistNames: string[] = [];
+
     if (maleCharacter) {
-      characterInfo += `男主角：${(maleCharacter as any).name || '未知'}，${(maleCharacter as any).age || '未知'}岁，${(maleCharacter as any).occupation || '未知'}，性格：${(maleCharacter as any).personality || '未知'}。\n`;
+      const mc = maleCharacter as any;
+      protagonistNames.push(mc.name || '未知');
+      characterInfo += `【男主角信息】
+- 姓名：${mc.name || '未知'}
+- 年龄：${mc.age || '未知'}岁
+- 性别：${mc.gender || '男'}
+- 学历：${mc.education || '未设定'}
+- 职业：${mc.occupation || '未设定'}
+- 所属团体：${mc.group || '未设定'}
+- 职位：${mc.position || '未设定'}
+- 性格：${mc.personality || '未设定'}
+- 外貌特征：${mc.appearance || '未设定'}
+- 背景故事：${mc.background || '未设定'}
+- 能力/特长：${mc.ability || '未设定'}
+
+`;
     }
     if (femaleCharacter) {
-      characterInfo += `女主角：${(femaleCharacter as any).name || '未知'}，${(femaleCharacter as any).age || '未知'}岁，${(femaleCharacter as any).occupation || '未知'}，性格：${(femaleCharacter as any).personality || '未知'}。\n`;
+      const fc = femaleCharacter as any;
+      protagonistNames.push(fc.name || '未知');
+      characterInfo += `【女主角信息】
+- 姓名：${fc.name || '未知'}
+- 年龄：${fc.age || '未知'}岁
+- 性别：${fc.gender || '女'}
+- 学历：${fc.education || '未设定'}
+- 职业：${fc.occupation || '未设定'}
+- 所属团体：${fc.group || '未设定'}
+- 职位：${fc.position || '未设定'}
+- 性格：${fc.personality || '未设定'}
+- 外貌特征：${fc.appearance || '未设定'}
+- 背景故事：${fc.background || '未设定'}
+- 能力/特长：${fc.ability || '未设定'}
+
+`;
     }
 
     // 构建主角活动描述
