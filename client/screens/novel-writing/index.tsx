@@ -442,12 +442,14 @@ if (femaleId) {
     if (params.selectedCharacterId && novel && params.selectedCharacterId !== handledCharacterIdRef.current) {
       handledCharacterIdRef.current = params.selectedCharacterId;
       handleSelectedCharacter(params.selectedCharacterId);
-      // 清除参数，避免重复处理
+      // 清除参数，避免重复处理，但保留其他参数
       router.replace('/novel-writing', {
         novelId: novel.id,
+        maleCharacterId: params.maleCharacterId,
+        femaleCharacterId: params.femaleCharacterId,
       });
     }
-  }, [params.selectedCharacterId, novel]);
+  }, [params.selectedCharacterId, novel, params.maleCharacterId, params.femaleCharacterId]);
 
   useFocusEffect(
     useCallback(() => {

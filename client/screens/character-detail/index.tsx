@@ -89,6 +89,46 @@ export default function CharacterDetailScreen() {
   const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
   const [isSavingRelation, setIsSavingRelation] = useState(false);
 
+  // 关系类型映射（英文key到中文标签）
+  const RELATION_LABELS: Record<string, string> = {
+    'father': '父亲',
+    'mother': '母亲',
+    'grandfather': '祖父/外祖父',
+    'grandmother': '祖母/外祖母',
+    'husband': '丈夫',
+    'wife': '妻子',
+    'spouse': '配偶',
+    'son': '儿子',
+    'daughter': '女儿',
+    'child': '子女',
+    'brother': '兄弟',
+    'sister': '姐妹',
+    'sibling': '兄弟姐妹',
+    'uncle': '伯叔/舅舅',
+    'aunt': '姑妈/姨妈',
+    'father_in_law': '公公/岳父',
+    'mother_in_law': '婆婆/岳母',
+    'brother_in_law': '姐夫/妹夫/小舅子',
+    'sister_in_law': '嫂子/弟妹/小姑子',
+    'daughter_in_law': '儿媳',
+    'son_in_law': '女婿',
+    'nephew': '侄子',
+    'niece': '侄女',
+    'cousin_male': '堂兄弟/表兄弟',
+    'cousin_female': '堂姐妹/表姐妹',
+    'friend': '朋友',
+    'enemy': '敌人',
+    'colleague': '同事',
+    'lover': '恋人',
+    'mentor': '导师',
+    'student': '学生',
+  };
+
+  // 获取关系类型的中文名称
+  const getRelationLabel = (relationKey: string): string => {
+    return RELATION_LABELS[relationKey] || relationKey;
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       const loadCharacterData = async () => {
@@ -247,8 +287,22 @@ export default function CharacterDetailScreen() {
     
     setIsSavingRelation(true);
     try {
-      const targetChar = availableCharacters.find(c => c.id === selectedTargetId);
-      if (!targetChar) return;
+      // 先从可用角色列表中查找
+      let targetChar = availableCharacters.find(c => c.id === selectedTargetId);
+
+      // 如果没找到，从角色库中查找
+      if (!targetChar) {
+        try {
+          targetChar = await getCharacterById(selectedTargetId);
+        } catch (error) {
+          console.error('Error fetching character from library:', error);
+        }
+      }
+
+      if (!targetChar) {
+        Alert.alert('错误', '角色不存在');
+        return;
+      }
       
       // 获取反向关系
       const reverseRelation = getReverseRelation(
@@ -810,8 +864,8 @@ export default function CharacterDetailScreen() {
                           {rel.targetName}
                         </ThemedText>
                         <ThemedText variant="caption" color={theme.textMuted}>
-                          {rel.relationType}
-                          {rel.reverseRelation && ' (' + rel.reverseRelation + ')'}
+                          {getRelationLabel(rel.relationType)}
+                          {rel.reverseRelation && ' (' + getRelationLabel(rel.reverseRelation) + ')'}
                         </ThemedText>
                       </View>
                       <TouchableOpacity
