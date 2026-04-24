@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Dimensions,
   Text,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -25,6 +27,11 @@ interface SavedChapter {
   title: string;
   content: string;
   order: number;
+}
+
+interface MarkerPosition {
+  index: number;
+  text: string;
 }
 
 export default function NovelPreview() {
@@ -47,57 +54,176 @@ export default function NovelPreview() {
 
   // 状态管理
   const [savedChapters, setSavedChapters] = useState<SavedChapter[]>([]);
-  const [currentChapterContent, setCurrentChapterContent] = useState('');
-  const [currentChapterOrder, setCurrentChapterOrder] = useState(1);
-  const [currentPosition, setCurrentPosition] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [inputTitle, setInputTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
+  // 搜索和导航状态
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<MarkerPosition[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [showInsertHint, setShowInsertHint] = useState(false);
+  const [insertPosition, setInsertPosition] = useState<MarkerPosition | null>(null);
+
+  // ScrollView引用
+  const scrollViewRef = useRef<ScrollView>(null);
+
   // 小说和角色状态
   const [novelId, setNovelId] = useState<string | null>(null);
   const [characterIdMap, setCharacterIdMap] = useState<Record<string, string>>({});
 
-  // 初始化：在开头放置定位符
-  useEffect(() => {
-    if (fullContent) {
-      setCurrentChapterContent(fullContent);
-      setCurrentPosition(0);
-    }
-  }, [fullContent]);
+  // 计算未保存的起始位置
+  const lastSavedPosition = savedChapters.reduce((total, chapter) => total + chapter.content.length, 0);
 
-  // 添加定位符并保存上一章
+  // 计算当前可预览的章节内容（已保存章节 + 未保存部分）
+  const previewChapters = [
+    ...savedChapters,
+    {
+      id: 'current',
+      title: `第${savedChapters.length + 1}章（未保存）`,
+      content: fullContent.substring(lastSavedPosition),
+      order: savedChapters.length + 1,
+    },
+  ].filter(ch => ch.content.length > 0);
+
+  // 执行搜索
+  const performSearch = (text: string) => {
+    if (!text.trim()) {
+      setSearchResults([]);
+      setCurrentSearchIndex(0);
+      return;
+    }
+
+    const results: MarkerPosition[] = [];
+    let index = 0;
+
+    while (true) {
+      const foundIndex = fullContent.indexOf(text, index);
+      if (foundIndex === -1) break;
+
+      // 获取匹配位置的文本上下文
+      const contextStart = Math.max(0, foundIndex - 20);
+      const contextEnd = Math.min(fullContent.length, foundIndex + text.length + 20);
+      const contextText = fullContent.substring(contextStart, contextEnd);
+
+      results.push({
+        index: foundIndex,
+        text: contextText,
+      });
+
+      index = foundIndex + text.length;
+    }
+
+    setSearchResults(results);
+    setCurrentSearchIndex(0);
+
+    if (results.length > 0) {
+      // 自动滚动到第一个搜索结果
+      scrollToPosition(results[0].index);
+    }
+  };
+
+  // 滚动到指定位置
+  const scrollToPosition = (position: number) => {
+    // 估算滚动位置（每个字符约2像素高度，简化计算）
+    const scrollPosition = Math.max(0, position * 0.5);
+    scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: true });
+  };
+
+  // 上一章
+  const handlePreviousChapter = () => {
+    if (currentSearchIndex > 0) {
+      const newIndex = currentSearchIndex - 1;
+      setCurrentSearchIndex(newIndex);
+      scrollToPosition(searchResults[newIndex].index);
+    } else {
+      Alert.alert('提示', '已经是第一个搜索结果');
+    }
+  };
+
+  // 下一章
+  const handleNextChapter = () => {
+    if (currentSearchIndex < searchResults.length - 1) {
+      const newIndex = currentSearchIndex + 1;
+      setCurrentSearchIndex(newIndex);
+      scrollToPosition(searchResults[newIndex].index);
+    } else {
+      Alert.alert('提示', '已经是最后一个搜索结果');
+    }
+  };
+
+  // 插入分隔符
+  const handleInsertMarker = () => {
+    if (!searchText.trim()) {
+      Alert.alert('提示', '请先输入要搜索的章节标题');
+      return;
+    }
+
+    // 使用当前搜索位置作为分隔符位置
+    if (searchResults.length > 0 && currentSearchIndex < searchResults.length) {
+      const markerPos = searchResults[currentSearchIndex];
+
+      setInsertPosition(markerPos);
+      setShowInsertHint(true);
+      setModalVisible(true);
+
+      // 滚动到分隔符位置
+      scrollToPosition(markerPos.index);
+    } else {
+      Alert.alert('提示', '请先搜索并选择要插入的位置');
+    }
+  };
+
+  // 添加定位符并保存章节
   const handleAddMarker = () => {
     if (!inputTitle.trim()) {
       Alert.alert('提示', '请输入章节标题', [{ text: '确定' }]);
       return;
     }
 
-    // 计算上一章的内容（从当前位置到用户点击的位置）
-    // 由于我们无法精确知道用户点击的位置，这里简化处理：
-    // 假设用户已经阅读了currentChapterContent，我们将整个currentChapterContent保存为一章
+    if (!insertPosition) {
+      Alert.alert('提示', '插入位置无效');
+      return;
+    }
+
+    // 计算上一章的内容（从lastSavedPosition到insertPosition）
+    const previousContent = fullContent.substring(lastSavedPosition, insertPosition.index);
+
+    if (previousContent.length < 10) {
+      Alert.alert('提示', '章节内容太少，请选择一个更合适的位置');
+      return;
+    }
 
     const newChapter: SavedChapter = {
       id: generateId(),
       title: inputTitle.trim(),
-      content: currentChapterContent,
-      order: currentChapterOrder,
+      content: previousContent,
+      order: savedChapters.length + 1,
     };
 
     // 添加到已保存章节列表
     setSavedChapters([...savedChapters, newChapter]);
 
-    // 准备下一章
-    setCurrentChapterOrder(currentChapterOrder + 1);
-    setCurrentChapterContent(''); // 下一章内容为空，需要用户提供
-    setCurrentPosition(0);
+    // 清理状态
     setModalVisible(false);
     setInputTitle('');
+    setShowInsertHint(false);
+    setInsertPosition(null);
+    setSearchText('');
+    setSearchResults([]);
+    setCurrentSearchIndex(0);
+
+    Alert.alert('成功', `已添加第${newChapter.order}章：${newChapter.title}`);
   };
 
   // 完成章节定位，开始导入
   const handleFinish = async () => {
+    if (savedChapters.length === 0) {
+      Alert.alert('提示', '请至少保存一个章节');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -257,24 +383,9 @@ export default function NovelPreview() {
       color: theme.textMuted,
       marginTop: 2,
     },
-    contentContainer: {
+    scrollContainer: {
       flex: 1,
-      padding: 16,
-    },
-    chapterInfo: {
-      marginBottom: 16,
-    },
-    chapterTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.textPrimary,
-      marginBottom: 8,
-    },
-    chapterContent: {
-      fontSize: 14,
-      lineHeight: 24,
-      color: theme.textSecondary,
-      maxHeight: 400,
+      marginBottom: 180, // 为底部搜索区域留出空间
     },
     savedChaptersList: {
       paddingHorizontal: 16,
@@ -300,95 +411,189 @@ export default function NovelPreview() {
       fontSize: 14,
       color: theme.textSecondary,
     },
+    contentContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 16,
+    },
+    chapterSection: {
+      marginBottom: 32,
+    },
+    chapterHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      backgroundColor: '#FFF5F5',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      marginBottom: 12,
+    },
+    chapterHeaderText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#C8102E',
+      flex: 1,
+    },
+    chapterContent: {
+      fontSize: 14,
+      lineHeight: 24,
+      color: theme.textSecondary,
+    },
+    insertHint: {
+      backgroundColor: 'rgba(200, 16, 46, 0.1)',
+      borderLeftWidth: 3,
+      borderLeftColor: '#C8102E',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      marginBottom: 16,
+    },
+    insertHintText: {
+      fontSize: 12,
+      color: '#C8102E',
+    },
+    bottomSearchArea: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: theme.backgroundDefault,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      padding: 16,
+      paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+    },
+    searchInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 12,
+    },
+    searchInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: theme.textPrimary,
+      backgroundColor: theme.backgroundRoot,
+    },
+    searchResultInfo: {
+      fontSize: 12,
+      color: theme.textMuted,
+    },
+    navButtons: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    navButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      backgroundColor: '#C8102E',
+      borderRadius: 8,
+    },
+    navButtonDisabled: {
+      backgroundColor: '#E5E5E5',
+    },
+    navButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
+      marginLeft: 6,
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 12,
+    },
     actionButton: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 12,
-      paddingHorizontal: 24,
       borderRadius: 8,
-      backgroundColor: '#C8102E',
-    },
-    actionButtonText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: '#FFFFFF',
-      marginLeft: 8,
     },
     secondaryButton: {
       backgroundColor: theme.backgroundDefault,
       borderWidth: 1,
       borderColor: theme.border,
-  },
-  secondaryButtonText: {
-    color: theme.textPrimary,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: theme.backgroundRoot,
-    borderRadius: 12,
-    padding: 20,
-    width: '100%',
-    maxWidth: 320,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.textPrimary,
-    marginBottom: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: theme.textPrimary,
-    marginBottom: 16,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCancelButton: {
-    backgroundColor: theme.backgroundDefault,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  modalConfirmButton: {
-    backgroundColor: '#C8102E',
-  },
-  modalButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  modalCancelButtonText: {
-    color: theme.textPrimary,
-  },
-  modalConfirmButtonText: {
-    color: '#FFFFFF',
-  },
-  bottomActions: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-    backgroundColor: theme.backgroundDefault,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-  },
-});
+    },
+    secondaryButtonText: {
+      color: theme.textPrimary,
+    },
+    primaryButton: {
+      backgroundColor: '#C8102E',
+    },
+    primaryButtonText: {
+      color: '#FFFFFF',
+    },
+    buttonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      marginLeft: 6,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: theme.backgroundRoot,
+      borderRadius: 12,
+      padding: 20,
+      width: '100%',
+      maxWidth: 320,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textPrimary,
+      marginBottom: 16,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 14,
+      color: theme.textPrimary,
+      marginBottom: 16,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    modalCancelButton: {
+      backgroundColor: theme.backgroundDefault,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    modalConfirmButton: {
+      backgroundColor: '#C8102E',
+    },
+    modalButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    modalCancelButtonText: {
+      color: theme.textPrimary,
+    },
+    modalConfirmButtonText: {
+      color: '#FFFFFF',
+    },
+  });
 
   return (
     <Screen style={styles.container}>
@@ -405,7 +610,7 @@ export default function NovelPreview() {
         <View style={{ width: 80 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
         {/* 已保存章节列表 */}
         {savedChapters.length > 0 && (
           <View style={styles.savedChaptersList}>
@@ -421,58 +626,116 @@ export default function NovelPreview() {
           </View>
         )}
 
-        {/* 当前章节内容 */}
+        {/* 章节内容预览 */}
         <View style={styles.contentContainer}>
-          <View style={styles.chapterInfo}>
-            <ThemedText style={styles.chapterTitle}>
-              第{currentChapterOrder}章
-            </ThemedText>
-            <ThemedText style={styles.chapterContent}>
-              {currentChapterContent || '暂无内容'}
-            </ThemedText>
-          </View>
+          {previewChapters.map((chapter, index) => (
+            <View key={chapter.id} style={styles.chapterSection}>
+              <View style={styles.chapterHeader}>
+                <Feather name="book-open" size={18} color="#C8102E" style={{ marginRight: 8 }} />
+                <Text style={styles.chapterHeaderText}>
+                  {chapter.title}
+                </Text>
+              </View>
+              <Text style={styles.chapterContent}>
+                {chapter.content}
+              </Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
-      {/* 底部操作按钮 */}
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={() => setModalVisible(true)}
-          disabled={isSaving || isFinished}
-        >
-          <Feather name="bookmark" size={18} color={theme.textPrimary} />
-          <ThemedText style={[styles.actionButtonText, styles.secondaryButtonText]}>
-            标记此章
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleFinish}
-          disabled={savedChapters.length === 0 || isSaving || isFinished}
-        >
-          {isSaving ? (
-            <Feather name="loader" size={18} color="#FFFFFF" />
-          ) : (
-            <Feather name="check" size={18} color="#FFFFFF" />
-          )}
-          <ThemedText style={styles.actionButtonText}>
-            {isSaving ? '导入中...' : '完成导入'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* 底部搜索和操作区域 */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.bottomSearchArea}
+      >
+        {/* 搜索输入 */}
+        <View style={styles.searchInputRow}>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.searchInput}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="输入章节标题搜索..."
+              placeholderTextColor={theme.textMuted}
+              returnKeyType="search"
+              onSubmitEditing={() => performSearch(searchText)}
+            />
+          </View>
+        </View>
+
+        {/* 搜索结果和导航 */}
+        {searchResults.length > 0 && (
+          <>
+            <View style={styles.searchResultInfo}>
+              <Text>找到 {searchResults.length} 个结果，当前第 {currentSearchIndex + 1} 个</Text>
+            </View>
+            <View style={styles.navButtons}>
+              <TouchableOpacity
+                style={[styles.navButton, currentSearchIndex === 0 && styles.navButtonDisabled]}
+                onPress={handlePreviousChapter}
+                disabled={currentSearchIndex === 0}
+              >
+                <Feather name="arrow-up" size={16} color={currentSearchIndex === 0 ? '#999' : '#FFFFFF'} />
+                <Text style={[styles.navButtonText, currentSearchIndex === 0 && { color: '#999' }]}>
+                  上一章
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.navButton, currentSearchIndex === searchResults.length - 1 && styles.navButtonDisabled]}
+                onPress={handleNextChapter}
+                disabled={currentSearchIndex === searchResults.length - 1}
+              >
+                <Feather name="arrow-down" size={16} color={currentSearchIndex === searchResults.length - 1 ? '#999' : '#FFFFFF'} />
+                <Text style={[styles.navButtonText, currentSearchIndex === searchResults.length - 1 && { color: '#999' }]}>
+                  下一章
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* 操作按钮 */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.secondaryButton]}
+            onPress={handleInsertMarker}
+            disabled={searchResults.length === 0 || isSaving || isFinished}
+          >
+            <Feather name="bookmark" size={18} color={searchResults.length === 0 ? '#999' : theme.textPrimary} />
+            <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+              插入分隔符
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.primaryButton]}
+            onPress={handleFinish}
+            disabled={savedChapters.length === 0 || isSaving || isFinished}
+          >
+            {isSaving ? (
+              <Feather name="loader" size={18} color="#FFFFFF" />
+            ) : (
+              <Feather name="check" size={18} color="#FFFFFF" />
+            )}
+            <Text style={[styles.buttonText, styles.primaryButtonText]}>
+              {isSaving ? '导入中...' : '完成导入'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
 
       {/* 章节标题输入弹窗 */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>输入章节标题</ThemedText>
+            <Text style={styles.modalTitle}>输入章节标题</Text>
             <TextInput
               style={styles.input}
               value={inputTitle}
               onChangeText={setInputTitle}
-              placeholder={`第${currentChapterOrder}章`}
+              placeholder={`第${savedChapters.length + 1}章`}
               placeholderTextColor={theme.textMuted}
+              autoFocus
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -480,19 +743,21 @@ export default function NovelPreview() {
                 onPress={() => {
                   setModalVisible(false);
                   setInputTitle('');
+                  setShowInsertHint(false);
+                  setInsertPosition(null);
                 }}
               >
-                <ThemedText style={[styles.modalButtonText, styles.modalCancelButtonText]}>
+                <Text style={[styles.modalButtonText, styles.modalCancelButtonText]}>
                   取消
-                </ThemedText>
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalConfirmButton]}
                 onPress={handleAddMarker}
               >
-                <ThemedText style={[styles.modalButtonText, styles.modalConfirmButtonText]}>
+                <Text style={[styles.modalButtonText, styles.modalConfirmButtonText]}>
                   确认
-                </ThemedText>
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
