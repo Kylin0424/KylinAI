@@ -288,5 +288,27 @@ export const createStyles = (theme: Theme) => {
     deleteConfirmButton: {
       backgroundColor: '#C8102E',
     },
+    confirmButton: {
+      position: 'absolute',
+      bottom: 100,
+      left: 16,
+      right: 16,
+      backgroundColor: '#C8102E',
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+    confirmButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
 };

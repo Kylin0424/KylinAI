@@ -428,6 +428,45 @@ if (femaleId) {
     }
   };
 
+  // 处理从角色库选择的多个角色
+  const handleSelectedCharacters = async (characterIds: string) => {
+    const ids = characterIds.split(',').filter(id => id.trim());
+    if (ids.length === 0) return;
+
+    try {
+      let addedCount = 0;
+      let duplicateCount = 0;
+
+      for (const id of ids) {
+        const character = await getCharacterById(id);
+        if (!character) {
+          console.warn(`角色不存在: ${id}`);
+          continue;
+        }
+
+        // 检查是否已经在配角列表中
+        const exists = sideCharacters.some((sc) => sc.id === id);
+        if (exists) {
+          duplicateCount++;
+          continue;
+        }
+
+        // 添加到配角列表
+        setSideCharacters((prev) => [...prev, character]);
+        addedCount++;
+      }
+
+      if (addedCount > 0) {
+        Alert.alert('成功', `已添加 ${addedCount} 个角色${duplicateCount > 0 ? `（${duplicateCount} 个已存在）` : ''}`);
+      } else if (duplicateCount > 0) {
+        Alert.alert('提示', `所有角色都已存在于配角列表中`);
+      }
+    } catch (error) {
+      console.error('Handle selected characters error:', error);
+      Alert.alert('错误', '添加角色失败');
+    }
+  };
+
   // 检测是否有导入数据，如果有则处理
   useEffect(() => {
     if (params.importData && !novel) {
@@ -450,6 +489,22 @@ if (femaleId) {
       });
     }
   }, [params.selectedCharacterId, novel, params.maleCharacterId, params.femaleCharacterId]);
+
+  // 检测是否从角色库选择了多个角色
+  const handledCharacterIdsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (params.selectedCharacterIds && novel && params.selectedCharacterIds !== handledCharacterIdsRef.current) {
+      handledCharacterIdsRef.current = params.selectedCharacterIds;
+      handleSelectedCharacters(params.selectedCharacterIds);
+      // 清除参数，避免重复处理，但保留其他参数
+      router.replace('/novel-writing', {
+        novelId: novel.id,
+        maleCharacterId: params.maleCharacterId,
+        femaleCharacterId: params.femaleCharacterId,
+      });
+    }
+  }, [params.selectedCharacterIds, novel, params.maleCharacterId, params.femaleCharacterId]);
 
   useFocusEffect(
     useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/hooks/useTheme';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
@@ -44,7 +45,7 @@ export default function CharacterListScreen() {
   const [activeTab, setActiveTab] = useState<CharacterTab>('permanent');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -69,8 +70,36 @@ export default function CharacterListScreen() {
     setIsLoading(false);
   };
 
+  // 状态持久化：保存activeTab
+  useEffect(() => {
+    AsyncStorage.setItem('characterList_activeTab', activeTab);
+  }, [activeTab]);
+
+  // 状态持久化：保存selectedCharacterIds
+  useEffect(() => {
+    AsyncStorage.setItem('characterList_selectedIds', JSON.stringify(selectedCharacterIds));
+  }, [selectedCharacterIds]);
+
   useFocusEffect(
     useCallback(() => {
+      // 加载持久化的状态
+      const loadPersistedState = async () => {
+        try {
+          const savedTab = await AsyncStorage.getItem('characterList_activeTab');
+          const savedIds = await AsyncStorage.getItem('characterList_selectedIds');
+
+          if (savedTab) {
+            setActiveTab(savedTab as CharacterTab);
+          }
+          if (savedIds) {
+            setSelectedCharacterIds(JSON.parse(savedIds));
+          }
+        } catch (error) {
+          console.error('[CharacterList] Error loading persisted state:', error);
+        }
+      };
+
+      loadPersistedState();
       loadData();
     }, [])
   );
@@ -304,10 +333,15 @@ export default function CharacterListScreen() {
               return (
                 <TouchableOpacity
                   key={char.id}
-                  style={[styles.characterCard, isLocked && styles.lockedCharacterCard, isTemp && styles.temporaryCharacterCard, isSelectMode && selectedCharacterId === char.id && styles.selectedCharacterCard]}
+                  style={[styles.characterCard, isLocked && styles.lockedCharacterCard, isTemp && styles.temporaryCharacterCard, isSelectMode && selectedCharacterIds.includes(char.id) && styles.selectedCharacterCard]}
                   onPress={() => {
                     if (isSelectMode) {
-                      setSelectedCharacterId(char.id);
+                      // 多选逻辑：如果已选中则取消，未选中则添加
+                      if (selectedCharacterIds.includes(char.id)) {
+                        setSelectedCharacterIds(selectedCharacterIds.filter(id => id !== char.id));
+                      } else {
+                        setSelectedCharacterIds([...selectedCharacterIds, char.id]);
+                      }
                     }
                   }}
                   activeOpacity={isSelectMode ? 0.7 : 1}
@@ -317,8 +351,8 @@ export default function CharacterListScreen() {
                       <View style={styles.characterNameRow}>
                         {isSelectMode && (
                           <View style={styles.checkboxContainer}>
-                            <View style={[styles.checkbox, selectedCharacterId === char.id && styles.checkboxChecked]}>
-                              {selectedCharacterId === char.id && <Feather name="check" size={14} color="#fff" />}
+                            <View style={[styles.checkbox, selectedCharacterIds.includes(char.id) && styles.checkboxChecked]}>
+                              {selectedCharacterIds.includes(char.id) && <Feather name="check" size={14} color="#fff" />}
                             </View>
                           </View>
                         )}
@@ -464,6 +498,23 @@ export default function CharacterListScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* 确认添加按钮（仅在选择模式下显示） */}
+      {isSelectMode && selectedCharacterIds.length > 0 && (
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={() => {
+            const returnTo = params.returnTo || '/home';
+            router.replace(returnTo, {
+              selectedCharacterIds: selectedCharacterIds.join(','),
+            });
+          }}
+        >
+          <ThemedText variant="smallMedium" color="#fff">
+            确认添加 ({selectedCharacterIds.length})
+          </ThemedText>
+        </TouchableOpacity>
+      )}
 
       <FloatingBall />
     </Screen>
