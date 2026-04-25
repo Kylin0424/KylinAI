@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Keyboard,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Screen } from '@/components/Screen';
@@ -21,6 +22,11 @@ interface Chapter {
   startIndex: number;
   endIndex: number;
   content: string;
+}
+
+interface MarkerPosition {
+  index: number;
+  line: number;
 }
 
 export default function NovelTextEditor() {
@@ -36,10 +42,14 @@ export default function NovelTextEditor() {
   const [showChapterNameModal, setShowChapterNameModal] = useState(false);
   const [chapterName, setChapterName] = useState('');
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [showInsertIndicator, setShowInsertIndicator] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showInsertHint, setShowInsertHint] = useState(false);
+  const [insertPosition, setInsertPosition] = useState<MarkerPosition | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<MarkerPosition[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const [highlightedChapterIndex, setHighlightedChapterIndex] = useState<number>(-1);
   const scrollViewRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
 
   // 中文数字映射
   const chineseNumberMap: Record<string, number> = {
@@ -156,9 +166,56 @@ export default function NovelTextEditor() {
     return result;
   };
 
-  // 搜索章节
+  // 计算光标所在的行号
+  const getLineNumber = (position: number): number => {
+    const textBefore = text.substring(0, position);
+    return textBefore.split('\n').length;
+  };
+
+  // 执行搜索
+  const performSearch = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setCurrentSearchIndex(0);
+      return;
+    }
+
+    const results: MarkerPosition[] = [];
+    let index = 0;
+
+    while (true) {
+      const foundIndex = text.indexOf(query, index);
+      if (foundIndex === -1) break;
+
+      results.push({
+        index: foundIndex,
+        line: getLineNumber(foundIndex),
+      });
+
+      index = foundIndex + query.length;
+    }
+
+    setSearchResults(results);
+    setCurrentSearchIndex(0);
+
+    if (results.length > 0) {
+      // 自动滚动到第一个搜索结果
+      scrollToPosition(results[0].index);
+    } else {
+      Alert.alert('提示', '未找到匹配的内容');
+    }
+  };
+
+  // 滚动到指定位置
+  const scrollToPosition = (position: number) => {
+    // 估算滚动位置（每个字符约2像素高度，简化计算）
+    const scrollPosition = Math.max(0, position * 0.5);
+    scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: true });
+  };
+
+  // 搜索章节（基于已提取章节）
   const searchChapters = (query?: string) => {
-    const searchInput = (query || searchQuery).trim();
+    const searchInput = (query || searchText).trim();
     if (!searchInput || chapters.length === 0) {
       setHighlightedChapterIndex(-1);
       return;
@@ -214,13 +271,19 @@ export default function NovelTextEditor() {
   };
 
   // 处理搜索框回车
-  const handleSearchChapter = () => {
-    searchChapters();
+  const handleSearch = () => {
+    // 优先搜索整个文本
+    performSearch(searchText);
+
+    // 如果已提取章节，同时搜索章节
+    if (chapters.length > 0) {
+      searchChapters();
+    }
   };
 
   // 上一章：递减搜索
   const handlePreviousChapter = () => {
-    const parsed = parseSearchQuery(searchQuery);
+    const parsed = parseSearchQuery(searchText);
     if (parsed.number === 0) {
       Alert.alert('提示', '请先输入章节号');
       return;
@@ -231,13 +294,16 @@ export default function NovelTextEditor() {
       ? `${parsed.prefix}${numberToChinese(newNumber)}${parsed.suffix}`
       : (parsed.prefix || '') + newNumber.toString() + (parsed.suffix || '');
 
-    setSearchQuery(newQuery);
-    searchChapters(newQuery);
+    setSearchText(newQuery);
+    performSearch(newQuery);
+    if (chapters.length > 0) {
+      searchChapters(newQuery);
+    }
   };
 
   // 下一章：递增搜索
   const handleNextChapter = () => {
-    const parsed = parseSearchQuery(searchQuery);
+    const parsed = parseSearchQuery(searchText);
     if (parsed.number === 0) {
       Alert.alert('提示', '请先输入章节号');
       return;
@@ -248,17 +314,27 @@ export default function NovelTextEditor() {
       ? `${parsed.prefix}${numberToChinese(newNumber)}${parsed.suffix}`
       : (parsed.prefix || '') + newNumber.toString() + (parsed.suffix || '');
 
-    setSearchQuery(newQuery);
-    searchChapters(newQuery);
+    setSearchText(newQuery);
+    performSearch(newQuery);
+    if (chapters.length > 0) {
+      searchChapters(newQuery);
+    }
   };
 
-  // 插入分隔符 - 添加视觉提示
+  // 插入分隔符 - 在光标位置显示提示
   const insertSeparator = () => {
-    setShowInsertIndicator(true);
-    
+    const line = getLineNumber(cursorPosition);
+
+    setInsertPosition({
+      index: cursorPosition,
+      line: line,
+    });
+    setShowInsertHint(true);
+
     // 2秒后自动隐藏提示
     setTimeout(() => {
-      setShowInsertIndicator(false);
+      setShowInsertHint(false);
+      setInsertPosition(null);
     }, 2000);
 
     const separator = '\n===章节分隔符===\n';
@@ -269,10 +345,7 @@ export default function NovelTextEditor() {
 
     // 自动滚动到光标位置
     setTimeout(() => {
-      scrollViewRef.current?.scrollTo({
-        y: 0,
-        animated: true,
-      });
+      scrollToPosition(cursorPosition);
     }, 100);
   };
 
@@ -470,56 +543,6 @@ export default function NovelTextEditor() {
                 已识别章节 ({chapters.length})
               </Text>
             </View>
-            {/* 搜索框 */}
-            <View style={styles.searchContainer}>
-              <Feather name="search" size={16} color="#999" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="搜索章节 (如: 1 或 第一章)"
-                placeholderTextColor="#999"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                keyboardType="numbers-and-punctuation"
-                onSubmitEditing={handleSearchChapter}
-              />
-              <TouchableOpacity
-                style={styles.searchButton}
-                onPress={handleSearchChapter}
-              >
-                <Text style={styles.searchButtonText}>搜索</Text>
-              </TouchableOpacity>
-            </View>
-            {/* 上一章/下一章按钮 */}
-            <View style={styles.chapterNavContainer}>
-              <TouchableOpacity
-                style={styles.chapterNavButton}
-                onPress={handlePreviousChapter}
-                disabled={!searchQuery.trim()}
-              >
-                <Feather
-                  name="chevron-left"
-                  size={16}
-                  color={searchQuery.trim() ? "#C8102E" : "#CCC"}
-                />
-                <Text style={[styles.chapterNavButtonText, !searchQuery.trim() && styles.chapterNavButtonDisabled]}>
-                  上一章
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.chapterNavButton}
-                onPress={handleNextChapter}
-                disabled={!searchQuery.trim()}
-              >
-                <Text style={[styles.chapterNavButtonText, !searchQuery.trim() && styles.chapterNavButtonDisabled]}>
-                  下一章
-                </Text>
-                <Feather
-                  name="chevron-right"
-                  size={16}
-                  color={searchQuery.trim() ? "#C8102E" : "#CCC"}
-                />
-              </TouchableOpacity>
-            </View>
             <ScrollView
               style={styles.chapterList}
               horizontal
@@ -572,21 +595,8 @@ export default function NovelTextEditor() {
             style={styles.textScrollView}
             contentContainerStyle={styles.textContentContainer}
           >
-            {/* 插入分隔符视觉提示 */}
-            {showInsertIndicator && (
-              <View style={styles.insertIndicator}>
-                <View style={styles.insertIndicatorArrow}>
-                  <View style={styles.insertIndicatorArrowTriangle} />
-                  <View style={styles.insertIndicatorLine} />
-                </View>
-                <View style={styles.insertIndicatorText}>
-                  <Feather name="scissors" size={16} color="#C8102E" />
-                  <Text style={styles.insertIndicatorLabel}>分隔符将插入此处</Text>
-                </View>
-              </View>
-            )}
-
             <TextInput
+              ref={textInputRef}
               style={styles.textInput}
               multiline
               value={text}
@@ -597,39 +607,99 @@ export default function NovelTextEditor() {
               autoFocus
               textAlignVertical="top"
             />
+
+            {/* 插入分隔符提示 - 显示在点击位置 */}
+            {showInsertHint && insertPosition && (
+              <View style={styles.insertHint}>
+                <View style={styles.insertHintMarker}>
+                  <Feather name="scissors" size={16} color="#C8102E" />
+                </View>
+                <Text style={styles.insertHintText}>
+                  分隔符已插入第 {insertPosition.line} 行
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </View>
 
         {/* 底部工具栏 */}
-        <View style={styles.bottomToolbar}>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={insertSeparator}
-          >
-            <Feather name="scissors" size={20} color="#333" />
-            <Text style={styles.toolbarButtonText}>插入分隔符</Text>
-          </TouchableOpacity>
+        <View style={styles.bottomContainer}>
+          {/* 搜索区域 */}
+          <View style={styles.searchArea}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="输入章节标题搜索（如：1 或 第一章）"
+              placeholderTextColor="#999"
+              value={searchText}
+              onChangeText={setSearchText}
+              keyboardType="numbers-and-punctuation"
+              onSubmitEditing={handleSearch}
+            />
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearch}
+            >
+              <Feather name="search" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={openChapterNameModal}
-          >
-            <Feather name="list" size={20} color="#333" />
-            <Text style={styles.toolbarButtonText}>提取章节</Text>
-          </TouchableOpacity>
+          {/* 导航按钮 */}
+          {searchResults.length > 0 && (
+            <View style={styles.navButtons}>
+              <TouchableOpacity
+                style={[styles.navButton, currentSearchIndex === 0 && styles.navButtonDisabled]}
+                onPress={handlePreviousChapter}
+                disabled={currentSearchIndex === 0}
+              >
+                <Feather name="arrow-up" size={16} color={currentSearchIndex === 0 ? '#999' : '#fff'} />
+                <Text style={[styles.navButtonText, currentSearchIndex === 0 && { color: '#999' }]}>
+                  上一章
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.navButton, currentSearchIndex === searchResults.length - 1 && styles.navButtonDisabled]}
+                onPress={handleNextChapter}
+                disabled={currentSearchIndex === searchResults.length - 1}
+              >
+                <Feather name="arrow-down" size={16} color={currentSearchIndex === searchResults.length - 1 ? '#999' : '#fff'} />
+                <Text style={[styles.navButtonText, currentSearchIndex === searchResults.length - 1 && { color: '#999' }]}>
+                  下一章
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => {
-              const start = Math.max(0, cursorPosition - 100);
-              const end = Math.min(text.length, cursorPosition + 100);
-              const context = text.slice(start, end);
-              Alert.alert('当前位置上下文', context);
-            }}
-          >
-            <Feather name="map-pin" size={20} color="#333" />
-            <Text style={styles.toolbarButtonText}>查看上下文</Text>
-          </TouchableOpacity>
+          {/* 操作按钮 */}
+          <View style={styles.toolbar}>
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={insertSeparator}
+            >
+              <Feather name="scissors" size={20} color="#333" />
+              <Text style={styles.toolbarButtonText}>插入分隔符</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={openChapterNameModal}
+            >
+              <Feather name="list" size={20} color="#333" />
+              <Text style={styles.toolbarButtonText}>提取章节</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={() => {
+                const start = Math.max(0, cursorPosition - 100);
+                const end = Math.min(text.length, cursorPosition + 100);
+                const context = text.slice(start, end);
+                Alert.alert('当前位置上下文', context);
+              }}
+            >
+              <Feather name="map-pin" size={20} color="#333" />
+              <Text style={styles.toolbarButtonText}>查看上下文</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
@@ -730,65 +800,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginLeft: 8,
-    marginRight: 8,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 6,
-  },
-  searchButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#C8102E',
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  searchButtonText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  chapterNavContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-    gap: 8,
-  },
-  chapterNavButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 6,
-    gap: 6,
-  },
-  chapterNavButtonText: {
-    fontSize: 13,
-    color: '#C8102E',
-    fontWeight: '600',
-  },
-  chapterNavButtonDisabled: {
-    color: '#CCC',
-  },
   chapterList: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -835,104 +846,128 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
-    minHeight: 400,
   },
-  insertIndicator: {
-    position: 'absolute',
-    top: 20,
-    left: 16,
-    right: 16,
-    backgroundColor: '#FFF5F5',
-    borderWidth: 2,
-    borderColor: '#C8102E',
-    borderRadius: 8,
-    padding: 12,
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  insertIndicatorArrow: {
+  insertHint: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: 'rgba(200, 16, 46, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#C8102E',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginVertical: 4,
+    borderRadius: 4,
   },
-  insertIndicatorArrowTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 12,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#C8102E',
+  insertHintMarker: {
+    marginRight: 8,
   },
-  insertIndicatorLine: {
-    width: 2,
-    height: 20,
+  insertHintText: {
+    fontSize: 12,
+    color: '#C8102E',
+    fontWeight: '500',
+  },
+  bottomContainer: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5e5',
+  },
+  searchArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  searchButton: {
+    padding: 8,
     backgroundColor: '#C8102E',
+    borderRadius: 8,
   },
-  insertIndicatorText: {
+  navButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+  },
+  navButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    paddingVertical: 10,
+    backgroundColor: '#C8102E',
+    borderRadius: 8,
+    gap: 6,
   },
-  insertIndicatorLabel: {
+  navButtonDisabled: {
+    backgroundColor: '#e5e5e5',
+  },
+  navButtonText: {
     fontSize: 14,
-    color: '#C8102E',
+    color: '#fff',
     fontWeight: '600',
   },
-  bottomToolbar: {
+  toolbar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
-    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
   },
   toolbarButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'center',
     paddingVertical: 8,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
   },
   toolbarButtonText: {
-    marginLeft: 6,
     fontSize: 13,
     color: '#333',
+    marginLeft: 4,
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   modalContent: {
-    width: '85%',
-    maxWidth: 320,
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    width: '100%',
+    maxWidth: 320,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
   modalBody: {
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   modalDescription: {
     fontSize: 14,
@@ -941,7 +976,9 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
   modalButton: {
     flex: 1,
@@ -951,20 +988,18 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#f5f5f5',
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '500',
   },
   confirmButton: {
     backgroundColor: '#C8102E',
-    marginLeft: 8,
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
   },
   confirmButtonText: {
-    color: '#fff',
     fontSize: 14,
+    color: '#fff',
     fontWeight: '600',
   },
 });
