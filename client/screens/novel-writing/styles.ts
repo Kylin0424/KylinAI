@@ -578,7 +578,7 @@ export const createStyles = (theme: Theme) => {
       backgroundColor: theme.border,
     },
     // 楔子生成区域
-    prologueGeneratingContainer: {
+    firstChapterGeneratingContainer: {
       backgroundColor: theme.backgroundDefault,
       marginHorizontal: Spacing.md,
       marginTop: Spacing.sm,
@@ -587,26 +587,26 @@ export const createStyles = (theme: Theme) => {
       borderWidth: 1,
       borderColor: '#C8102E',
     },
-    prologueHeader: {
+    firstChapterHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: Spacing.sm,
       gap: Spacing.xs,
     },
-    prologueHeaderText: {
+    firstChapterHeaderText: {
       fontWeight: '600',
     },
-    prologueContentBox: {
+    firstChapterContentBox: {
       backgroundColor: theme.backgroundTertiary,
       borderRadius: 8,
       padding: Spacing.sm,
       minHeight: 200,
       maxHeight: 400,
     },
-    prologueContentText: {
+    firstChapterContentText: {
       lineHeight: 26,
     },
-    prologueHint: {
+    firstChapterHint: {
       marginTop: Spacing.sm,
       alignItems: 'center',
     },

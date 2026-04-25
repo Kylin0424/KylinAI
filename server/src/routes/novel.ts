@@ -575,7 +575,7 @@ ${contextPrompt}
 【绝对强制规则 - 最高优先级，不可违反】
 
 1. **绝对必须使用设定的主角【不可违反】**：
-   - ⚠️ 楔子中必须使用以下角色：${maleCharacter?.name || '无'}、${femaleCharacter?.name || '无'}
+   - ⚠️ 必须使用以下角色：${maleCharacter?.name || '无'}、${femaleCharacter?.name || '无'}
    - ⚠️ 绝对禁止自己创造新的主角替代用户设定的角色
    - ⚠️ 绝对禁止使用随机生成的角色信息
    - ⚠️ 续写内容中必须体现主角的姓名、性别、年龄、学历、职业、性格、外貌、背景等所有设定
@@ -841,18 +841,18 @@ router.post('/prologue', async (req: Request, res: Response) => {
 
     const systemPrompt = `你是一位专业的小说作家，擅长以第三人称旁观者视角进行叙述。
 你的叙述风格客观、细腻，善于描绘宏大的世界观和细腻的人物情感。
-你创作的楔子能够引人入胜，让读者对故事世界产生强烈的好奇心。
+你创作的第一章能够引人入胜，让读者对故事产生强烈的阅读兴趣。
 
 【核心创作原则 - 绝对必须遵守】
 
 1. **绝对必须使用设定的主角【最高优先级】**：
-   - ⚠️ 楔子中必须使用以下角色：${protagonistNames.join('、') || '无'}
+   - ⚠️ 必须使用以下角色：${protagonistNames.join('、') || '无'}
    - ⚠️ 绝对禁止自己创造新的主角替代用户设定的角色
    - ⚠️ 绝对禁止使用随机生成的角色信息
-   - 楔子中必须体现主角的姓名、性别、年龄、学历、职业、性格、外貌、背景等所有设定
-   - 楔子中必须体现主角所属团体、职位等设定
+   - 必须体现主角的姓名、性别、年龄、学历、职业、性格、外貌、背景等所有设定
+   - 必须体现主角所属团体、职位等设定
    - 每一个细节都必须与角色设定保持一致
-   - 【强制检查】在输出楔子之前，请务必检查是否使用了设定的主角姓名和特征
+   - 【强制检查】在输出内容之前，请务必检查是否使用了设定的主角姓名和特征
 
 2. 学历决定认知：
    - 角色的学历直接决定了他们的知识水平、表达方式和分析能力
@@ -928,7 +928,7 @@ router.post('/prologue', async (req: Request, res: Response) => {
     const cityDesc = cityLocation ? `\n- 具体地点：${cityLocation}` : '';
     const locationDesc = (region || cityLocation) ? `\n【地理位置】${regionDesc}${cityDesc}` : '';
 
-    const userPrompt = `请为小说《${title || '未命名'}》创作第零章-楔子。
+    const userPrompt = `请为小说《${title || '未命名'}》创作第一章。
 
 【世界设定】
 - 世界名称：${worldName}
@@ -977,7 +977,7 @@ ${region ? '7' : '6'}. 风格要求：第三人称旁观者视角，客观叙述
     res.end();
   } catch (error) {
     console.error('Prologue generation error:', error);
-    res.write(`data: ${JSON.stringify({ error: '生成楔子失败，请重试' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: '生成失败，请重试' })}\n\n`);
     res.end();
   }
 });

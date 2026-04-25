@@ -123,10 +123,10 @@ export default function NovelWritingScreen() {
     description: string;
   } | null>(null);
 
-  // 楔子生成状态
-  const [isGeneratingPrologue, setIsGeneratingPrologue] = useState(false);
-  const [prologueContent, setPrologueContent] = useState('');
-  const hasGeneratedPrologue = useRef(false);
+  // 第一章生成状态
+  const [isGeneratingFirstChapter, setIsGeneratingPrologue] = useState(false);
+  const [firstChapterContent, setPrologueContent] = useState('');
+  const hasGeneratedFirstChapter = useRef(false);
 
   // AI续写弹窗
   const [showContinueModal, setShowContinueModal] = useState(false);
@@ -369,7 +369,7 @@ if (femaleId) {
         savedChapters.push(savedChapter);
       }
 
-      // 添加作者更换通知章节（作为楔子）
+      // 添加作者更换通知章节（作为第一章节）
       const noticeChapter = await addChapter(newNovel.id, '作者更换通知', true);
       const noticeContent = `【作者更换通知】\n\n本小说已更换作者继续创作。作者将在保持原有故事风格和人物设定的基础上，继续完善和扩展故事内容。\n\n导入时间：${new Date().toLocaleString()}\n导入章节数：${importData.chapters.length} 章\n识别角色数：${importData.identifiedCharacters?.length || 0} 个`;
       await updateChapter(newNovel.id, noticeChapter.id, { content: noticeContent });
@@ -595,21 +595,35 @@ if (femaleId) {
   const generateFirstChapterOpening = async () => {
     if (!novel || !params.worldName) return;
 
-    setIsGeneratingPrologue(true);
-    setPrologueContent('');
+    setIsGeneratingFirstChapter(true);
+    setFirstChapterContent('');
 
     try {
-      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/prologue`;
+      // 构建世界背景设定
+      const worldSetting = `【世界背景】
+世界：${params.worldName}
+年代：${params.eraBackground || '现代社会'}
+季节：${params.seasonSetting || '春季'}
+地区：${params.region || ''}
+城市：${params.cityLocation || ''}
+
+【主角当前活动】
+${params.protagonistDoing || '暂无'}
+`;
+
+      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
       const body = JSON.stringify({
-        worldName: params.worldName,
-        eraBackground: params.eraBackground || '现代社会',
-        seasonSetting: params.seasonSetting || '春季',
-        protagonistDoing: params.protagonistDoing || '',
-        region: params.region || '',
-        cityLocation: params.cityLocation || '',
+        worldSetting: worldSetting,
+        prompt: `请根据以上世界背景和主角信息，创作本小说的第一章开头内容。要求：
+1. 详细介绍世界背景和时代设定
+2. 自然地引出主要角色（${maleCharacter?.name || '未设置'}、${femaleCharacter?.name || '未设置'}）
+3. 建立故事的基调和发展方向
+4. 字数在800-1000字左右`,
         title: novel.title,
+        themeType: novel.themeType,
         maleCharacter: maleCharacter,
         femaleCharacter: femaleCharacter,
+        previousChapters: [], // 第一次续写，没有之前的章节
       });
 
       const sse = new RNSSE(url, {
@@ -633,9 +647,10 @@ if (femaleId) {
             setCurrentChapterId(chapter.id);
             setCurrentChapterName('第一章');
             setContent(fullContent);
+            setHasGeneratedFirstChapter(true);
           }
           sse.close();
-          setIsGeneratingPrologue(false);
+          setIsGeneratingFirstChapter(false);
           return;
         }
 
@@ -648,7 +663,7 @@ if (femaleId) {
           const parsed = JSON.parse(event.data);
           if (parsed.content && typeof parsed.content === 'string') {
             fullContent += parsed.content;
-            setPrologueContent(fullContent);
+            setFirstChapterContent(fullContent);
           }
         } catch (e) {
           // 忽略解析错误，不输出到控制台
@@ -659,12 +674,12 @@ if (femaleId) {
       sse.addEventListener('error', (error) => {
         console.error('SSE error:', error);
         sse.close();
-        setIsGeneratingPrologue(false);
+        setIsGeneratingFirstChapter(false);
         Alert.alert('错误', '生成第一章开头失败，请重试');
       });
     } catch (error) {
       console.error('First chapter opening generation error:', error);
-      setIsGeneratingPrologue(false);
+      setIsGeneratingFirstChapter(false);
       Alert.alert('错误', '生成第一章开头失败，请重试');
     }
   };
@@ -1508,7 +1523,7 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             </View>
             <ScrollView style={styles.chapterDropdownList}>
               {novel.chapters.map((chapter, index) => {
-                // 计算显示标题：楔子显示"楔子"，正文显示"第X章"
+                // 计算显示标题：第一章节显示"正文显示"第X章"
                 const displayTitle = `第${chapter.order}章 ${chapter.title}`;
                 return (
                   <TouchableOpacity
@@ -1533,21 +1548,21 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
           </View>
         )}
 
-        {/* 楔子生成区域 */}
-        {isGeneratingPrologue && (
-          <View style={styles.prologueGeneratingContainer}>
-            <View style={styles.prologueHeader}>
+        {/* 第一章生成区域 */}
+        {isGeneratingFirstChapter && (
+          <View style={styles.firstChapterGeneratingContainer}>
+            <View style={styles.firstChapterHeader}>
               <ActivityIndicator size="small" color="#C8102E" />
-              <ThemedText variant="small" color="#C8102E" style={styles.prologueHeaderText}>
+              <ThemedText variant="small" color="#C8102E" style={styles.firstChapterHeaderText}>
                 正在生成第一章开头...
               </ThemedText>
             </View>
-            <View style={styles.prologueContentBox}>
-              <ThemedText variant="body" color={theme.textPrimary} style={styles.prologueContentText}>
-                {prologueContent || '正在构思中...'}
+            <View style={styles.firstChapterContentBox}>
+              <ThemedText variant="body" color={theme.textPrimary} style={styles.firstChapterContentText}>
+                {firstChapterContent || '正在构思中...'}
               </ThemedText>
             </View>
-            <View style={styles.prologueHint}>
+            <View style={styles.firstChapterHint}>
               <ThemedText variant="caption" color={theme.textMuted}>
                 世界：{params.worldName} · 年代：{params.eraBackground || '现代社会'} · 季节：{params.seasonSetting || '春季'}
               </ThemedText>
