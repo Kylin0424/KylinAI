@@ -495,16 +495,24 @@ if (femaleId) {
 
   useEffect(() => {
     if (params.selectedCharacterIds && novel && params.selectedCharacterIds !== handledCharacterIdsRef.current) {
+      console.log('[NovelWriting] 从角色库选择多个角色:', params.selectedCharacterIds);
       handledCharacterIdsRef.current = params.selectedCharacterIds;
+
+      // 保存当前novelId，避免router.replace后novel变为null
+      const currentNovelId = novel.id;
+      const currentMaleCharacterId = novel.maleCharacterId;
+      const currentFemaleCharacterId = novel.femaleCharacterId;
+
       handleSelectedCharacters(params.selectedCharacterIds);
+
       // 清除参数，避免重复处理，但保留其他参数
       router.replace('/novel-writing', {
-        novelId: novel.id,
-        maleCharacterId: params.maleCharacterId,
-        femaleCharacterId: params.femaleCharacterId,
+        novelId: currentNovelId,
+        maleCharacterId: currentMaleCharacterId,
+        femaleCharacterId: currentFemaleCharacterId,
       });
     }
-  }, [params.selectedCharacterIds, novel, params.maleCharacterId, params.femaleCharacterId]);
+  }, [params.selectedCharacterIds]);
 
   useFocusEffect(
     useCallback(() => {
