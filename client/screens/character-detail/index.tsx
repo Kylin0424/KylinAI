@@ -284,7 +284,7 @@ export default function CharacterDetailScreen() {
       Alert.alert('提示', '请选择角色和关系');
       return;
     }
-    
+
     setIsSavingRelation(true);
     try {
       // 先从可用角色列表中查找
@@ -293,23 +293,44 @@ export default function CharacterDetailScreen() {
       // 如果没找到，从角色库中查找
       if (!targetChar) {
         try {
+          console.log('[AddRelation] 从角色库查找角色:', selectedTargetId);
           targetChar = await getCharacterById(selectedTargetId);
+          console.log('[AddRelation] 从角色库找到角色:', targetChar?.name);
+
+          // 如果角色存在但不属于当前小说，将其添加到小说中
+          if (targetChar && targetChar.novelId !== character.novelId) {
+            console.log('[AddRelation] 角色不属于当前小说，将其添加到小说中');
+            // 更新角色的novelId
+            await updateCharacter(selectedTargetId, {
+              novelId: character.novelId,
+            });
+            targetChar.novelId = character.novelId;
+
+            // 更新可用角色列表
+            const novelChars = await getNovelCharacters(character.novelId);
+            setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+          }
         } catch (error) {
-          console.error('Error fetching character from library:', error);
+          console.error('[AddRelation] Error fetching character from library:', error);
         }
       }
 
       if (!targetChar) {
-        Alert.alert('错误', '角色不存在');
+        console.error('[AddRelation] 角色不存在:', selectedTargetId);
+        console.error('[AddRelation] availableCharacters:', availableCharacters.map(c => ({ id: c.id, name: c.name })));
+        Alert.alert('错误', '角色不存在，请重新选择');
+        setIsSavingRelation(false);
         return;
       }
-      
+
+      console.log('[AddRelation] 添加关系:', character.name, '->', targetChar.name, selectedRelation);
+
       // 获取反向关系
       const reverseRelation = getReverseRelation(
         selectedRelation,
         (targetChar.gender === '男' ? 'male' : 'female') as 'male' | 'female'
       );
-      
+
       // 添加到关系网络
       await addRelationToNetwork(
         character.novelId,
@@ -322,22 +343,22 @@ export default function CharacterDetailScreen() {
         selectedRelation,
         reverseRelation
       );
-      
+
       // 刷新关系列表
       const relations = await getCharacterRelationsFromNetwork(character.novelId, character.id);
       setCharacterRelations(relations);
-      
+
       // 刷新关系网络
       const network = await getRelationNetwork(character.novelId);
       setRelationNetwork(network);
-      
+
       setShowAddRelationModal(false);
       setSelectedTargetId('');
       setSelectedRelation('');
       Alert.alert('成功', '关系已添加');
     } catch (error) {
-      console.error('Error adding relation:', error);
-      Alert.alert('错误', '添加关系失败');
+      console.error('[AddRelation] Error adding relation:', error);
+      Alert.alert('错误', `添加关系失败: ${error instanceof Error ? error.message : '请重试'}`);
     } finally {
       setIsSavingRelation(false);
     }
