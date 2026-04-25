@@ -287,20 +287,22 @@ export default function CharacterDetailScreen() {
 
     setIsSavingRelation(true);
     try {
-      // 先从可用角色列表中查找
+      console.log('[AddRelation] 开始添加关系');
+      console.log('[AddRelation] selectedTargetId:', selectedTargetId);
+      console.log('[AddRelation] availableCharacters:', availableCharacters.map(c => ({ id: c.id, name: c.name })));
+
+      // 尝试从不同来源查找角色
       let targetChar = availableCharacters.find(c => c.id === selectedTargetId);
 
-      // 如果没找到，从角色库中查找
       if (!targetChar) {
+        console.log('[AddRelation] 从可用角色列表未找到，尝试从角色库查找');
         try {
-          console.log('[AddRelation] 从角色库查找角色:', selectedTargetId);
           targetChar = await getCharacterById(selectedTargetId);
           console.log('[AddRelation] 从角色库找到角色:', targetChar?.name);
 
           // 如果角色存在但不属于当前小说，将其添加到小说中
           if (targetChar && targetChar.novelId !== character.novelId) {
             console.log('[AddRelation] 角色不属于当前小说，将其添加到小说中');
-            // 更新角色的novelId
             await updateCharacter(selectedTargetId, {
               novelId: character.novelId,
             });
@@ -316,9 +318,8 @@ export default function CharacterDetailScreen() {
       }
 
       if (!targetChar) {
-        console.error('[AddRelation] 角色不存在:', selectedTargetId);
-        console.error('[AddRelation] availableCharacters:', availableCharacters.map(c => ({ id: c.id, name: c.name })));
-        Alert.alert('错误', '角色不存在，请重新选择');
+        console.error('[AddRelation] 角色不存在，selectedTargetId:', selectedTargetId);
+        Alert.alert('错误', `角色不存在 (ID: ${selectedTargetId})，请重新选择`);
         setIsSavingRelation(false);
         return;
       }

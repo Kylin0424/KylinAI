@@ -438,7 +438,7 @@ ${newPlotContext}
  * }
  */
 router.post('/continue', async (req: Request, res: Response) => {
-  const { prompt, title, themeType, maleCharacter, femaleCharacter, previousChapters } = req.body;
+  const { prompt, title, themeType, maleCharacter, femaleCharacter, previousChapters, worldSetting } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: '缺少续写提示参数' });
@@ -452,25 +452,67 @@ router.post('/continue', async (req: Request, res: Response) => {
 });
     const client = new LLMClient(config, customHeaders);
 
-    // 构建主要角色信息
+    // 构建主要角色信息（详细信息）
     let charactersInfo = '';
     if (maleCharacter) {
-      charactersInfo += `男主角：${maleCharacter.name}，${maleCharacter.age || '?'}岁，${maleCharacter.occupation || '未知'}`;
-      if (maleCharacter.personality) {
-        charactersInfo += `，性格：${maleCharacter.personality.substring(0, 100)}`;
+      charactersInfo += `【男主角】\n`;
+      charactersInfo += `姓名：${maleCharacter.name}\n`;
+      charactersInfo += `性别：${maleCharacter.gender}\n`;
+      charactersInfo += `年龄：${maleCharacter.age || '?'}岁\n`;
+      charactersInfo += `身高：${maleCharacter.height || '未知'}\n`;
+      charactersInfo += `学历：${maleCharacter.education || '未知'}\n`;
+      charactersInfo += `职业：${maleCharacter.occupation || '未知'}\n`;
+      if (maleCharacter.group) {
+        charactersInfo += `所属团体：${maleCharacter.group}\n`;
       }
-      if (maleCharacter.education) {
-        charactersInfo += `，学历：${maleCharacter.education}`;
+      if (maleCharacter.position) {
+        charactersInfo += `职位：${maleCharacter.position}\n`;
+      }
+      if (maleCharacter.personality) {
+        charactersInfo += `性格特点：${maleCharacter.personality}\n`;
+      }
+      if (maleCharacter.experience) {
+        charactersInfo += `经历背景：${maleCharacter.experience}\n`;
+      }
+      if (maleCharacter.familyBackground) {
+        charactersInfo += `家庭背景：${maleCharacter.familyBackground}\n`;
+      }
+      if (maleCharacter.appearance) {
+        charactersInfo += `外貌特征：${maleCharacter.appearance}\n`;
+      }
+      if (maleCharacter.specialTraits) {
+        charactersInfo += `特殊特征：${maleCharacter.specialTraits}\n`;
       }
       charactersInfo += '\n';
     }
     if (femaleCharacter) {
-      charactersInfo += `女主角：${femaleCharacter.name}，${femaleCharacter.age || '?'}岁，${femaleCharacter.occupation || '未知'}`;
-      if (femaleCharacter.personality) {
-        charactersInfo += `，性格：${femaleCharacter.personality.substring(0, 100)}`;
+      charactersInfo += `【女主角】\n`;
+      charactersInfo += `姓名：${femaleCharacter.name}\n`;
+      charactersInfo += `性别：${femaleCharacter.gender}\n`;
+      charactersInfo += `年龄：${femaleCharacter.age || '?'}岁\n`;
+      charactersInfo += `身高：${femaleCharacter.height || '未知'}\n`;
+      charactersInfo += `学历：${femaleCharacter.education || '未知'}\n`;
+      charactersInfo += `职业：${femaleCharacter.occupation || '未知'}\n`;
+      if (femaleCharacter.group) {
+        charactersInfo += `所属团体：${femaleCharacter.group}\n`;
       }
-      if (femaleCharacter.education) {
-        charactersInfo += `，学历：${femaleCharacter.education}`;
+      if (femaleCharacter.position) {
+        charactersInfo += `职位：${femaleCharacter.position}\n`;
+      }
+      if (femaleCharacter.personality) {
+        charactersInfo += `性格特点：${femaleCharacter.personality}\n`;
+      }
+      if (femaleCharacter.experience) {
+        charactersInfo += `经历背景：${femaleCharacter.experience}\n`;
+      }
+      if (femaleCharacter.familyBackground) {
+        charactersInfo += `家庭背景：${femaleCharacter.familyBackground}\n`;
+      }
+      if (femaleCharacter.appearance) {
+        charactersInfo += `外貌特征：${femaleCharacter.appearance}\n`;
+      }
+      if (femaleCharacter.specialTraits) {
+        charactersInfo += `特殊特征：${femaleCharacter.specialTraits}\n`;
       }
       charactersInfo += '\n';
     }
