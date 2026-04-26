@@ -584,9 +584,9 @@ if (femaleId) {
       params.autoGeneratePrologue === 'true' &&
       params.worldName &&
       novel &&
-      !hasGeneratedPrologue.current
+      !hasGeneratedFirstChapter.current
     ) {
-      hasGeneratedPrologue.current = true;
+      hasGeneratedFirstChapter.current = true;
       generateFirstChapterOpening();
     }
   }, [params.autoGeneratePrologue, params.worldName, novel]);
