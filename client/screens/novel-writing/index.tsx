@@ -124,8 +124,8 @@ export default function NovelWritingScreen() {
   } | null>(null);
 
   // 第一章生成状态
-  const [isGeneratingFirstChapter, setIsGeneratingPrologue] = useState(false);
-  const [firstChapterContent, setPrologueContent] = useState('');
+  const [isGeneratingFirstChapter, setIsGeneratingFirstChapter] = useState(false);
+  const [firstChapterContent, setFirstChapterContent] = useState('');
   const hasGeneratedFirstChapter = useRef(false);
 
   // AI续写弹窗

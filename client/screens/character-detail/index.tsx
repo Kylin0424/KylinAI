@@ -184,21 +184,35 @@ export default function CharacterDetailScreen() {
             // 角色不在当前小说中，尝试从角色库查找并添加
             try {
               const libraryChar = await getCharacterById(params.selectedRelationCharacterId);
-              if (libraryChar && libraryChar.novelId !== character.novelId) {
-                console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
-                await updateCharacter(params.selectedRelationCharacterId, {
-                  novelId: character.novelId,
-                });
+              if (libraryChar) {
+                console.log('[AddRelation] 角色信息:', libraryChar.name, '当前小说ID:', libraryChar.novelId, '目标小说ID:', character.novelId);
 
-                // 重新加载可用角色列表
-                const novelChars = await getNovelCharacters(character.novelId);
-                setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+                if (libraryChar.novelId !== character.novelId) {
+                  console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
+                  await updateCharacter(params.selectedRelationCharacterId, {
+                    novelId: character.novelId,
+                  });
+
+                  // 重新加载可用角色列表
+                  const novelChars = await getNovelCharacters(character.novelId);
+                  setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+                  console.log('[AddRelation] 更新后的可用角色数量:', novelChars.length);
+                } else {
+                  console.log('[AddRelation] 角色已属于当前小说，重新加载列表');
+                  // 角色已属于当前小说，但不在availableCharacters中，重新加载
+                  const novelChars = await getNovelCharacters(character.novelId);
+                  setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+                }
               }
             } catch (error) {
               console.error('[AddRelation] Error adding character to novel:', error);
+              Alert.alert('错误', '添加角色到小说失败');
+              return;
             }
           }
 
+          // 直接设置选中的目标角色ID，不再重复检查
+          console.log('[AddRelation] 设置选中的目标角色ID:', params.selectedRelationCharacterId);
           setSelectedTargetId(params.selectedRelationCharacterId);
           setShowAddRelationModal(true);
         }
