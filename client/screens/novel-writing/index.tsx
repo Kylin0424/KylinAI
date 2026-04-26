@@ -388,13 +388,26 @@ if (femaleId) {
       Alert.alert(
         '导入成功',
         `已成功导入 ${importData.chapters.length} 个章节${importData.identifiedCharacters?.length ? `和 ${importData.identifiedCharacters.length} 个角色` : ''}`,
-        [{ text: '确定' }]
+        [
+          {
+            text: '查看角色',
+            onPress: () => {
+              // 跳转到角色列表页面
+              router.push('/character-list');
+            }
+          },
+          {
+            text: '开始创作',
+            style: 'default',
+            onPress: () => {
+              // 清除importData参数，避免重复处理
+              router.replace('/novel-writing', {
+                novelId: newNovel.id,
+              });
+            }
+          }
+        ]
       );
-
-      // 清除importData参数，避免重复处理
-      router.replace('/novel-writing', {
-        novelId: newNovel.id,
-      });
     } catch (error) {
       console.error('Handle import data error:', error);
       Alert.alert('错误', '导入小说数据失败');
@@ -1360,6 +1373,10 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
       const data = await response.json();
       setContent(prev => prev + '\n\n' + data.content);
       setContinueDirection(''); // 清空续写走向
+
+      // 自动保存生成的内容
+      await handleSave();
+      Alert.alert('成功', 'AI续写内容已生成并保存');
     } catch (error) {
       console.error('Novel generation error:', error);
       Alert.alert('错误', '生成内容失败，请重试');
