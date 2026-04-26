@@ -48,6 +48,8 @@ export default function NovelTextEditor() {
   const [searchResults, setSearchResults] = useState<MarkerPosition[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const [highlightedChapterIndex, setHighlightedChapterIndex] = useState<number>(-1);
+  const [textHeight, setTextHeight] = useState(0); // 文本总高度
+  const [lineHeight, setLineHeight] = useState(20); // 行高（默认20）
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
 
@@ -208,8 +210,12 @@ export default function NovelTextEditor() {
 
   // 滚动到指定位置
   const scrollToPosition = (position: number) => {
-    // 估算滚动位置（每个字符约2像素高度，简化计算）
-    const scrollPosition = Math.max(0, position * 0.5);
+    // 计算当前字符所在的行号
+    const line = getLineNumber(position);
+
+    // 使用行号和行高来估算滚动位置
+    // 每行高度 = lineHeight，滚动位置 = 行号 * 行高
+    const scrollPosition = Math.max(0, line * lineHeight);
     scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: true });
   };
 
@@ -256,8 +262,9 @@ export default function NovelTextEditor() {
 
     const chapter = chapters[chapterIndex];
     if (chapter) {
-      // 计算滚动位置（简单估算）
-      const scrollY = chapter.startIndex * 0.5;
+      // 计算滚动位置：使用章节起始位置的行号
+      const chapterStartLine = getLineNumber(chapter.startIndex);
+      const scrollY = Math.max(0, chapterStartLine * lineHeight);
       scrollViewRef.current?.scrollTo({
         y: scrollY,
         animated: true,
@@ -321,27 +328,28 @@ export default function NovelTextEditor() {
     }
   };
 
-  // 插入分隔符 - 在光标位置显示提示
+  // 插入分隔符 - 在标记的位置插入
   const insertSeparator = () => {
-    const line = getLineNumber(cursorPosition);
-
-    setInsertPosition({
-      index: cursorPosition,
-      line: line,
-    });
-    setShowInsertHint(true);
-
-    // 2秒后自动隐藏提示
-    setTimeout(() => {
-      setShowInsertHint(false);
-      setInsertPosition(null);
-    }, 2000);
+    if (!insertPosition) {
+      Alert.alert('提示', '请先点击文本中的某一行来标记插入位置');
+      return;
+    }
 
     const separator = '\n===章节分隔符===\n';
     const newText =
-      text.slice(0, cursorPosition) + separator + text.slice(cursorPosition);
+      text.slice(0, insertPosition.index) + separator + text.slice(insertPosition.index);
     setText(newText);
-    setCursorPosition(cursorPosition + separator.length);
+
+    // 更新光标位置到分隔符之后
+    const newCursorPosition = insertPosition.index + separator.length;
+    setCursorPosition(newCursorPosition);
+
+    // 隐藏提示
+    setShowInsertHint(false);
+    setInsertPosition(null);
+
+    Alert.alert('成功', `已在第 ${insertPosition.line} 行插入分隔符`);
+  };
 
     // 自动滚动到光标位置
     setTimeout(() => {
@@ -500,12 +508,35 @@ export default function NovelTextEditor() {
     identifyCharacters();
   };
 
-  // 计算光标在TextInput中的位置
+  // 处理文本内容大小变化
+  const handleContentSizeChange = (event: any) => {
+    const { contentSize } = event.nativeEvent;
+    if (contentSize) {
+      const newHeight = contentSize.height;
+      setTextHeight(newHeight);
+
+      // 估算行高：总高度 / 行数
+      const totalLines = getLineNumber(text.length) + 1; // +1 是因为最后一行可能不完整
+      if (totalLines > 0) {
+        setLineHeight(newHeight / totalLines);
+      }
+    }
+  };
   const handleSelectionChange = (event: any) => {
     const { selection } = event.nativeEvent;
     if (selection) {
       setSelection(selection);
       setCursorPosition(selection.start);
+
+      // 当光标移动时，自动标记分隔符插入位置（显示提示）
+      if (!showInsertHint || cursorPosition !== selection.start) {
+        const line = getLineNumber(selection.start);
+        setInsertPosition({
+          index: selection.start,
+          line: line,
+        });
+        setShowInsertHint(true);
+      }
     }
   };
 
@@ -602,6 +633,7 @@ export default function NovelTextEditor() {
               value={text}
               onChangeText={setText}
               onSelectionChange={handleSelectionChange}
+              onContentSizeChange={handleContentSizeChange}
               placeholder="开始编辑您的小说内容..."
               placeholderTextColor="#999"
               autoFocus
@@ -612,10 +644,10 @@ export default function NovelTextEditor() {
             {showInsertHint && insertPosition && (
               <View style={styles.insertHint}>
                 <View style={styles.insertHintMarker}>
-                  <Feather name="scissors" size={16} color="#C8102E" />
+                  <Feather name="arrow-left" size={20} color="#C8102E" />
                 </View>
                 <Text style={styles.insertHintText}>
-                  分隔符已插入第 {insertPosition.line} 行
+                  分隔符将被放置在第 {insertPosition.line} 行
                 </Text>
               </View>
             )}
