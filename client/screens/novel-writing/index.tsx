@@ -2694,7 +2694,8 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                 style={styles.addSideCharacterOption}
                 onPress={() => {
                   setShowAddSideCharacterModal(false);
-                  router.push('/character-list?mode=select&returnTo=/novel-writing');
+                  // 传递novelId，确保返回时novel不会丢失
+                  router.push(`/character-list?mode=select&returnTo=/novel-writing&novelId=${novel?.id || ''}`);
                 }}
               >
                 <View style={styles.addSideCharacterOptionIcon}>

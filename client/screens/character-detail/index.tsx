@@ -174,7 +174,31 @@ export default function CharacterDetailScreen() {
         setIsLoading(false);
 
         // 处理从角色库返回的选择
-        if (params.selectedRelationCharacterId) {
+        if (params.selectedRelationCharacterId && character?.novelId) {
+          console.log('[AddRelation] 从角色库返回，角色ID:', params.selectedRelationCharacterId);
+
+          // 检查角色是否属于当前小说
+          const targetChar = availableCharacters.find(c => c.id === params.selectedRelationCharacterId);
+
+          if (!targetChar) {
+            // 角色不在当前小说中，尝试从角色库查找并添加
+            try {
+              const libraryChar = await getCharacterById(params.selectedRelationCharacterId);
+              if (libraryChar && libraryChar.novelId !== character.novelId) {
+                console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
+                await updateCharacter(params.selectedRelationCharacterId, {
+                  novelId: character.novelId,
+                });
+
+                // 重新加载可用角色列表
+                const novelChars = await getNovelCharacters(character.novelId);
+                setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+              }
+            } catch (error) {
+              console.error('[AddRelation] Error adding character to novel:', error);
+            }
+          }
+
           setSelectedTargetId(params.selectedRelationCharacterId);
           setShowAddRelationModal(true);
         }

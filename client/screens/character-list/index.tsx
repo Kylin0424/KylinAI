@@ -33,6 +33,7 @@ export default function CharacterListScreen() {
   const params = useSafeSearchParams<{
     mode?: string;
     returnTo?: string;
+    novelId?: string;  // 添加novelId参数
   }>();
 
   const isSelectMode = params.mode === 'select' || params.mode === 'select-relation';
@@ -439,6 +440,7 @@ export default function CharacterListScreen() {
                         const returnTo = params.returnTo || '/home';
                         router.replace(returnTo, {
                           selectedCharacterId: char.id,
+                          novelId: params.novelId,  // 保留novelId参数
                         });
                       } else {
                         // 普通模式：跳转到角色详情
@@ -507,6 +509,7 @@ export default function CharacterListScreen() {
             const returnTo = params.returnTo || '/home';
             router.replace(returnTo, {
               selectedCharacterIds: selectedCharacterIds.join(','),
+              novelId: params.novelId,  // 保留novelId参数
             });
           }}
         >
