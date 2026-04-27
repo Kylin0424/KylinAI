@@ -23,6 +23,7 @@ import {
   deleteCharacter,
 } from '@/utils/characterStorage';
 import { Novel, getAllNovels } from '@/utils/novelStorage';
+import { FAMILY_RELATIONS } from '@/constants/familyRelations';
 
 type CharacterTab = 'permanent' | 'temporary';
 
@@ -167,22 +168,9 @@ export default function CharacterListScreen() {
   };
 
   const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
-    const relationTypes: Record<string, string> = {
-      'father': '父亲',
-      'mother': '母亲',
-      'spouse': '配偶',
-      'sibling': '兄弟姐妹',
-      'child': '子女',
-      'friend': '朋友',
-      'enemy': '敌人',
-      'colleague': '同事',
-      'lover': '恋人',
-      'mentor': '导师',
-      'student': '学生',
-    };
-    
-    const label = relationTypes[relation.relationType] || relation.relationType;
-    return label;
+    // 使用FAMILY_RELATIONS数组查找对应的中文名称
+    const relationDef = FAMILY_RELATIONS.find(r => r.id === relation.relationType);
+    return relationDef?.name || relation.relationType;
   };
 
   const getRelatedCharacter = (relation: CharacterRelation, charId: string): Character | undefined => {
@@ -412,10 +400,11 @@ export default function CharacterListScreen() {
                       <View style={styles.relationsList}>
                         {charRelations.map(relation => {
                           const relatedChar = getRelatedCharacter(relation, char.id);
+                          const relationLabel = getRelationLabel(relation, char.id);
                           return (
                             <View key={relation.id} style={styles.relationTag}>
                               <ThemedText variant="caption" color={theme.textSecondary}>
-                                {getRelationLabel(relation, char.id)}: {relatedChar?.name || '未知'}
+                                {relatedChar?.name}的{relationLabel}
                               </ThemedText>
                             </View>
                           );
