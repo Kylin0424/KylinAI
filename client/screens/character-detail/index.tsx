@@ -931,18 +931,23 @@ export default function CharacterDetailScreen() {
               {/* 已有关系列表 */}
               {characterRelations.length > 0 ? (
                 <View style={styles.relationList}>
-                  {characterRelations.map((rel, index) => (
-                    <View key={index} style={styles.relationItem}>
-                      <View style={styles.relationInfo}>
-                        <ThemedText variant="smallMedium" color={theme.textPrimary}>
-                          {rel.targetName}{getRelationLabel(rel.relationType) ? '的' + getRelationLabel(rel.relationType) : ''}
-                        </ThemedText>
-                        {rel.reverseRelation && (
-                          <ThemedText variant="caption" color={theme.textMuted}>
-                            {' (' + getRelationLabel(rel.reverseRelation) + ')'}
+                  {characterRelations.map((rel, index) => {
+                    // 查找relationType对应的关系定义
+                    const relationDef = FAMILY_RELATIONS.find(r => r.id === rel.relationType);
+                    const relationLabel = relationDef?.name || getRelationLabel(rel.relationType);
+
+                    return (
+                      <View key={index} style={styles.relationItem}>
+                        <View style={styles.relationInfo}>
+                          <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                            {rel.targetName}的{relationLabel}
                           </ThemedText>
-                        )}
-                      </View>
+                          {rel.reverseRelation && (
+                            <ThemedText variant="caption" color={theme.textMuted}>
+                              {' (' + getRelationLabel(rel.reverseRelation) + ')'}
+                            </ThemedText>
+                          )}
+                        </View>
                       <TouchableOpacity
                         style={styles.removeRelationButton}
                         onPress={() => handleRemoveRelation(rel.targetId)}
