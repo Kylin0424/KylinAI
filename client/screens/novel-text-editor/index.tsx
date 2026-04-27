@@ -351,12 +351,6 @@ export default function NovelTextEditor() {
     Alert.alert('成功', `已在第 ${insertPosition.line} 行插入分隔符`);
   };
 
-    // 自动滚动到光标位置
-    setTimeout(() => {
-      scrollToPosition(cursorPosition);
-    }, 100);
-  };
-
   // 打开章节命名弹窗
   const openChapterNameModal = () => {
     setChapterName('');
