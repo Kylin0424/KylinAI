@@ -948,14 +948,15 @@ export default function CharacterDetailScreen() {
                             </ThemedText>
                           )}
                         </View>
-                      <TouchableOpacity
-                        style={styles.removeRelationButton}
-                        onPress={() => handleRemoveRelation(rel.targetId)}
-                      >
-                        <Feather name="x" size={16} color={theme.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
+                        <TouchableOpacity
+                          style={styles.removeRelationButton}
+                          onPress={() => handleRemoveRelation(rel.targetId)}
+                        >
+                          <Feather name="x" size={16} color={theme.textMuted} />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
                 </View>
               ) : (
                 <View style={styles.emptyRelationContainer}>
