@@ -89,44 +89,11 @@ export default function CharacterDetailScreen() {
   const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
   const [isSavingRelation, setIsSavingRelation] = useState(false);
 
-  // 关系类型映射（英文key到中文标签）
-  const RELATION_LABELS: Record<string, string> = {
-    'father': '父亲',
-    'mother': '母亲',
-    'grandfather': '祖父/外祖父',
-    'grandmother': '祖母/外祖母',
-    'husband': '丈夫',
-    'wife': '妻子',
-    'spouse': '配偶',
-    'son': '儿子',
-    'daughter': '女儿',
-    'child': '子女',
-    'brother': '兄弟',
-    'sister': '姐妹',
-    'sibling': '兄弟姐妹',
-    'uncle': '伯叔/舅舅',
-    'aunt': '姑妈/姨妈',
-    'father_in_law': '公公/岳父',
-    'mother_in_law': '婆婆/岳母',
-    'brother_in_law': '姐夫/妹夫/小舅子',
-    'sister_in_law': '嫂子/弟妹/小姑子',
-    'daughter_in_law': '儿媳',
-    'son_in_law': '女婿',
-    'nephew': '侄子',
-    'niece': '侄女',
-    'cousin_male': '堂兄弟/表兄弟',
-    'cousin_female': '堂姐妹/表姐妹',
-    'friend': '朋友',
-    'enemy': '敌人',
-    'colleague': '同事',
-    'lover': '恋人',
-    'mentor': '导师',
-    'student': '学生',
-  };
-
   // 获取关系类型的中文名称
   const getRelationLabel = (relationKey: string): string => {
-    return RELATION_LABELS[relationKey] || relationKey;
+    // 从FAMILY_RELATIONS数组中查找对应的中文名称
+    const relation = FAMILY_RELATIONS.find(r => r.id === relationKey);
+    return relation?.name || relationKey;
   };
 
   useFocusEffect(
@@ -176,14 +143,20 @@ export default function CharacterDetailScreen() {
         // 处理从角色库返回的选择
         if (params.selectedRelationCharacterId && character?.novelId) {
           console.log('[AddRelation] 从角色库返回，角色ID:', params.selectedRelationCharacterId);
+          console.log('[AddRelation] 当前角色信息:', character.name, 'novelId:', character.novelId);
+          console.log('[AddRelation] 可用角色列表:', availableCharacters.map(c => ({id: c.id, name: c.name})));
 
           // 检查角色是否属于当前小说
           const targetChar = availableCharacters.find(c => c.id === params.selectedRelationCharacterId);
+          console.log('[AddRelation] 查找结果:', targetChar ? `找到角色 ${targetChar.name}` : '角色不在可用列表中');
 
           if (!targetChar) {
             // 角色不在当前小说中，尝试从角色库查找并添加
             try {
+              console.log('[AddRelation] 开始从角色库查找角色...');
               const libraryChar = await getCharacterById(params.selectedRelationCharacterId);
+              console.log('[AddRelation] 角色库返回:', libraryChar);
+
               if (libraryChar) {
                 console.log('[AddRelation] 角色信息:', libraryChar.name, '当前小说ID:', libraryChar.novelId, '目标小说ID:', character.novelId);
 
@@ -197,11 +170,13 @@ export default function CharacterDetailScreen() {
                   const novelChars = await getNovelCharacters(character.novelId);
                   setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
                   console.log('[AddRelation] 更新后的可用角色数量:', novelChars.length);
+                  console.log('[AddRelation] 更新后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
                 } else {
                   console.log('[AddRelation] 角色已属于当前小说，重新加载列表');
                   // 角色已属于当前小说，但不在availableCharacters中，重新加载
                   const novelChars = await getNovelCharacters(character.novelId);
                   setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+                  console.log('[AddRelation] 重新加载后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
                 }
               }
             } catch (error) {
