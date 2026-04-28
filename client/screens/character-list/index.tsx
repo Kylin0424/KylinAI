@@ -401,6 +401,14 @@ export default function CharacterListScreen() {
                         {charRelations.map(relation => {
                           const relatedChar = getRelatedCharacter(relation, char.id);
                           const relationLabel = getRelationLabel(relation, char.id);
+
+                          console.log('[CharacterList] 关系显示调试:', {
+                            charName: char.name,
+                            relatedCharName: relatedChar?.name,
+                            relationType: relation.relationType,
+                            relationLabel: relationLabel
+                          });
+
                           return (
                             <View key={relation.id} style={styles.relationTag}>
                               <ThemedText variant="caption" color={theme.textSecondary}>

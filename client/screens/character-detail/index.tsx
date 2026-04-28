@@ -936,6 +936,15 @@ export default function CharacterDetailScreen() {
                     const relationDef = FAMILY_RELATIONS.find(r => r.id === rel.relationType);
                     const relationLabel = relationDef?.name || getRelationLabel(rel.relationType);
 
+                    console.log('[Debug] 关系显示调试:', {
+                      characterName: character.name,
+                      targetName: rel.targetName,
+                      relationType: rel.relationType,
+                      relationLabel: relationLabel,
+                      reverseRelation: rel.reverseRelation,
+                      relationDef: relationDef
+                    });
+
                     return (
                       <View key={index} style={styles.relationItem}>
                         <View style={styles.relationInfo}>
