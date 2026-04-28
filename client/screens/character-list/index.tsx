@@ -370,8 +370,8 @@ export default function CharacterListScreen() {
                 onPress={handleBatchDelete}
                 disabled={selectedForDelete.length === 0}
               >
-                <Feather name="trash-2" size={16} color="#fff" />
-                <ThemedText variant="small" color="#fff" style={{ marginLeft: 6 }}>
+                <Feather name="trash-2" size={16} color="#C8102E" />
+                <ThemedText variant="small" color="#C8102E" style={{ marginLeft: 6 }}>
                   删除选中
                 </ThemedText>
               </TouchableOpacity>
