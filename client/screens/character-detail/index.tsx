@@ -163,77 +163,83 @@ export default function CharacterDetailScreen() {
           if (char.novelId) {
             const n = await getNovelById(char.novelId);
             setNovel(n);
-            
+
             // 加载关系网络
             const network = await getRelationNetwork(char.novelId);
             setRelationNetwork(network);
-            
+
             // 加载当前角色的关系
             const relations = await getCharacterRelationsFromNetwork(char.novelId, char.id);
             setCharacterRelations(relations);
-            
+
             // 加载小说的其他角色（用于添加关系）
             const novelChars = await getNovelCharacters(char.novelId);
             setAvailableCharacters(novelChars.filter(c => c.id !== char.id));
           }
         }
         setIsLoading(false);
-
-        // 处理从角色库返回的选择
-        if (params.selectedRelationCharacterId && character?.novelId) {
-          console.log('[AddRelation] 从角色库返回，角色ID:', params.selectedRelationCharacterId);
-          console.log('[AddRelation] 当前角色信息:', character.name, 'novelId:', character.novelId);
-          console.log('[AddRelation] 可用角色列表:', availableCharacters.map(c => ({id: c.id, name: c.name})));
-
-          // 检查角色是否属于当前小说
-          const targetChar = availableCharacters.find(c => c.id === params.selectedRelationCharacterId);
-          console.log('[AddRelation] 查找结果:', targetChar ? `找到角色 ${targetChar.name}` : '角色不在可用列表中');
-
-          if (!targetChar) {
-            // 角色不在当前小说中，尝试从角色库查找并添加
-            try {
-              console.log('[AddRelation] 开始从角色库查找角色...');
-              const libraryChar = await getCharacterById(params.selectedRelationCharacterId);
-              console.log('[AddRelation] 角色库返回:', libraryChar);
-
-              if (libraryChar) {
-                console.log('[AddRelation] 角色信息:', libraryChar.name, '当前小说ID:', libraryChar.novelId, '目标小说ID:', character.novelId);
-
-                if (libraryChar.novelId !== character.novelId) {
-                  console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
-                  await updateCharacter(params.selectedRelationCharacterId, {
-                    novelId: character.novelId,
-                  });
-
-                  // 重新加载可用角色列表
-                  const novelChars = await getNovelCharacters(character.novelId);
-                  setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
-                  console.log('[AddRelation] 更新后的可用角色数量:', novelChars.length);
-                  console.log('[AddRelation] 更新后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
-                } else {
-                  console.log('[AddRelation] 角色已属于当前小说，重新加载列表');
-                  // 角色已属于当前小说，但不在availableCharacters中，重新加载
-                  const novelChars = await getNovelCharacters(character.novelId);
-                  setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
-                  console.log('[AddRelation] 重新加载后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
-                }
-              }
-            } catch (error) {
-              console.error('[AddRelation] Error adding character to novel:', error);
-              Alert.alert('错误', '添加角色到小说失败');
-              return;
-            }
-          }
-
-          // 直接设置选中的目标角色ID，不再重复检查
-          console.log('[AddRelation] 设置选中的目标角色ID:', params.selectedRelationCharacterId);
-          setSelectedTargetId(params.selectedRelationCharacterId);
-          setShowAddRelationModal(true);
-        }
       };
       loadCharacterData();
-    }, [params.characterId, params.selectedRelationCharacterId])
+    }, [params.characterId])
   );
+
+  // 处理从角色库返回的选择（独立的useEffect，避免在useFocusEffect中重复执行）
+  React.useEffect(() => {
+    const handleReturnFromLibrary = async () => {
+      if (!params.selectedRelationCharacterId || !character?.novelId) return;
+
+      console.log('[AddRelation] 从角色库返回，角色ID:', params.selectedRelationCharacterId);
+      console.log('[AddRelation] 当前角色信息:', character.name, 'novelId:', character.novelId);
+      console.log('[AddRelation] 可用角色列表:', availableCharacters.map(c => ({id: c.id, name: c.name})));
+
+      // 检查角色是否属于当前小说
+      const targetChar = availableCharacters.find(c => c.id === params.selectedRelationCharacterId);
+      console.log('[AddRelation] 查找结果:', targetChar ? `找到角色 ${targetChar.name}` : '角色不在可用列表中');
+
+      if (!targetChar) {
+        // 角色不在当前小说中，尝试从角色库查找并添加
+        try {
+          console.log('[AddRelation] 开始从角色库查找角色...');
+          const libraryChar = await getCharacterById(params.selectedRelationCharacterId);
+          console.log('[AddRelation] 角色库返回:', libraryChar);
+
+          if (libraryChar) {
+            console.log('[AddRelation] 角色信息:', libraryChar.name, '当前小说ID:', libraryChar.novelId, '目标小说ID:', character.novelId);
+
+            if (libraryChar.novelId !== character.novelId) {
+              console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
+              await updateCharacter(params.selectedRelationCharacterId, {
+                novelId: character.novelId,
+              });
+
+              // 重新加载可用角色列表
+              const novelChars = await getNovelCharacters(character.novelId);
+              setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+              console.log('[AddRelation] 更新后的可用角色数量:', novelChars.length);
+              console.log('[AddRelation] 更新后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
+            } else {
+              console.log('[AddRelation] 角色已属于当前小说，重新加载列表');
+              // 角色已属于当前小说，但不在availableCharacters中，重新加载
+              const novelChars = await getNovelCharacters(character.novelId);
+              setAvailableCharacters(novelChars.filter(c => c.id !== character.id));
+              console.log('[AddRelation] 重新加载后的可用角色列表:', novelChars.filter(c => c.id !== character.id).map(c => ({id: c.id, name: c.name})));
+            }
+          }
+        } catch (error) {
+          console.error('[AddRelation] Error adding character to novel:', error);
+          Alert.alert('错误', '添加角色到小说失败');
+          return;
+        }
+      }
+
+      // 直接设置选中的目标角色ID，不再重复检查
+      console.log('[AddRelation] 设置选中的目标角色ID:', params.selectedRelationCharacterId);
+      setSelectedTargetId(params.selectedRelationCharacterId);
+      setShowAddRelationModal(true);
+    };
+
+    handleReturnFromLibrary();
+  }, [params.selectedRelationCharacterId, character?.novelId, availableCharacters]);
 
   // 检查是否可编辑（未关联小说的角色可编辑）
   const canEdit = !character?.novelId;
