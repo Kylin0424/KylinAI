@@ -239,7 +239,7 @@ export default function CharacterDetailScreen() {
     };
 
     handleReturnFromLibrary();
-  }, [params.selectedRelationCharacterId, character?.novelId, availableCharacters]);
+  }, [params.selectedRelationCharacterId, character?.novelId]); // 移除availableCharacters依赖，避免无限循环
 
   // 检查是否可编辑（未关联小说的角色可编辑）
   const canEdit = !character?.novelId;
