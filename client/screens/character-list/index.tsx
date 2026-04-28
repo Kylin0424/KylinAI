@@ -21,6 +21,7 @@ import {
   getAllCharacters,
   getAllRelations,
   deleteCharacter,
+  forceDeleteCharacters,
 } from '@/utils/characterStorage';
 import { Novel, getAllNovels } from '@/utils/novelStorage';
 import { FAMILY_RELATIONS } from '@/constants/familyRelations';
@@ -48,6 +49,12 @@ export default function CharacterListScreen() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+
+  // 多选模式相关状态
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState<string[]>([]);
+  const [showMultiSelectConfirm, setShowMultiSelectConfirm] = useState(false);
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -159,6 +166,65 @@ export default function CharacterListScreen() {
     console.log('[CharacterList] Delete cancelled');
     setDeleteModalVisible(false);
     setCharacterToDelete(null);
+  };
+
+  // 多选模式相关函数
+  const handleLongPress = (character: Character) => {
+    console.log('[CharacterList] Long pressed on:', character.name);
+    // 触发多选模式确认弹窗
+    setShowMultiSelectConfirm(true);
+  };
+
+  const handleConfirmMultiSelect = () => {
+    console.log('[CharacterList] Confirmed entering multi-select mode');
+    setIsMultiSelectMode(true);
+    setShowMultiSelectConfirm(false);
+  };
+
+  const handleCancelMultiSelect = () => {
+    console.log('[CharacterList] Cancelled entering multi-select mode');
+    setShowMultiSelectConfirm(false);
+  };
+
+  const handleExitMultiSelect = () => {
+    console.log('[CharacterList] Exiting multi-select mode');
+    setIsMultiSelectMode(false);
+    setSelectedForDelete([]);
+  };
+
+  const handleToggleSelection = (characterId: string) => {
+    console.log('[CharacterList] Toggling selection for:', characterId);
+    if (selectedForDelete.includes(characterId)) {
+      setSelectedForDelete(selectedForDelete.filter(id => id !== characterId));
+    } else {
+      setSelectedForDelete([...selectedForDelete, characterId]);
+    }
+  };
+
+  const handleBatchDelete = () => {
+    console.log('[CharacterList] Batch delete requested for:', selectedForDelete);
+    setShowBatchDeleteConfirm(true);
+  };
+
+  const handleConfirmBatchDelete = async () => {
+    console.log('[CharacterList] Confirmed batch delete for:', selectedForDelete);
+    try {
+      await forceDeleteCharacters(selectedForDelete);
+      console.log('[CharacterList] Batch delete successful');
+      setSelectedForDelete([]);
+      setIsMultiSelectMode(false);
+      setShowBatchDeleteConfirm(false);
+      loadData();
+      Alert.alert('成功', `已删除 ${selectedForDelete.length} 个角色`);
+    } catch (error) {
+      console.error('[CharacterList] Error in batch delete:', error);
+      Alert.alert('错误', '删除失败，请重试');
+    }
+  };
+
+  const handleCancelBatchDelete = () => {
+    console.log('[CharacterList] Cancelled batch delete');
+    setShowBatchDeleteConfirm(false);
   };
 
   const getCharacterRelations = (charId: string): CharacterRelation[] => {
@@ -282,6 +348,37 @@ export default function CharacterListScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 多选模式控制栏 */}
+        {isMultiSelectMode && (
+          <View style={styles.multiSelectBar}>
+            <ThemedText variant="small" color={theme.textPrimary}>
+              已选择 {selectedForDelete.length} 个角色
+            </ThemedText>
+            <View style={styles.multiSelectButtons}>
+              <TouchableOpacity
+                style={[styles.multiSelectButton, styles.cancelButton]}
+                onPress={handleExitMultiSelect}
+              >
+                <ThemedText variant="small" color="#666">取消</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.multiSelectButton,
+                  styles.deleteSelectedButton,
+                  selectedForDelete.length === 0 && styles.multiSelectButtonDisabled
+                ]}
+                onPress={handleBatchDelete}
+                disabled={selectedForDelete.length === 0}
+              >
+                <Feather name="trash-2" size={16} color="#fff" />
+                <ThemedText variant="small" color="#fff" style={{ marginLeft: 6 }}>
+                  删除选中
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {isLoading ? (
           <View style={styles.emptyContainer}>
             <ThemedText variant="body" color={theme.textMuted}>
@@ -322,7 +419,13 @@ export default function CharacterListScreen() {
               return (
                 <TouchableOpacity
                   key={char.id}
-                  style={[styles.characterCard, isLocked && styles.lockedCharacterCard, isTemp && styles.temporaryCharacterCard, isSelectMode && selectedCharacterIds.includes(char.id) && styles.selectedCharacterCard]}
+                  style={[
+                    styles.characterCard,
+                    isLocked && styles.lockedCharacterCard,
+                    isTemp && styles.temporaryCharacterCard,
+                    isSelectMode && selectedCharacterIds.includes(char.id) && styles.selectedCharacterCard,
+                    isMultiSelectMode && selectedForDelete.includes(char.id) && styles.selectedCharacterCard
+                  ]}
                   onPress={() => {
                     if (isSelectMode) {
                       // 多选逻辑：如果已选中则取消，未选中则添加
@@ -331,17 +434,33 @@ export default function CharacterListScreen() {
                       } else {
                         setSelectedCharacterIds([...selectedCharacterIds, char.id]);
                       }
+                    } else if (isMultiSelectMode) {
+                      // 多选删除模式：切换选中状态
+                      handleToggleSelection(char.id);
                     }
                   }}
-                  activeOpacity={isSelectMode ? 0.7 : 1}
+                  onLongPress={() => {
+                    if (!isSelectMode && !isMultiSelectMode) {
+                      handleLongPress(char);
+                    }
+                  }}
+                  activeOpacity={isSelectMode || isMultiSelectMode ? 0.7 : 1}
                 >
                   <View style={styles.characterHeader}>
                     <View style={styles.characterMain}>
                       <View style={styles.characterNameRow}>
-                        {isSelectMode && (
+                        {(isSelectMode || isMultiSelectMode) && (
                           <View style={styles.checkboxContainer}>
-                            <View style={[styles.checkbox, selectedCharacterIds.includes(char.id) && styles.checkboxChecked]}>
-                              {selectedCharacterIds.includes(char.id) && <Feather name="check" size={14} color="#fff" />}
+                            <View style={[
+                              styles.checkbox,
+                              ((isSelectMode && selectedCharacterIds.includes(char.id)) ||
+                               (isMultiSelectMode && selectedForDelete.includes(char.id))) &&
+                              styles.checkboxChecked
+                            ]}>
+                              {((isSelectMode && selectedCharacterIds.includes(char.id)) ||
+                                (isMultiSelectMode && selectedForDelete.includes(char.id))) &&
+                                <Feather name="check" size={14} color="#fff" />
+                              }
                             </View>
                           </View>
                         )}
@@ -377,7 +496,7 @@ export default function CharacterListScreen() {
                         </View>
                       )}
                     </View>
-                    {!isSelectMode && (
+                    {!isSelectMode && !isMultiSelectMode && (
                       <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => {
@@ -491,6 +610,101 @@ export default function CharacterListScreen() {
               >
                 <ThemedText variant="smallMedium" color="#FFFFFF">
                   删除
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 多选模式确认弹窗 */}
+      <Modal
+        visible={showMultiSelectConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelMultiSelect}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={handleCancelMultiSelect}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <ThemedText variant="h3" color={theme.textPrimary} style={styles.modalTitle}>
+              进入删除模式
+            </ThemedText>
+            <ThemedText variant="body" color={theme.textSecondary} style={styles.modalMessage}>
+              即将进入角色删除模式，可以批量删除角色。此操作不可撤销，请谨慎选择。
+            </ThemedText>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={handleCancelMultiSelect}
+              >
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                  取消
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.deleteConfirmButton]}
+                onPress={handleConfirmMultiSelect}
+              >
+                <ThemedText variant="smallMedium" color="#FFFFFF">
+                  确认进入
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 批量删除确认弹窗 */}
+      <Modal
+        visible={showBatchDeleteConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelBatchDelete}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={handleCancelBatchDelete}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <ThemedText variant="h3" color={theme.textPrimary} style={styles.modalTitle}>
+              确认批量删除
+            </ThemedText>
+            <ThemedText variant="body" color={theme.textSecondary} style={styles.modalMessage}>
+              将删除以下角色：
+            </ThemedText>
+            <ScrollView style={styles.deleteListContainer}>
+              {selectedForDelete.map(id => {
+                const char = characters.find(c => c.id === id);
+                return (
+                  <View key={id} style={styles.deleteListItem}>
+                    <Feather name="user" size={14} color={theme.textMuted} />
+                    <ThemedText variant="caption" color={theme.textPrimary}>
+                      {char?.name || '未知角色'}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={handleCancelBatchDelete}
+              >
+                <ThemedText variant="smallMedium" color={theme.textPrimary}>
+                  取消
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.deleteConfirmButton]}
+                onPress={handleConfirmBatchDelete}
+              >
+                <ThemedText variant="smallMedium" color="#FFFFFF">
+                  确认删除 ({selectedForDelete.length})
                 </ThemedText>
               </TouchableOpacity>
             </View>

@@ -310,5 +310,48 @@ export const createStyles = (theme: Theme) => {
       fontSize: 16,
       fontWeight: '600',
     },
+    // 多选模式样式
+    multiSelectBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#C8102E',
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      borderRadius: 8,
+      marginBottom: Spacing.lg,
+    },
+    multiSelectButtons: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    multiSelectButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.sm,
+      borderRadius: 6,
+    },
+    cancelButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    deleteSelectedButton: {
+      backgroundColor: '#FFFFFF',
+    },
+    multiSelectButtonDisabled: {
+      opacity: 0.5,
+    },
+    deleteListContainer: {
+      maxHeight: 200,
+      marginBottom: Spacing.lg,
+    },
+    deleteListItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: '#E5E5E5',
+      gap: Spacing.sm,
+    },
   });
 };

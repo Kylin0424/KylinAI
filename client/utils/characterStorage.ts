@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAllNovels } from './novelStorage';
 
 export interface Character {
   id: string;
@@ -113,6 +114,45 @@ export const deleteCharacter = async (characterId: string): Promise<void> => {
     await AsyncStorage.setItem(RELATIONS_KEY, JSON.stringify(filteredRelations));
   } catch (error) {
     console.error('Error deleting character:', error);
+    throw error;
+  }
+};
+
+// 强制批量删除角色（无论是否被小说绑定）
+export const forceDeleteCharacters = async (characterIds: string[]): Promise<void> => {
+  try {
+    // 1. 删除角色本身
+    const characters = await getAllCharacters();
+    const filteredCharacters = characters.filter(c => !characterIds.includes(c.id));
+    await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(filteredCharacters));
+
+    // 2. 删除角色相关的旧关系
+    const relations = await getAllRelations();
+    const filteredRelations = relations.filter(
+      r => !characterIds.includes(r.characterId) && !characterIds.includes(r.relatedCharacterId)
+    );
+    await AsyncStorage.setItem(RELATIONS_KEY, JSON.stringify(filteredRelations));
+
+    // 3. 清理关系网络中的相关数据
+    const novels = await getAllNovels();
+    for (const novel of novels) {
+      if (novel.id) {
+        try {
+          const network = await getRelationNetwork(novel.id);
+          const cleanedNetwork = network.map(node => ({
+            ...node,
+            relations: node.relations.filter(r => !characterIds.includes(r.targetId))
+          })).filter(node => !characterIds.includes(node.characterId));
+          await saveRelationNetwork(novel.id, cleanedNetwork);
+        } catch (error) {
+          console.error(`[forceDeleteCharacters] Error cleaning relation network for novel ${novel.id}:`, error);
+        }
+      }
+    }
+
+    console.log('[forceDeleteCharacters] Successfully deleted characters and cleaned relations:', characterIds);
+  } catch (error) {
+    console.error('[forceDeleteCharacters] Error deleting characters:', error);
     throw error;
   }
 };
