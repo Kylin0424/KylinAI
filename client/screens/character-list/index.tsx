@@ -348,37 +348,6 @@ export default function CharacterListScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 多选模式控制栏 */}
-        {isMultiSelectMode && (
-          <View style={styles.multiSelectBar}>
-            <ThemedText variant="small" color={theme.textPrimary}>
-              已选择 {selectedForDelete.length} 个角色
-            </ThemedText>
-            <View style={styles.multiSelectButtons}>
-              <TouchableOpacity
-                style={[styles.multiSelectButton, styles.cancelButton]}
-                onPress={handleExitMultiSelect}
-              >
-                <ThemedText variant="small" color="#666">取消</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.multiSelectButton,
-                  styles.deleteSelectedButton,
-                  selectedForDelete.length === 0 && styles.multiSelectButtonDisabled
-                ]}
-                onPress={handleBatchDelete}
-                disabled={selectedForDelete.length === 0}
-              >
-                <Feather name="trash-2" size={16} color="#C8102E" />
-                <ThemedText variant="small" color="#C8102E" style={{ marginLeft: 6 }}>
-                  删除选中
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
         {isLoading ? (
           <View style={styles.emptyContainer}>
             <ThemedText variant="body" color={theme.textMuted}>
@@ -575,6 +544,37 @@ export default function CharacterListScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* 多选模式控制栏 - 固定在页面底部 */}
+      {isMultiSelectMode && (
+        <View style={styles.multiSelectBar}>
+          <ThemedText variant="small" color="#FFFFFF">
+            已选择 {selectedForDelete.length} 个角色
+          </ThemedText>
+          <View style={styles.multiSelectButtons}>
+            <TouchableOpacity
+              style={[styles.multiSelectButton, styles.cancelButton]}
+              onPress={handleExitMultiSelect}
+            >
+              <ThemedText variant="small" color="#FFFFFF">取消</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.multiSelectButton,
+                styles.deleteSelectedButton,
+                selectedForDelete.length === 0 && styles.multiSelectButtonDisabled
+              ]}
+              onPress={handleBatchDelete}
+              disabled={selectedForDelete.length === 0}
+            >
+              <Feather name="trash-2" size={16} color="#C8102E" />
+              <ThemedText variant="small" color="#C8102E" style={{ marginLeft: 6 }}>
+                删除选中
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* 删除确认Modal */}
       <Modal
