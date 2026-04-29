@@ -391,6 +391,27 @@ export default function CharacterDetailScreen() {
         (targetChar.gender === '男' ? 'male' : 'female') as 'male' | 'female'
       );
 
+      // 辅助函数：根据关系类型ID获取中文名称
+      const getRelationLabelFromType = (relationType: string): string => {
+        const relationDef = FAMILY_RELATIONS.find(r => r.id === relationType);
+        if (relationDef) {
+          return relationDef.name;
+        }
+
+        // 通用关系类型映射
+        const LABELS: Record<string, string> = {
+          'uncle': '舅舅/伯伯/叔叔',
+          'aunt': '姨妈/姑姑',
+          'cousin': '堂兄弟/表兄弟',
+          'nephew': '侄子/外甥',
+          'niece': '侄女/外甥女',
+          'brother_in_law': '姐夫/妹夫/小舅子',
+          'sister_in_law': '嫂子/弟妹/小姑子',
+        };
+
+        return LABELS[relationType] || relationType;
+      };
+
       // 添加到关系网络
       await addRelationToNetwork(
         character.novelId,
@@ -410,6 +431,9 @@ export default function CharacterDetailScreen() {
         characterId: character.id,
         relatedCharacterId: targetChar.id,
         relationType: selectedRelation,
+        description: `${character.name}的${getRelationLabelFromType(selectedRelation)}是${targetChar.name}`,
+        createdAt: Date.now(),
+        novelId: character.novelId,
       });
 
       // 保存反向关系到CharacterRelation数组（供角色库显示）
@@ -419,6 +443,9 @@ export default function CharacterDetailScreen() {
           characterId: targetChar.id,
           relatedCharacterId: character.id,
           relationType: reverseRelation,
+          description: `${targetChar.name}的${getRelationLabelFromType(reverseRelation)}是${character.name}`,
+          createdAt: Date.now(),
+          novelId: targetChar.novelId,
         });
       }
 
