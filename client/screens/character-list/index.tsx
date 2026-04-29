@@ -236,7 +236,34 @@ export default function CharacterListScreen() {
   const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
     // 使用FAMILY_RELATIONS数组查找对应的中文名称
     const relationDef = FAMILY_RELATIONS.find(r => r.id === relation.relationType);
-    return relationDef?.name || relation.relationType;
+
+    // 如果FAMILY_RELATIONS中找不到，使用RELATION_LABELS作为备选
+    if (!relationDef) {
+      const RELATION_LABELS: Record<string, string> = {
+        'father': '父亲',
+        'mother': '母亲',
+        'grandfather': '祖父/外祖父',
+        'grandmother': '祖母/外祖母',
+        'husband': '丈夫',
+        'wife': '妻子',
+        'spouse': '配偶',
+        'son': '儿子',
+        'daughter': '女儿',
+        'child': '子女',
+        'brother': '兄弟',
+        'sister': '姐妹',
+        'sibling': '兄弟姐妹',
+        'uncle': '伯叔/舅舅',
+        'aunt': '姑妈/姨妈',
+        'father_in_law': '公公/岳父',
+        'mother_in_law': '婆婆/岳母',
+        'brother_in_law': '姐夫/妹夫/小舅子',
+        'sister_in_law': '嫂子/弟妹/小姑子',
+      };
+      return RELATION_LABELS[relation.relationType] || relation.relationType;
+    }
+
+    return relationDef.name;
   };
 
   const getRelatedCharacter = (relation: CharacterRelation, charId: string): Character | undefined => {

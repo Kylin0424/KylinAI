@@ -313,7 +313,7 @@ export const createStyles = (theme: Theme) => {
     // 多选模式样式
     multiSelectBar: {
       position: 'absolute',
-      bottom: 80,
+      bottom: 16,
       left: 16,
       right: 16,
       flexDirection: 'row',
@@ -323,12 +323,7 @@ export const createStyles = (theme: Theme) => {
       paddingHorizontal: Spacing.lg,
       paddingVertical: Spacing.md,
       borderRadius: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 5,
-      zIndex: 1000,
+      zIndex: 999,
     },
     multiSelectButtons: {
       flexDirection: 'row',

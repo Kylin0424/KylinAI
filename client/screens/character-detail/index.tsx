@@ -28,6 +28,7 @@ import {
   addRelationToNetwork,
   removeRelationFromNetwork,
   getCharacterRelationsFromNetwork,
+  saveRelation,
   RelationNetworkNode,
 } from '@/utils/characterStorage';
 import { getNovelById, Novel } from '@/utils/novelStorage';
@@ -402,6 +403,24 @@ export default function CharacterDetailScreen() {
         selectedRelation,
         reverseRelation
       );
+
+      // 保存正向关系到CharacterRelation数组（供角色库显示）
+      await saveRelation({
+        id: `${character.id}_${targetChar.id}_${Date.now()}`,
+        characterId: character.id,
+        relatedCharacterId: targetChar.id,
+        relationType: selectedRelation,
+      });
+
+      // 保存反向关系到CharacterRelation数组（供角色库显示）
+      if (reverseRelation) {
+        await saveRelation({
+          id: `${targetChar.id}_${character.id}_${Date.now()}`,
+          characterId: targetChar.id,
+          relatedCharacterId: character.id,
+          relationType: reverseRelation,
+        });
+      }
 
       // 刷新关系列表
       const relations = await getCharacterRelationsFromNetwork(character.novelId, character.id);
