@@ -245,12 +245,66 @@ export default function CharacterListScreen() {
         return acc;
       }, {} as Record<string, string>);
 
-      // 添加一些可能缺失的常见关系类型
-      RELATION_LABELS['brother_in_law'] = '姐夫/妹夫/小舅子';
-      RELATION_LABELS['sister_in_law'] = '嫂子/弟妹/小姑子';
-      RELATION_LABELS['family'] = '家庭关系';
+      // 添加所有可能缺失的关系类型（包括家庭关系、朋友关系、同事关系等）
+      const ADDITIONAL_LABELS: Record<string, string> = {
+        // 家庭关系（标准）
+        'father': '父亲',
+        'mother': '母亲',
+        'grandfather': '祖父/爷爷',
+        'grandmother': '祖母/奶奶',
+        'husband': '丈夫',
+        'wife': '妻子',
+        'son': '儿子',
+        'daughter': '女儿',
+        'grandson': '孙子',
+        'granddaughter': '孙女',
+        'brother': '兄弟',
+        'sister': '姐妹',
+        'sibling': '兄弟姐妹',
 
-      return RELATION_LABELS[relation.relationType] || relation.relationType;
+        // 姻亲关系
+        'father_in_law': '公公/岳父',
+        'mother_in_law': '婆婆/岳母',
+        'brother_in_law': '姐夫/妹夫/小舅子',
+        'sister_in_law': '嫂子/弟妹/小姑子',
+
+        // 旁系亲属
+        'uncle': '舅舅/伯伯/叔叔',
+        'aunt': '姨妈/姑姑',
+        'cousin': '堂兄弟/表兄弟',
+
+        // 朋友关系
+        'teammate': '队友',
+        'buddy': '好哥们',
+        'childhood_friend': '发小',
+        'best_friend': '挚友',
+        'friend': '朋友',
+        'close_friend': '密友',
+
+        // 同事关系
+        'colleague': '同事',
+        'workmate': '工友',
+        'boss': '上司',
+        'subordinate': '下属',
+
+        // 其他关系
+        'classmate': '同学',
+        'neighbor': '邻居',
+        'mentor': '导师',
+        'disciple': '徒弟',
+        'partner': '搭档',
+        'rival': '对手',
+
+        // 通用标记
+        'family': '家庭关系',
+        'friend': '朋友关系',
+        'colleague': '同事关系',
+      };
+
+      // 合并两个映射表
+      const ALL_LABELS = { ...RELATION_LABELS, ...ADDITIONAL_LABELS };
+
+      return ALL_LABELS[relation.relationType] || relation.relationType;
     }
 
     return relationDef.name;

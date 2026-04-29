@@ -1183,13 +1183,13 @@ export default function CharacterDetailScreen() {
                             key={relation.id}
                             style={[
                               styles.relationTypeOption,
-                              selectedRelation === relation.name && styles.relationTypeOptionSelected,
+                              selectedRelation === relation.id && styles.relationTypeOptionSelected,
                             ]}
-                            onPress={() => setSelectedRelation(relation.name)}
+                            onPress={() => setSelectedRelation(relation.id)}
                           >
                             <ThemedText
                               variant="caption"
-                              color={selectedRelation === relation.name ? '#FFFFFF' : theme.textPrimary}
+                              color={selectedRelation === relation.id ? '#FFFFFF' : theme.textPrimary}
                             >
                               {relation.name}
                             </ThemedText>
