@@ -234,80 +234,33 @@ export default function CharacterListScreen() {
   };
 
   const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
-    // 使用FAMILY_RELATIONS数组查找对应的中文名称
-    const relationDef = FAMILY_RELATIONS.find(r => r.id === relation.relationType);
+    // 从FAMILY_RELATIONS中提取所有关系ID到中文的映射
+    const FAMILY_LABELS: Record<string, string> = FAMILY_RELATIONS.reduce((acc, r) => {
+      acc[r.id] = r.name;
+      return acc;
+    }, {} as Record<string, string>);
 
-    // 如果FAMILY_RELATIONS中找不到，使用自动生成的备选映射
-    if (!relationDef) {
-      // 从FAMILY_RELATIONS中提取所有关系ID到中文的映射
-      const RELATION_LABELS: Record<string, string> = FAMILY_RELATIONS.reduce((acc, r) => {
-        acc[r.id] = r.name;
-        return acc;
-      }, {} as Record<string, string>);
+    // 添加FAMILY_RELATIONS中可能缺失的通用关系类型
+    const ADDITIONAL_LABELS: Record<string, string> = {
+      // 通用家庭关系（简化版，不区分父系/母系/长幼）
+      'uncle': '舅舅/伯伯/叔叔',
+      'aunt': '姨妈/姑姑',
+      'cousin': '堂兄弟/表兄弟',
+      'nephew': '侄子/外甥',
+      'niece': '侄女/外甥女',
+      'brother_in_law': '姐夫/妹夫/小舅子/小叔子/大伯子',
+      'sister_in_law': '嫂子/弟妹/小姨子/大姨子/大姑子/小姑子',
 
-      // 添加所有可能缺失的关系类型（包括家庭关系、朋友关系、同事关系等）
-      const ADDITIONAL_LABELS: Record<string, string> = {
-        // 家庭关系（标准）
-        'father': '父亲',
-        'mother': '母亲',
-        'grandfather': '祖父/爷爷',
-        'grandmother': '祖母/奶奶',
-        'husband': '丈夫',
-        'wife': '妻子',
-        'son': '儿子',
-        'daughter': '女儿',
-        'grandson': '孙子',
-        'granddaughter': '孙女',
-        'brother': '兄弟',
-        'sister': '姐妹',
-        'sibling': '兄弟姐妹',
+      // 其他通用标记
+      'family': '家庭关系',
+      'friend': '朋友关系',
+      'colleague': '同事关系',
+    };
 
-        // 姻亲关系
-        'father_in_law': '公公/岳父',
-        'mother_in_law': '婆婆/岳母',
-        'brother_in_law': '姐夫/妹夫/小舅子',
-        'sister_in_law': '嫂子/弟妹/小姑子',
+    // 合并两个映射表
+    const ALL_LABELS = { ...FAMILY_LABELS, ...ADDITIONAL_LABELS };
 
-        // 旁系亲属
-        'uncle': '舅舅/伯伯/叔叔',
-        'aunt': '姨妈/姑姑',
-        'cousin': '堂兄弟/表兄弟',
-
-        // 朋友关系
-        'teammate': '队友',
-        'buddy': '好哥们',
-        'childhood_friend': '发小',
-        'best_friend': '挚友',
-        'friend': '朋友',
-        'close_friend': '密友',
-
-        // 同事关系
-        'colleague': '同事',
-        'workmate': '工友',
-        'boss': '上司',
-        'subordinate': '下属',
-
-        // 其他关系
-        'classmate': '同学',
-        'neighbor': '邻居',
-        'mentor': '导师',
-        'disciple': '徒弟',
-        'partner': '搭档',
-        'rival': '对手',
-
-        // 通用标记
-        'family': '家庭关系',
-        'friend': '朋友关系',
-        'colleague': '同事关系',
-      };
-
-      // 合并两个映射表
-      const ALL_LABELS = { ...RELATION_LABELS, ...ADDITIONAL_LABELS };
-
-      return ALL_LABELS[relation.relationType] || relation.relationType;
-    }
-
-    return relationDef.name;
+    return ALL_LABELS[relation.relationType] || relation.relationType;
   };
 
   const getRelatedCharacter = (relation: CharacterRelation, charId: string): Character | undefined => {
