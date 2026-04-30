@@ -244,22 +244,59 @@ export default function CharacterListScreen() {
     const ADDITIONAL_LABELS: Record<string, string> = {
       // 通用家庭关系（简化版，不区分父系/母系/长幼）
       'uncle': '舅舅/伯伯/叔叔',
+      'uncle_husband_side': '伯伯/叔叔',
+      'uncle_wife_side': '舅舅',
       'aunt': '姨妈/姑姑',
+      'aunt_husband_side': '姑妈',
+      'aunt_wife_side': '姨妈',
       'cousin': '堂兄弟/表兄弟',
+      'cousin_male': '堂兄弟/表兄弟',
+      'cousin_female': '堂姐妹/表姐妹',
       'nephew': '侄子/外甥',
+      'nephew_husband_side': '外甥',
+      'nephew_wife_side': '侄子',
       'niece': '侄女/外甥女',
+      'niece_husband_side': '外甥女',
+      'niece_wife_side': '侄女',
       'brother_in_law': '姐夫/妹夫/小舅子/小叔子/大伯子',
       'sister_in_law': '嫂子/弟妹/小姨子/大姨子/大姑子/小姑子',
 
-      // 其他通用标记
+      // 朋友关系
+      'friend': '朋友',
+      'best_friend': '挚友',
+      'close_friend': '密友',
+      'buddy': '好哥们',
+      'teammate': '队友',
+      'classmate': '同学',
+      'childhood_friend': '发小',
+      'neighbor': '邻居',
+      'mentor': '导师',
+      'disciple': '徒弟',
+      'partner': '搭档',
+      'rival': '对手',
+      'acquaintance': '熟人',
+      'old_friend': '老友',
+
+      // 同事关系
+      'colleague': '同事',
+      'workmate': '工友',
+      'boss': '上司',
+      'subordinate': '下属',
+
+      // 其他关系
       'family': '家庭关系',
-      'friend': '朋友关系',
-      'colleague': '同事关系',
+      'relative': '亲戚',
+      'other': '其他关系',
     };
 
     // 合并两个映射表
     const ALL_LABELS = { ...FAMILY_LABELS, ...ADDITIONAL_LABELS };
 
+    // 如果relationType已经是中文，直接返回
+    if (/[\u4e00-\u9fa5]/.test(relation.relationType)) {
+      return relation.relationType;
+    }
+    
     return ALL_LABELS[relation.relationType] || relation.relationType;
   };
 
