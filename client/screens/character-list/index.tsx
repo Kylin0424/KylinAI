@@ -26,6 +26,74 @@ import {
 import { Novel, getAllNovels } from '@/utils/novelStorage';
 import { FAMILY_RELATIONS } from '@/constants/familyRelations';
 
+// 补充的关系类型映射（用于不在 FAMILY_RELATIONS 中的通用关系类型）
+const ADDITIONAL_RELATION_LABELS: Record<string, string> = {
+  // 通用家庭关系（简化版，不区分父系/母系/长幼）
+  'uncle': '舅舅/伯伯/叔叔',
+  'uncle_husband_side': '伯伯/叔叔',
+  'uncle_wife_side': '舅舅',
+  'aunt': '姨妈/姑姑',
+  'aunt_husband_side': '姑妈',
+  'aunt_wife_side': '姨妈',
+  'cousin': '堂兄弟/表兄弟',
+  'cousin_male': '堂兄弟/表兄弟',
+  'cousin_female': '堂姐妹/表姐妹',
+  'nephew': '侄子/外甥',
+  'nephew_husband_side': '外甥',
+  'nephew_wife_side': '侄子',
+  'niece': '侄女/外甥女',
+  'niece_husband_side': '外甥女',
+  'niece_wife_side': '侄女',
+  'brother_in_law': '姐夫/妹夫/小舅子/小叔子/大伯子',
+  'sister_in_law': '嫂子/弟妹/小姨子/大姨子/大姑子/小姑子',
+
+  // 朋友关系
+  'friend': '朋友',
+  'best_friend': '挚友',
+  'close_friend': '密友',
+  'buddy': '好哥们',
+  'teammate': '队友',
+  'classmate': '同学',
+  'childhood_friend': '发小',
+  'neighbor': '邻居',
+  'mentor': '导师',
+  'disciple': '徒弟',
+  'partner': '搭档',
+  'rival': '对手',
+  'acquaintance': '熟人',
+  'old_friend': '老友',
+
+  // 同事关系
+  'colleague': '同事',
+  'workmate': '工友',
+  'boss': '上司',
+  'subordinate': '下属',
+
+  // 敌对/仇恨关系
+  'enemy': '仇人',
+  'adversary': '对手',
+  'arch_rival': '宿敌',
+  'bully': '欺负者',
+  'victim': '受害者',
+
+  // 其他关系
+  'family': '家庭关系',
+  'relative': '亲戚',
+  'other': '其他关系',
+};
+
+// 从 FAMILY_RELATIONS 构建的映射表
+const FAMILY_LABELS_MAP: Record<string, string> = FAMILY_RELATIONS.reduce((acc, r) => {
+  acc[r.id] = r.name;
+  return acc;
+}, {} as Record<string, string>);
+
+// 合并所有关系标签映射
+const ALL_RELATION_LABELS: Record<string, string> = {
+  ...FAMILY_LABELS_MAP,
+  ...ADDITIONAL_RELATION_LABELS,
+};
+
 type CharacterTab = 'permanent' | 'temporary';
 
 export default function CharacterListScreen() {
@@ -234,70 +302,13 @@ export default function CharacterListScreen() {
   };
 
   const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
-    // 从FAMILY_RELATIONS中提取所有关系ID到中文的映射
-    const FAMILY_LABELS: Record<string, string> = FAMILY_RELATIONS.reduce((acc, r) => {
-      acc[r.id] = r.name;
-      return acc;
-    }, {} as Record<string, string>);
-
-    // 添加FAMILY_RELATIONS中可能缺失的通用关系类型
-    const ADDITIONAL_LABELS: Record<string, string> = {
-      // 通用家庭关系（简化版，不区分父系/母系/长幼）
-      'uncle': '舅舅/伯伯/叔叔',
-      'uncle_husband_side': '伯伯/叔叔',
-      'uncle_wife_side': '舅舅',
-      'aunt': '姨妈/姑姑',
-      'aunt_husband_side': '姑妈',
-      'aunt_wife_side': '姨妈',
-      'cousin': '堂兄弟/表兄弟',
-      'cousin_male': '堂兄弟/表兄弟',
-      'cousin_female': '堂姐妹/表姐妹',
-      'nephew': '侄子/外甥',
-      'nephew_husband_side': '外甥',
-      'nephew_wife_side': '侄子',
-      'niece': '侄女/外甥女',
-      'niece_husband_side': '外甥女',
-      'niece_wife_side': '侄女',
-      'brother_in_law': '姐夫/妹夫/小舅子/小叔子/大伯子',
-      'sister_in_law': '嫂子/弟妹/小姨子/大姨子/大姑子/小姑子',
-
-      // 朋友关系
-      'friend': '朋友',
-      'best_friend': '挚友',
-      'close_friend': '密友',
-      'buddy': '好哥们',
-      'teammate': '队友',
-      'classmate': '同学',
-      'childhood_friend': '发小',
-      'neighbor': '邻居',
-      'mentor': '导师',
-      'disciple': '徒弟',
-      'partner': '搭档',
-      'rival': '对手',
-      'acquaintance': '熟人',
-      'old_friend': '老友',
-
-      // 同事关系
-      'colleague': '同事',
-      'workmate': '工友',
-      'boss': '上司',
-      'subordinate': '下属',
-
-      // 其他关系
-      'family': '家庭关系',
-      'relative': '亲戚',
-      'other': '其他关系',
-    };
-
-    // 合并两个映射表
-    const ALL_LABELS = { ...FAMILY_LABELS, ...ADDITIONAL_LABELS };
-
     // 如果relationType已经是中文，直接返回
     if (/[\u4e00-\u9fa5]/.test(relation.relationType)) {
       return relation.relationType;
     }
     
-    return ALL_LABELS[relation.relationType] || relation.relationType;
+    // 使用预定义的 ALL_RELATION_LABELS 映射表
+    return ALL_RELATION_LABELS[relation.relationType] || relation.relationType;
   };
 
   const getRelatedCharacter = (relation: CharacterRelation, charId: string): Character | undefined => {

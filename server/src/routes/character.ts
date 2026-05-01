@@ -438,10 +438,101 @@ router.post('/generate-npc', async (req: Request, res: Response) => {
 });
     const client = new LLMClient(config, customHeaders);
 
+    // 完整的关系类型映射表：英文ID -> 中文名称
     const relationTypeMap: Record<string, string> = {
+      // 直系亲属
       'father': '父亲',
       'mother': '母亲',
-      'child': '子女',
+      'son': '儿子',
+      'daughter': '女儿',
+      'husband': '丈夫',
+      'wife': '妻子',
+      'grandfather': '祖父/爷爷',
+      'grandmother': '祖母/奶奶',
+      'grandson': '孙子',
+      'granddaughter': '孙女',
+      // 兄弟姐妹
+      'older_brother': '哥哥',
+      'younger_brother': '弟弟',
+      'older_sister': '姐姐',
+      'younger_sister': '妹妹',
+      'brother': '兄弟',
+      'sister': '姐妹',
+      // 叔伯姑姨（不区分父系母系）
+      'uncle_paternal': '叔叔/伯伯',
+      'aunt_paternal': '姑姑',
+      'uncle_maternal': '舅舅',
+      'aunt_maternal': '姨妈',
+      // 通用叔伯姑姨（AI可能返回的简化版本）
+      'uncle': '舅舅/伯伯/叔叔',
+      'aunt': '姨妈/姑姑',
+      // 堂表亲
+      'older_cousin_paternal_male': '堂哥',
+      'younger_cousin_paternal_male': '堂弟',
+      'older_cousin_paternal_female': '堂姐',
+      'younger_cousin_paternal_female': '堂妹',
+      'older_cousin_maternal_male': '表哥',
+      'younger_cousin_maternal_male': '表弟',
+      'older_cousin_maternal_female': '表姐',
+      'younger_cousin_maternal_female': '表妹',
+      'cousin_male': '堂兄弟',
+      'cousin_female': '堂姐妹',
+      // 甥侄
+      'nephew_paternal': '侄子',
+      'niece_paternal': '侄女',
+      'nephew_maternal': '外甥',
+      'niece_maternal': '外甥女',
+      // 儿媳女婿
+      'daughter_in_law': '儿媳',
+      'son_in_law': '女婿',
+      'father_in_law': '公公/岳父',
+      'mother_in_law': '婆婆/岳母',
+      // 叔伯姑姨配偶
+      'uncle_in_law': '叔公/伯公/姑父/舅公',
+      'aunt_in_law': '婶婆/伯婆/姑婆/姨婆',
+      // 兄弟姐妹配偶
+      'brother_in_law': '姐夫/妹夫/小舅子/大伯子/小叔子',
+      'sister_in_law': '嫂子/弟媳/大姨子/小姨子',
+      // 其他家庭关系
+      'stepfather': '继父',
+      'stepmother': '继母',
+      'stepson': '继子',
+      'stepdaughter': '继女',
+      'stepbrother': '继兄/继弟',
+      'stepsister': '继姐/继妹',
+      // 朋友关系
+      'teammate': '队友',
+      'buddy': '好哥们',
+      'childhood_friend': '发小',
+      'best_friend': '挚友',
+      'friend': '朋友',
+      'close_friend': '密友',
+      // 同事关系
+      'colleague': '同事',
+      'workmate': '工友',
+      'boss': '上司',
+      'subordinate': '下属',
+      'mentor': '导师',
+      'disciple': '徒弟',
+      'partner': '搭档',
+      'rival': '对手',
+      // 其他关系
+      'classmate': '同学',
+      'neighbor': '邻居',
+      'enemy': '仇人',
+      'stranger': '陌生人',
+      'fan': '粉丝',
+      'mentor_friend': '忘年交',
+      // 敌对关系
+      'adversary': '对手',
+      'arch_rival': '宿敌',
+      'bully': '欺负者',
+      'victim': '受害者',
+      // 泛化关系（AI可能返回的通用类型）
+      'family': '家庭关系',
+      'relative': '亲戚',
+      'acquaintance': '熟人',
+      'old_friend': '老友',
     };
 
     const relationLabel = relationTypeMap[relationType] || relationType;
