@@ -128,6 +128,35 @@ const mapRelationToKey = (relationStr: string): string => {
   if (relation.includes('导师') || relation.includes('老师')) return 'mentor';
   if (relation.includes('学生') || relation.includes('徒弟')) return 'student';
   
+  // 扩展社会关系（按优先级排序，避免误匹配）
+  if (relation.includes('发小') || relation.includes('青梅竹马')) return 'childhood_friend';
+  if (relation.includes('老同学') || relation.includes('老友') || relation.includes('故交')) return 'old_friend';
+  if (relation.includes('哥们') || relation.includes('好兄弟')) return 'buddy';
+  if (relation.includes('闺蜜') || relation.includes('死党')) return 'bestie';
+  if (relation.includes('战友')) return 'comrade';
+  if (relation.includes('室友') || relation.includes('舍友')) return 'roommate';
+  if (relation.includes('邻居') || relation.includes('街坊')) return 'neighbor';
+  if (relation.includes('老板') || relation.includes('上司') || relation.includes('领导')) return 'boss';
+  if (relation.includes('客户') || relation.includes('顾客')) return 'client';
+  if (relation.includes('合作伙伴') || relation.includes('合伙人')) return 'partner';
+  if (relation.includes('校友') || relation.includes('同窗')) return 'classmate';
+  if (relation.includes('队友') || relation.includes('队友')) return 'teammate';
+  if (relation.includes('粉丝') || relation.includes('追星族')) return 'fan';
+  if (relation.includes('偶像') || relation.includes('爱豆')) return 'idol';
+  if (relation.includes('对手') || relation.includes('竞争者')) return 'adversary';
+  if (relation.includes('宿敌') || relation.includes('死对头')) return 'arch_rival';
+  if (relation.includes('债主')) return 'creditor';
+  if (relation.includes('债务人') || relation.includes('欠债人')) return 'debtor';
+  if (relation.includes('恩人')) return 'benefactor';
+  if (relation.includes('救命恩人')) return 'lifesaver';
+  if (relation.includes('师傅') || relation.includes('师父')) return 'master';
+  if (relation.includes('徒弟') || relation.includes('弟子')) return 'apprentice';
+  
+  // 泛化关系（这些应该尽量避免，但作为兜底）
+  if (relation.includes('熟人')) return 'acquaintance';
+  if (relation.includes('认识')) return 'acquaintance';
+  if (relation.includes('亲戚')) return 'relative';
+  
   return 'family'; // 默认为family
 };
 

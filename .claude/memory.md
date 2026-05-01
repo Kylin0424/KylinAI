@@ -290,6 +290,56 @@ AI开始编写代码
 
 ---
 
+## 关系显示问题分析（2026年5月1日）
+
+### 问题现象
+- 关系显示为"家庭关系"而不是"朋友"、"同事"等具体关系
+- 部分关系显示英文（如 uncle）
+
+### 问题根源
+1. **前端 `mapRelationToKey` 函数**（`client/screens/character-result/index.tsx` 第66-132行）
+   - 负责将 AI 返回的中文关系名称转换为英文 ID
+   - 如果没有匹配到任何已知关系，默认返回 `'family'`
+   - 之前缺少"发小"、"哥们"等社会关系的映射
+
+2. **后端 `relationTypeMap`**（`server/src/routes/character.ts`）
+   - 负责将英文 ID 转换为中文显示
+   - 缺少部分映射如 `'family': '家庭关系'`
+
+3. **前端 `getRelationLabel` 函数**（`client/screens/character-list/index.tsx`）
+   - 负责在角色库页面显示关系标签
+   - 使用 `ADDITIONAL_RELATION_LABELS` 映射表
+
+### 修复方案
+1. 扩展 `mapRelationToKey` 函数，添加更多社会关系映射：
+   - 发小 → childhood_friend
+   - 哥们 → buddy
+   - 战友 → comrade
+   - 室友 → roommate
+   - 邻居 → neighbor
+   - 老板/上司 → boss
+   - 客户 → client
+   - 合作伙伴 → partner
+   - 校友/同学 → classmate
+   - 队友 → teammate
+   - 粉丝 → fan
+   - 偶像 → idol
+   - 对手 → adversary
+   - 宿敌 → arch_rival
+   - 恩人 → benefactor
+   - 熟人 → acquaintance
+   - 亲戚 → relative
+
+2. 后端 `relationTypeMap` 添加映射：
+   - `'uncle': '舅舅/伯伯/叔叔'`
+   - `'family': '家庭关系'`
+   - `'adversary': '对手'`
+   - `'arch_rival': '宿敌'`
+
+3. 前端 `ADDITIONAL_RELATION_LABELS` 已有完整映射
+
+---
+
 ## 已完成里程碑
 
 1. ✅ 注册 Render 账号并绑定 Visa 卡
