@@ -368,29 +368,50 @@ export default function CharacterListScreen() {
     '宿敌': '宿敌',
   };
 
-  // 获取反向关系标签
-  const getReverseRelationLabel = (relationType: string): string => {
+  // 获取反向关系标签（考虑主角性别）
+  const getReverseRelationLabel = (relationType: string, char: Character): string => {
+    // 姻亲关系需要根据主角性别返回正确的称呼
+    // 公公/婆婆是女性对丈夫父亲的称呼
+    // 岳父/岳母是男性对妻子父亲的称呼
+    // 反向：女婿是男性，儿媳是女性
+    if (char.isMainCharacter) {
+      // 主角是男性，姻亲关系的反向
+      if (relationType === '公公') return '女婿';  // 男性视角：岳父的反向是女婿
+      if (relationType === '婆婆') return '女婿';  // 男性视角：岳母的反向是女婿
+      if (relationType === '岳父') return '女婿';  // 男性视角：岳父的反向是女婿
+      if (relationType === '岳母') return '女婿';  // 男性视角：岳母的反向是女婿
+      if (relationType === '小舅子') return '姐夫';  // 男性视角：小舅子的反向是姐夫
+      if (relationType === '小叔子') return '嫂子';  // 男性视角：小叔子的反向是嫂子
+      if (relationType === '大舅子') return '姐夫';  // 男性视角：大舅子的反向是姐夫
+      if (relationType === '大姨子') return '妹夫';  // 男性视角：大姨子的反向是妹夫
+      if (relationType === '小姨子') return '妹夫';  // 男性视角：小姨子的反向是妹夫
+      // 主角是女性，姻亲关系的反向
+      if (relationType === '公公') return '儿媳';  // 女性视角：公公的反向是儿媳
+      if (relationType === '婆婆') return '儿媳';  // 女性视角：婆婆的反向是儿媳
+      if (relationType === '岳父') return '儿媳';  // 女性视角：岳父的反向是儿媳
+      if (relationType === '岳母') return '儿媳';  // 女性视角：岳母的反向是儿媳
+      if (relationType === '小舅子') return '妹夫';  // 女性视角：小舅子的反向是妹夫
+      if (relationType === '小叔子') return '嫂子';  // 女性视角：小叔子的反向是嫂子
+      if (relationType === '大舅子') return '妹夫';  // 女性视角：大舅子的反向是妹夫
+      if (relationType === '大姨子') return '姐夫';  // 女性视角：大姨子的反向是姐夫
+      if (relationType === '小姨子') return '姐夫';  // 女性视角：小姨子的反向是姐夫
+    }
     return REVERSE_RELATIONS[relationType] || relationType;
   };
 
   // 获取当前卡片应该显示的关系标签
-  // 如果当前卡片是主角（存储关系时的主语），显示反向关系
-  // 如果当前卡片是关系角色（存储关系时的宾语），显示原关系
-  const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
+  // 如果当前卡片是主角，显示反向关系
+  // 如果当前卡片是关系角色，显示原关系
+  const getRelationLabel = (relation: CharacterRelation, char: Character): string => {
     // 获取关系类型的原始值（可能是中文或英文）
     const originalRelation = relation.relationType;
     
     // 如果relationType已经是中文
     if (/[\u4e00-\u9fa5]/.test(originalRelation)) {
-      // 获取关系角色信息
-      const relatedChar = getRelatedCharacter(relation, charId);
-      
-      // 如果当前卡片是主角（关系存储时的主语），显示反向关系
-      if (relation.characterId === charId && relatedChar?.isMainCharacter) {
-        // 当前卡片是主角，显示反向关系
-        return getReverseRelationLabel(originalRelation);
+      // 如果当前卡片是主角，显示反向关系
+      if (char.isMainCharacter) {
+        return getReverseRelationLabel(originalRelation, char);
       }
-      
       // 其他情况显示原关系
       return originalRelation;
     }
@@ -398,12 +419,9 @@ export default function CharacterListScreen() {
     // 使用预定义的 ALL_RELATION_LABELS 映射表（兼容旧的英文ID）
     const mappedRelation = ALL_RELATION_LABELS[originalRelation] || originalRelation;
     
-    // 获取关系角色信息
-    const relatedChar = getRelatedCharacter(relation, charId);
-    
     // 如果当前卡片是主角，显示反向关系
-    if (relation.characterId === charId && relatedChar?.isMainCharacter) {
-      return getReverseRelationLabel(mappedRelation);
+    if (char.isMainCharacter) {
+      return getReverseRelationLabel(mappedRelation, char);
     }
     
     return mappedRelation;
@@ -658,7 +676,7 @@ export default function CharacterListScreen() {
                       <View style={styles.relationsList}>
                         {charRelations.map(relation => {
                           const relatedChar = getRelatedCharacter(relation, char.id);
-                          const relationLabel = getRelationLabel(relation, char.id);
+                          const relationLabel = getRelationLabel(relation, char);
 
                           console.log('[CharacterList] 关系显示调试:', {
                             charName: char.name,
