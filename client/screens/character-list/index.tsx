@@ -368,34 +368,27 @@ export default function CharacterListScreen() {
     '宿敌': '宿敌',
   };
 
-  // 获取反向关系标签（考虑主角性别）
-  const getReverseRelationLabel = (relationType: string, char: Character): string => {
-    // 姻亲关系需要根据主角性别返回正确的称呼
-    // 公公/婆婆是女性对丈夫父亲的称呼
-    // 岳父/岳母是男性对妻子父亲的称呼
-    // 反向：女婿是男性，儿媳是女性
-    if (char.isMainCharacter) {
-      // 主角是男性，姻亲关系的反向
-      if (relationType === '公公') return '女婿';  // 男性视角：岳父的反向是女婿
-      if (relationType === '婆婆') return '女婿';  // 男性视角：岳母的反向是女婿
-      if (relationType === '岳父') return '女婿';  // 男性视角：岳父的反向是女婿
-      if (relationType === '岳母') return '女婿';  // 男性视角：岳母的反向是女婿
-      if (relationType === '小舅子') return '姐夫';  // 男性视角：小舅子的反向是姐夫
-      if (relationType === '小叔子') return '嫂子';  // 男性视角：小叔子的反向是嫂子
-      if (relationType === '大舅子') return '姐夫';  // 男性视角：大舅子的反向是姐夫
-      if (relationType === '大姨子') return '妹夫';  // 男性视角：大姨子的反向是妹夫
-      if (relationType === '小姨子') return '妹夫';  // 男性视角：小姨子的反向是妹夫
-      // 主角是女性，姻亲关系的反向
-      if (relationType === '公公') return '儿媳';  // 女性视角：公公的反向是儿媳
-      if (relationType === '婆婆') return '儿媳';  // 女性视角：婆婆的反向是儿媳
-      if (relationType === '岳父') return '儿媳';  // 女性视角：岳父的反向是儿媳
-      if (relationType === '岳母') return '儿媳';  // 女性视角：岳母的反向是儿媳
-      if (relationType === '小舅子') return '妹夫';  // 女性视角：小舅子的反向是妹夫
-      if (relationType === '小叔子') return '嫂子';  // 女性视角：小叔子的反向是嫂子
-      if (relationType === '大舅子') return '妹夫';  // 女性视角：大舅子的反向是妹夫
-      if (relationType === '大姨子') return '姐夫';  // 女性视角：大姨子的反向是姐夫
-      if (relationType === '小姨子') return '姐夫';  // 女性视角：小姨子的反向是姐夫
+  // 获取反向关系标签（根据性别返回正确的称呼）
+  // 公公/婆婆是女性对丈夫父母的称呼
+  // 岳父/岳母是男性对妻子父母的称呼
+  const getReverseRelationLabel = (relationType: string, charGender: string): string => {
+    // 先检查姻亲关系
+    if (charGender === '男') {
+      // 男性视角
+      if (relationType === '公公' || relationType === '岳父') return '女婿';
+      if (relationType === '婆婆' || relationType === '岳母') return '女婿';
+      if (relationType === '小舅子' || relationType === '大舅子') return '姐夫';
+      if (relationType === '小叔子' || relationType === '大伯子') return '嫂子';
+      if (relationType === '小姨子' || relationType === '大姨子') return '妹夫';
+    } else {
+      // 女性视角
+      if (relationType === '公公' || relationType === '岳父') return '儿媳';
+      if (relationType === '婆婆' || relationType === '岳母') return '儿媳';
+      if (relationType === '小舅子' || relationType === '大舅子') return '妹夫';
+      if (relationType === '小叔子' || relationType === '大伯子') return '嫂子';
+      if (relationType === '小姨子' || relationType === '大姨子') return '姐夫';
     }
+    // 其他关系使用预定义的反向映射表
     return REVERSE_RELATIONS[relationType] || relationType;
   };
 
@@ -410,7 +403,7 @@ export default function CharacterListScreen() {
     if (/[\u4e00-\u9fa5]/.test(originalRelation)) {
       // 如果当前卡片是主角，显示反向关系
       if (char.isMainCharacter) {
-        return getReverseRelationLabel(originalRelation, char);
+        return getReverseRelationLabel(originalRelation, char.gender);
       }
       // 其他情况显示原关系
       return originalRelation;
@@ -421,7 +414,7 @@ export default function CharacterListScreen() {
     
     // 如果当前卡片是主角，显示反向关系
     if (char.isMainCharacter) {
-      return getReverseRelationLabel(mappedRelation, char);
+      return getReverseRelationLabel(mappedRelation, char.gender);
     }
     
     return mappedRelation;
