@@ -67,97 +67,79 @@ const mapRelationToKey = (relationStr: string): string => {
   const relation = relationStr.trim();
   
   // 直系亲属 - 父母祖辈
-  if (relation.includes('父亲') || relation.includes('爸爸')) return 'father';
-  if (relation.includes('母亲') || relation.includes('妈妈')) return 'mother';
-  if (relation.includes('祖父') || relation.includes('爷爷')) return 'grandfather';
-  if (relation.includes('祖母') || relation.includes('奶奶')) return 'grandmother';
-  if (relation.includes('外祖父') || relation.includes('外公')) return 'grandfather';
-  if (relation.includes('外祖母') || relation.includes('外婆')) return 'grandmother';
+  // 将中文关系映射到英文key（保留用于某些需要英文ID的场景）
+  if (relation.includes('父亲') || relation.includes('爸爸')) return '父亲';
+  if (relation.includes('母亲') || relation.includes('妈妈')) return '母亲';
+  if (relation.includes('祖父') || relation.includes('爷爷')) return '爷爷';
+  if (relation.includes('祖母') || relation.includes('奶奶')) return '奶奶';
+  if (relation.includes('外祖父') || relation.includes('外公')) return '外公';
+  if (relation.includes('外祖母') || relation.includes('外婆')) return '外婆';
+  if (relation.includes('丈夫') || relation.includes('老公')) return '丈夫';
+  if (relation.includes('妻子') || relation.includes('老婆')) return '妻子';
+  if (relation.includes('配偶')) return '配偶';
+  if (relation.includes('儿子')) return '儿子';
+  if (relation.includes('女儿')) return '女儿';
+  if (relation.includes('子女')) return '子女';
+  if (relation.includes('哥哥') || relation.includes('弟弟') || relation.includes('兄弟')) return '兄弟';
+  if (relation.includes('姐姐') || relation.includes('妹妹') || relation.includes('姐妹')) return '姐妹';
+  if (relation.includes('兄妹') || relation.includes('姐弟')) return '兄妹';
+  if (relation.includes('伯父') || relation.includes('伯伯')) return '伯伯';
+  if (relation.includes('叔叔')) return '叔叔';
+  if (relation.includes('姑妈') || relation.includes('姑姑')) return '姑姑';
+  if (relation.includes('舅舅')) return '舅舅';
+  if (relation.includes('姨妈') || relation.includes('阿姨')) return '姨妈';
+  if (relation.includes('公公') || relation.includes('岳父')) return '公公';
+  if (relation.includes('婆婆') || relation.includes('岳母')) return '婆婆';
+  if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return '小舅子';
+  if (relation.includes('大舅子') || relation.includes('内兄') || relation.includes('妻兄')) return '大舅子';
+  if (relation.includes('小姑子') || relation.includes('小姨子')) return '小姨子';
+  if (relation.includes('大姑子') || relation.includes('大姨子')) return '大姨子';
+  if (relation.includes('儿媳') || relation.includes('儿媳妇')) return '儿媳';
+  if (relation.includes('女婿')) return '女婿';
+  if (relation.includes('侄子')) return '侄子';
+  if (relation.includes('侄女')) return '侄女';
+  if (relation.includes('堂兄弟') || relation.includes('堂哥') || relation.includes('堂弟')) return '堂兄弟';
+  if (relation.includes('堂姐妹') || relation.includes('堂姐') || relation.includes('堂妹')) return '堂姐妹';
+  if (relation.includes('表兄弟') || relation.includes('表哥') || relation.includes('表弟')) return '表兄弟';
+  if (relation.includes('表姐妹') || relation.includes('表姐') || relation.includes('表妹')) return '表姐妹';
+  if (relation.includes('朋友')) return '朋友';
+  if (relation.includes('敌人') || relation.includes('仇人')) return '仇人';
+  if (relation.includes('同事')) return '同事';
+  if (relation.includes('恋人') || relation.includes('情人')) return '恋人';
+  if (relation.includes('导师') || relation.includes('老师')) return '导师';
+  if (relation.includes('学生')) return '学生';
+  if (relation.includes('发小') || relation.includes('青梅竹马')) return '发小';
+  if (relation.includes('老同学') || relation.includes('老友') || relation.includes('故交')) return '老同学';
+  if (relation.includes('哥们') || relation.includes('好兄弟')) return '好哥们';
+  if (relation.includes('闺蜜')) return '闺蜜';
+  if (relation.includes('死党')) return '死党';
+  if (relation.includes('战友')) return '战友';
+  if (relation.includes('室友') || relation.includes('舍友')) return '室友';
+  if (relation.includes('邻居') || relation.includes('街坊')) return '邻居';
+  if (relation.includes('老板') || relation.includes('上司') || relation.includes('领导')) return '上司';
+  if (relation.includes('客户') || relation.includes('顾客')) return '客户';
+  if (relation.includes('合作伙伴') || relation.includes('合伙人')) return '合伙人';
+  if (relation.includes('校友') || relation.includes('同窗')) return '校友';
+  if (relation.includes('队友')) return '队友';
+  if (relation.includes('粉丝') || relation.includes('追星族')) return '粉丝';
+  if (relation.includes('偶像') || relation.includes('爱豆')) return '偶像';
+  if (relation.includes('对手') || relation.includes('竞争者')) return '对手';
+  if (relation.includes('宿敌') || relation.includes('死对头')) return '宿敌';
+  if (relation.includes('债主')) return '债主';
+  if (relation.includes('债务人') || relation.includes('欠债人')) return '债务人';
+  if (relation.includes('恩人') || relation.includes('救命恩人')) return '恩人';
+  if (relation.includes('师傅') || relation.includes('师父')) return '师傅';
+  if (relation.includes('徒弟') || relation.includes('弟子')) return '徒弟';
+  if (relation.includes('搭档')) return '搭档';
+  if (relation.includes('熟人')) return '熟人';
+  if (relation.includes('亲戚')) return '亲戚';
+  if (relation.includes('义父') || relation.includes('干爹')) return '义父';
+  if (relation.includes('义母') || relation.includes('干妈')) return '义母';
+  if (relation.includes('干儿子') || relation.includes('干子')) return '干儿子';
+  if (relation.includes('干女儿')) return '干女儿';
   
-  // 配偶
-  if (relation.includes('丈夫') || relation.includes('老公')) return 'husband';
-  if (relation.includes('妻子') || relation.includes('老婆')) return 'wife';
-  if (relation.includes('配偶')) return 'spouse';
-  
-  // 子女
-  if (relation.includes('儿子')) return 'son';
-  if (relation.includes('女儿')) return 'daughter';
-  if (relation.includes('子女')) return 'child';
-  
-  // 兄弟姐妹
-  if (relation.includes('哥哥') || relation.includes('弟弟') || relation.includes('兄弟')) return 'brother';
-  if (relation.includes('姐姐') || relation.includes('妹妹') || relation.includes('姐妹')) return 'sister';
-  if (relation.includes('兄妹') || relation.includes('姐弟')) return 'sibling';
-  
-  // 父母的兄弟姐妹（伯叔姑舅姨）
-  if (relation.includes('伯父') || relation.includes('伯伯')) return 'uncle';
-  if (relation.includes('叔叔') || relation.includes('叔叔')) return 'uncle';
-  if (relation.includes('姑妈') || relation.includes('姑姑')) return 'aunt';
-  if (relation.includes('舅舅')) return 'uncle';
-  if (relation.includes('姨妈') || relation.includes('阿姨')) return 'aunt';
-  
-  // 配偶的父母（公婆岳父母）
-  if (relation.includes('公公') || relation.includes('岳父')) return 'father_in_law';
-  if (relation.includes('婆婆') || relation.includes('岳母')) return 'mother_in_law';
-  
-  // 配偶的兄弟姐妹（小舅子、小姑子等）
-  if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return 'brother_in_law';
-  if (relation.includes('大舅子') || relation.includes('内兄') || relation.includes('妻兄')) return 'brother_in_law';
-  if (relation.includes('小姑子') || relation.includes('小姨子')) return 'sister_in_law';
-  if (relation.includes('大姑子') || relation.includes('大姨子')) return 'sister_in_law';
-  
-  // 子女的配偶（儿媳女婿）
-  if (relation.includes('儿媳') || relation.includes('儿媳妇')) return 'daughter_in_law';
-  if (relation.includes('女婿')) return 'son_in_law';
-  
-  // 侄子侄女
-  if (relation.includes('侄子')) return 'nephew';
-  if (relation.includes('侄女')) return 'niece';
-  
-  // 侄子侄女
-  if (relation.includes('堂兄弟') || relation.includes('堂哥') || relation.includes('堂弟')) return 'cousin_male';
-  if (relation.includes('堂姐妹') || relation.includes('堂姐') || relation.includes('堂妹')) return 'cousin_female';
-  if (relation.includes('表兄弟') || relation.includes('表哥') || relation.includes('表弟')) return 'cousin_male';
-  if (relation.includes('表姐妹') || relation.includes('表姐') || relation.includes('表妹')) return 'cousin_female';
-  
-  // 社会关系
-  if (relation.includes('朋友')) return 'friend';
-  if (relation.includes('敌人') || relation.includes('仇人')) return 'enemy';
-  if (relation.includes('同事')) return 'colleague';
-  if (relation.includes('恋人') || relation.includes('情人')) return 'lover';
-  if (relation.includes('导师') || relation.includes('老师')) return 'mentor';
-  if (relation.includes('学生') || relation.includes('徒弟')) return 'student';
-  
-  // 扩展社会关系（按优先级排序，避免误匹配）
-  if (relation.includes('发小') || relation.includes('青梅竹马')) return 'childhood_friend';
-  if (relation.includes('老同学') || relation.includes('老友') || relation.includes('故交')) return 'old_friend';
-  if (relation.includes('哥们') || relation.includes('好兄弟')) return 'buddy';
-  if (relation.includes('闺蜜') || relation.includes('死党')) return 'bestie';
-  if (relation.includes('战友')) return 'comrade';
-  if (relation.includes('室友') || relation.includes('舍友')) return 'roommate';
-  if (relation.includes('邻居') || relation.includes('街坊')) return 'neighbor';
-  if (relation.includes('老板') || relation.includes('上司') || relation.includes('领导')) return 'boss';
-  if (relation.includes('客户') || relation.includes('顾客')) return 'client';
-  if (relation.includes('合作伙伴') || relation.includes('合伙人')) return 'partner';
-  if (relation.includes('校友') || relation.includes('同窗')) return 'classmate';
-  if (relation.includes('队友') || relation.includes('队友')) return 'teammate';
-  if (relation.includes('粉丝') || relation.includes('追星族')) return 'fan';
-  if (relation.includes('偶像') || relation.includes('爱豆')) return 'idol';
-  if (relation.includes('对手') || relation.includes('竞争者')) return 'adversary';
-  if (relation.includes('宿敌') || relation.includes('死对头')) return 'arch_rival';
-  if (relation.includes('债主')) return 'creditor';
-  if (relation.includes('债务人') || relation.includes('欠债人')) return 'debtor';
-  if (relation.includes('恩人')) return 'benefactor';
-  if (relation.includes('救命恩人')) return 'lifesaver';
-  if (relation.includes('师傅') || relation.includes('师父')) return 'master';
-  if (relation.includes('徒弟') || relation.includes('弟子')) return 'apprentice';
-  
-  // 泛化关系（这些应该尽量避免，但作为兜底）
-  if (relation.includes('熟人')) return 'acquaintance';
-  if (relation.includes('认识')) return 'acquaintance';
-  if (relation.includes('亲戚')) return 'relative';
-  
-  return 'family'; // 默认为family
+  // 未能识别的关系，直接返回原字符串（不返回family）
+  return relation;
 };
 
 export default function CharacterResultScreen() {

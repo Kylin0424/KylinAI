@@ -301,14 +301,112 @@ export default function CharacterListScreen() {
     );
   };
 
+  // 反向关系映射表
+  const REVERSE_RELATIONS: Record<string, string> = {
+    '父亲': '儿子',
+    '母亲': '女儿',
+    '爷爷': '孙子',
+    '奶奶': '孙女',
+    '外公': '外孙',
+    '外婆': '外孙女',
+    '丈夫': '妻子',
+    '妻子': '丈夫',
+    '儿子': '父亲',
+    '女儿': '母亲',
+    '兄弟': '兄弟',
+    '姐妹': '姐妹',
+    '兄妹': '兄妹',
+    '伯伯': '侄子',
+    '叔叔': '侄子',
+    '姑姑': '侄子',
+    '舅舅': '外甥',
+    '姨妈': '外甥女',
+    '公公': '儿媳',
+    '婆婆': '女婿',
+    '岳父': '女婿',
+    '岳母': '儿媳',
+    '小舅子': '姐夫',
+    '大舅子': '姐夫',
+    '小姨子': '妹夫',
+    '大姨子': '姐夫',
+    '儿媳': '公公',
+    '女婿': '岳母',
+    '侄子': '伯伯',
+    '侄女': '伯伯',
+    '外甥': '舅舅',
+    '外甥女': '姨妈',
+    '堂兄弟': '堂兄弟',
+    '堂姐妹': '堂姐妹',
+    '表兄弟': '表兄弟',
+    '表姐妹': '表姐妹',
+    '朋友': '朋友',
+    '同事': '同事',
+    '上司': '下属',
+    '下属': '上司',
+    '客户': '客户',
+    '合伙人': '合伙人',
+    '同学': '同学',
+    '室友': '室友',
+    '邻居': '邻居',
+    '发小': '发小',
+    '老同学': '老同学',
+    '好哥们': '好哥们',
+    '闺蜜': '闺蜜',
+    '死党': '死党',
+    '导师': '学生',
+    '学生': '导师',
+    '师傅': '徒弟',
+    '徒弟': '师傅',
+    '搭档': '搭档',
+    '恋人': '恋人',
+    '粉丝': '偶像',
+    '偶像': '粉丝',
+    '恩人': '受恩者',
+    '债主': '债务人',
+    '仇人': '仇人',
+    '对手': '对手',
+    '宿敌': '宿敌',
+  };
+
+  // 获取反向关系标签
+  const getReverseRelationLabel = (relationType: string): string => {
+    return REVERSE_RELATIONS[relationType] || relationType;
+  };
+
+  // 获取当前卡片应该显示的关系标签
+  // 如果当前卡片是主角（存储关系时的主语），显示反向关系
+  // 如果当前卡片是关系角色（存储关系时的宾语），显示原关系
   const getRelationLabel = (relation: CharacterRelation, charId: string): string => {
-    // 如果relationType已经是中文，直接返回
-    if (/[\u4e00-\u9fa5]/.test(relation.relationType)) {
-      return relation.relationType;
+    // 获取关系类型的原始值（可能是中文或英文）
+    const originalRelation = relation.relationType;
+    
+    // 如果relationType已经是中文
+    if (/[\u4e00-\u9fa5]/.test(originalRelation)) {
+      // 获取关系角色信息
+      const relatedChar = getRelatedCharacter(relation, charId);
+      
+      // 如果当前卡片是主角（关系存储时的主语），显示反向关系
+      if (relation.characterId === charId && relatedChar?.isMainCharacter) {
+        // 当前卡片是主角，显示反向关系
+        return getReverseRelationLabel(originalRelation);
+      }
+      
+      // 其他情况显示原关系
+      return originalRelation;
     }
     
-    // 使用预定义的 ALL_RELATION_LABELS 映射表
-    return ALL_RELATION_LABELS[relation.relationType] || relation.relationType;
+    // 使用预定义的 ALL_RELATION_LABELS 映射表（兼容旧的英文ID）
+    const mappedRelation = ALL_RELATION_LABELS[originalRelation] || originalRelation;
+    
+    // 获取关系角色信息
+    const relatedChar = getRelatedCharacter(relation, charId);
+    
+    // 如果当前卡片是主角，显示反向关系
+    if (relation.characterId === charId && relatedChar?.isMainCharacter) {
+      return getReverseRelationLabel(mappedRelation);
+    }
+    
+    return mappedRelation;
   };
 
   const getRelatedCharacter = (relation: CharacterRelation, charId: string): Character | undefined => {
