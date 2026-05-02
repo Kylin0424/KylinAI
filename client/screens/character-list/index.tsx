@@ -368,39 +368,198 @@ export default function CharacterListScreen() {
     '宿敌': '宿敌',
   };
 
-  // 获取反向关系标签（根据性别返回正确的称呼）
-  // 公公/婆婆是女性对丈夫父母的称呼
-  // 岳父/岳母是男性对妻子父母的称呼
-  const getReverseRelationLabel = (relationType: string, charGender: string): string => {
-    // 先检查父母/子女关系（需要根据性别返回）
-    if (relationType === '女儿') {
-      return charGender === '男' ? '父亲' : '母亲';
-    }
-    if (relationType === '儿子') {
-      return charGender === '男' ? '父亲' : '母亲';
-    }
-    // 再检查姻亲关系
-    if (charGender === '男') {
-      // 男性视角
-      if (relationType === '公公' || relationType === '岳父') return '女婿';
-      if (relationType === '婆婆' || relationType === '岳母') return '女婿';
-      if (relationType === '小舅子' || relationType === '大舅子') return '姐夫';
-      if (relationType === '小叔子' || relationType === '大伯子') return '嫂子';
-      if (relationType === '小姨子' || relationType === '大姨子') return '妹夫';
-    } else {
-      // 女性视角
-      if (relationType === '公公' || relationType === '岳父') return '儿媳';
-      if (relationType === '婆婆' || relationType === '岳母') return '儿媳';
-      if (relationType === '小舅子' || relationType === '大舅子') return '妹夫';
-      if (relationType === '小叔子' || relationType === '大伯子') return '嫂子';
-      if (relationType === '小姨子' || relationType === '大姨子') return '姐夫';
-    }
-    // 其他关系使用预定义的反向映射表
-    return REVERSE_RELATIONS[relationType] || relationType;
-  };
+  // 获取反向关系标签（系统性处理所有关系类型）
+/**
+ * 获取反向关系标签（根据当前角色性别）
+ * @param relation 原关系（中文）
+ * @param charGender 当前角色性别
+ */
+const getReverseRelationLabel = (relation: string, charGender: string): string => {
+  const r = relation;
 
-  // 获取当前卡片应该显示的关系标签
-  // 如果当前卡片是主角，显示反向关系
+  // 1. 父母子女关系
+  if (r === '父亲' || r === '爸爸' || r === '爹') {
+    return charGender === '男' ? '儿子' : '女儿';
+  }
+  if (r === '母亲' || r === '妈妈' || r === '妈') {
+    return charGender === '男' ? '儿子' : '女儿';
+  }
+  if (r === '儿子') {
+    return charGender === '男' ? '父亲' : '母亲';
+  }
+  if (r === '女儿') {
+    return charGender === '男' ? '父亲' : '母亲';
+  }
+  if (r === '爸爸' || r === '爹') {
+    return charGender === '男' ? '儿子' : '女儿';
+  }
+
+  // 2. 祖父母与孙辈
+  if (r === '爷爷' || r === '祖父' || r === '外公' || r === '外祖父' || r === '爷爷') {
+    return charGender === '男' ? '孙子' : '孙女';
+  }
+  if (r === '奶奶' || r === '祖母' || r === '外婆' || r === '外祖母') {
+    return charGender === '男' ? '孙子' : '孙女';
+  }
+  if (r === '孙子') {
+    return charGender === '男' ? '爷爷' : '奶奶';
+  }
+  if (r === '孙女') {
+    return charGender === '男' ? '爷爷' : '奶奶';
+  }
+
+  // 3. 兄弟姐妹
+  if (r === '哥哥' || r === '兄长' || r === '哥') {
+    return charGender === '男' ? '弟弟' : '妹妹';
+  }
+  if (r === '弟弟' || r === '弟') {
+    return charGender === '男' ? '哥哥' : '姐姐';
+  }
+  if (r === '姐姐' || r === '姐') {
+    return charGender === '男' ? '弟弟' : '妹妹';
+  }
+  if (r === '妹妹' || r === '妹') {
+    return charGender === '男' ? '哥哥' : '姐姐';
+  }
+  if (r === '哥哥' || r === '弟弟' || r === '姐姐' || r === '妹妹') {
+    return charGender === '男' ? '弟弟' : '妹妹';
+  }
+
+  // 4. 叔伯姑姨舅
+  if (r === '叔叔' || r === '伯伯' || r === '伯父' || r === '叔父' || r === '大爷') {
+    return charGender === '男' ? '侄子' : '侄女';
+  }
+  if (r === '姑姑' || r === '姑妈' || r === '姑母') {
+    return charGender === '男' ? '侄子' : '侄女';
+  }
+  if (r === '舅舅' || r === '舅父' || r === '舅伯' || r === '大舅' || r === '小舅') {
+    return charGender === '男' ? '外甥' : '外甥女';
+  }
+  if (r === '姨妈' || r === '姨母' || r === '姨姨' || r === '大姨' || r === '小姨') {
+    return charGender === '男' ? '外甥' : '外甥女';
+  }
+  if (r === '侄子') {
+    return charGender === '男' ? '叔叔' : '姑姑';
+  }
+  if (r === '侄女') {
+    return charGender === '男' ? '叔叔' : '姑姑';
+  }
+  if (r === '外甥') {
+    return charGender === '男' ? '舅舅' : '姨妈';
+  }
+  if (r === '外甥女') {
+    return charGender === '男' ? '舅舅' : '姨妈';
+  }
+
+  // 5. 堂表亲
+  if (r === '表哥' || r === '表弟' || r === '表姐' || r === '表妹') {
+    return charGender === '男' ? '表弟' : '表妹';
+  }
+  if (r === '堂哥' || r === '堂弟' || r === '堂姐' || r === '堂妹') {
+    return charGender === '男' ? '堂弟' : '堂妹';
+  }
+
+  // 6. 翁婿/婆媳关系（男性视角）
+  if (r === '岳父' || r === '丈人') {
+    return '女婿';
+  }
+  if (r === '岳母' || r === '丈母娘') {
+    return '女婿';
+  }
+  if (r === '公公' || r === '婆父') {
+    return '儿媳';
+  }
+  if (r === '婆婆' || r === '婆母') {
+    return '儿媳';
+  }
+  if (r === '女婿') {
+    return charGender === '男' ? '岳父' : '岳母';
+  }
+  if (r === '儿媳' || r === '儿媳妇') {
+    return charGender === '男' ? '公公' : '婆婆';
+  }
+
+  // 7. 配偶兄弟姐妹
+  if (r === '大舅子' || r === '小舅子' || r === '舅兄' || r === '舅弟') {
+    return charGender === '男' ? '妹夫' : '姐夫';
+  }
+  if (r === '大姨子' || r === '小姨子' || r === '姨姐' || r === '姨妹') {
+    return charGender === '男' ? '妹夫' : '姐夫';
+  }
+  if (r === '妹夫' || r === '姐夫') {
+    return charGender === '男' ? '大姨子' : '大舅子';
+  }
+
+  // 8. 配偶（对称关系）
+  if (r === '丈夫' || r === '老公' || r === '娘子' || r === '老婆' || r === '妻子' || r === '太太' || r === '夫人' || r === '配偶' || r === '爱人') {
+    return r; // 对称关系
+  }
+
+  // 9. 继亲关系
+  if (r === '继父') {
+    return charGender === '男' ? '继子' : '继女';
+  }
+  if (r === '继母') {
+    return charGender === '男' ? '继子' : '继女';
+  }
+  if (r === '继子') {
+    return charGender === '男' ? '继父' : '继母';
+  }
+  if (r === '继女') {
+    return charGender === '男' ? '继父' : '继母';
+  }
+
+  // 10. 养亲关系
+  if (r === '养父') {
+    return charGender === '男' ? '养子' : '养女';
+  }
+  if (r === '养母') {
+    return charGender === '男' ? '养子' : '养女';
+  }
+  if (r === '养子') {
+    return charGender === '男' ? '养父' : '养母';
+  }
+  if (r === '养女') {
+    return charGender === '男' ? '养父' : '养母';
+  }
+
+  // 11. 兄弟姐妹配偶关系
+  if (r === '嫂子' || r === '嫂嫂' || r === '兄嫂') {
+    return charGender === '男' ? '小叔子' : '小姑子';
+  }
+  if (r === '弟妹' || r === '弟妇' || r === '弟媳') {
+    return charGender === '男' ? '大伯子' : '大姑子';
+  }
+  if (r === '姐夫' || r === '妹夫') {
+    return charGender === '男' ? '小姨子' : '大舅子';
+  }
+
+  // 12. 祖孙关系
+  if (r === '曾祖父' || r === '高祖父') {
+    return charGender === '男' ? '曾孙' : '曾孙女';
+  }
+  if (r === '曾祖母' || r === '高祖母') {
+    return charGender === '男' ? '曾孙' : '曾孙女';
+  }
+  if (r === '曾孙' || r === '曾孙女') {
+    return charGender === '男' ? '曾祖父' : '曾祖母';
+  }
+
+  // 13. 其他亲戚
+  if (r === '侄子') return charGender === '男' ? '叔叔' : '姑姑';
+  if (r === '侄女') return charGender === '男' ? '叔叔' : '姑姑';
+  if (r === '外甥') return charGender === '男' ? '舅舅' : '姨妈';
+  if (r === '外甥女') return charGender === '男' ? '舅舅' : '姨妈';
+
+  // 14. 社会关系（对称或不变）
+  const symmetricRelations = ['朋友', '同学', '同事', '邻居', '战友', '闺蜜', '哥们', '兄弟', '姐妹', '伙伴', '搭档', '合伙人', '客户', '老板', '上司', '老师', '学生', '偶像', '粉丝', '恩人', '仇人', '敌人', '对手'];
+  if (symmetricRelations.includes(r)) {
+    return r;
+  }
+
+  // 默认返回原关系
+  return r;
+};
   // 如果当前卡片是关系角色，显示原关系
   const getRelationLabel = (relation: CharacterRelation, char: Character): string => {
     // 获取关系类型的原始值（可能是中文或英文）
@@ -409,7 +568,7 @@ export default function CharacterListScreen() {
     // 如果relationType已经是中文
     if (/[\u4e00-\u9fa5]/.test(originalRelation)) {
       // 如果当前卡片是主角，显示反向关系
-      if (char.isMainCharacter) {
+      if (char.roleType === 'male_lead' || char.roleType === 'female_lead') {
         return getReverseRelationLabel(originalRelation, char.gender);
       }
       // 其他情况显示原关系
@@ -420,7 +579,7 @@ export default function CharacterListScreen() {
     const mappedRelation = ALL_RELATION_LABELS[originalRelation] || originalRelation;
     
     // 如果当前卡片是主角，显示反向关系
-    if (char.isMainCharacter) {
+    if (char.roleType === 'male_lead' || char.roleType === 'female_lead') {
       return getReverseRelationLabel(mappedRelation, char.gender);
     }
     
@@ -683,8 +842,8 @@ export default function CharacterListScreen() {
                             relatedCharName: relatedChar?.name,
                             relationType: relation.relationType,
                             relationLabel: relationLabel,
-                            isMainCharacter: char.isMainCharacter,
-                            relatedIsMainCharacter: relatedChar?.isMainCharacter,
+                            isMainCharacter: char.roleType === 'male_lead' || char.roleType === 'female_lead',
+                            relatedIsMainCharacter: relatedChar ? (relatedChar.roleType === 'male_lead' || relatedChar.roleType === 'female_lead') : false,
                             fullDebug: relation
                           });
 
