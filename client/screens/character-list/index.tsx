@@ -372,7 +372,14 @@ export default function CharacterListScreen() {
   // 公公/婆婆是女性对丈夫父母的称呼
   // 岳父/岳母是男性对妻子父母的称呼
   const getReverseRelationLabel = (relationType: string, charGender: string): string => {
-    // 先检查姻亲关系
+    // 先检查父母/子女关系（需要根据性别返回）
+    if (relationType === '女儿') {
+      return charGender === '男' ? '父亲' : '母亲';
+    }
+    if (relationType === '儿子') {
+      return charGender === '男' ? '父亲' : '母亲';
+    }
+    // 再检查姻亲关系
     if (charGender === '男') {
       // 男性视角
       if (relationType === '公公' || relationType === '岳父') return '女婿';
