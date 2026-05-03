@@ -490,9 +490,18 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
     return charGender === '男' ? '大姨子' : '大舅子';
   }
 
-  // 8. 配偶（对称关系）
-  if (r === '丈夫' || r === '老公' || r === '娘子' || r === '老婆' || r === '妻子' || r === '太太' || r === '夫人' || r === '配偶' || r === '爱人') {
-    return r; // 对称关系
+  // 8. 配偶关系（根据当前角色性别返回正确的配偶称呼）
+  // 如果原关系是男性配偶称呼（丈夫），则反向是妻子；如果原关系是女性配偶称呼（妻子），则反向是丈夫
+  const spouseMale = ['丈夫', '老公', '郎君', '相公', '官人', '爱人'];
+  const spouseFemale = ['妻子', '老婆', '娘子', '太太', '夫人', '媳妇', '配偶', '爱人'];
+  
+  if (spouseMale.includes(r)) {
+    // 原关系是男性配偶称呼 → 反向是妻子
+    return charGender === '男' ? '妻子' : '丈夫';
+  }
+  if (spouseFemale.includes(r)) {
+    // 原关系是女性配偶称呼 → 反向是丈夫
+    return charGender === '男' ? '丈夫' : '妻子';
   }
 
   // 9. 继亲关系
