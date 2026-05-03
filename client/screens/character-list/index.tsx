@@ -546,10 +546,8 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
   }
 
   // 13. 其他亲戚
-  if (r === '侄子') return charGender === '男' ? '叔叔' : '姑姑';
-  if (r === '侄女') return charGender === '男' ? '叔叔' : '姑姑';
-  if (r === '外甥') return charGender === '男' ? '舅舅' : '姨妈';
-  if (r === '外甥女') return charGender === '男' ? '舅舅' : '姨妈';
+  // 侄子/侄女：兄弟/姐妹的儿子/女儿，叫叔叔/姑姑（被称呼者是男性伯叔）或舅舅/姨妈（被称呼者是女性姨舅）
+  if (r === '侄子' || r === '侄女') return charGender === '男' ? '叔叔': '舅舅';
 
   // 14. 社会关系（对称或不变）
   const symmetricRelations = ['朋友', '同学', '同事', '邻居', '战友', '闺蜜', '哥们', '兄弟', '姐妹', '伙伴', '搭档', '合伙人', '客户', '老板', '上司', '老师', '学生', '偶像', '粉丝', '恩人', '仇人', '敌人', '对手'];
