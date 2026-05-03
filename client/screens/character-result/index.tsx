@@ -265,6 +265,7 @@ export default function CharacterResultScreen() {
         appearance: protagonistData.appearance || '',
         specialTraits: protagonistData.specialTraits || '',
         createdAt: Date.now(),
+        roleType: params.gender === '男' ? 'male_lead' : 'female_lead', // 设置主角类型
       };
 
       // 生成角色头像（暂时禁用，避免404错误影响核心功能）
