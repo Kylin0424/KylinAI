@@ -570,11 +570,13 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
     return charGender === '男' ? '妹夫' : '弟媳';
   }
   // 姐夫/妹夫的反向
+  // 姐夫：妻子姐姐的丈夫，反向是妻子的兄弟（小舅子/大舅子）
   if (r === '姐夫') {
-    return '小舅子';
+    return charGender === '男' ? '大舅子' : '小舅子';
   }
+  // 妹夫：妻子妹妹的丈夫，反向是妻子姐妹（小姨子/大姨子）
   if (r === '妹夫') {
-    return '小舅子';
+    return charGender === '女' ? '大姨子' : '小姨子';
   }
   // 嫂子/弟媳的反向
   if (r === '嫂子') {

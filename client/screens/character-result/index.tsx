@@ -50,12 +50,13 @@ const RELATION_TYPES = [
   { key: 'maternal_aunt', label: '姨妈', reverseKey: 'nephew', generateNPC: false },
   { key: 'father_in_law', label: '公公/岳父', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
   { key: 'mother_in_law', label: '婆婆/岳母', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
-  { key: '姐夫', label: '姐夫(妻姐之夫)', reverseKey: '小舅子', generateNPC: false },
-  { key: '妹夫', label: '妹夫(妻妹之夫)', reverseKey: '小舅子', generateNPC: false },
-  { key: '小舅子', label: '小舅子(妻之弟)', reverseKey: '姐夫', generateNPC: false },
-  { key: '大舅子', label: '大舅子(妻之兄)', reverseKey: '姐夫', generateNPC: false },
-  { key: '小姨子', label: '小姨子(妻之妹)', reverseKey: '妹夫', generateNPC: false },
-  { key: '大姨子', label: '大姨子(妻之姐)', reverseKey: '妹夫', generateNPC: false },
+  { key: '姐夫', label: '姐夫(妻姐之夫，即大姨子的丈夫)', reverseKey: '小舅子', generateNPC: false },
+  { key: '妹夫', label: '妹夫(妻妹之夫，即小姨子的丈夫)', reverseKey: '小姨子', generateNPC: false },
+  { key: '小舅子', label: '小舅子(妻子的弟弟)', reverseKey: '姐夫', generateNPC: false },
+  { key: '大舅子', label: '大舅子(妻子的哥哥)', reverseKey: '姐夫', generateNPC: false },
+  { key: '小姨子', label: '小姨子(妻子的妹妹)', reverseKey: '妹夫', generateNPC: false },
+  { key: '大姨子', label: '大姨子(妻子的姐姐)', reverseKey: '姐夫', generateNPC: false },
+  { key: '小姑子', label: '小姑子(丈夫的妹妹)', reverseKey: '妹夫', generateNPC: false },
   { key: 'daughter_in_law', label: '儿媳', reverseKey: 'father_in_law/mother_in_law', generateNPC: false },
   { key: 'son_in_law', label: '女婿', reverseKey: 'father_in_law/mother_in_law', generateNPC: false },
   { key: 'nephew', label: '侄子', reverseKey: 'uncle', generateNPC: false },
@@ -109,8 +110,9 @@ const mapRelationToKey = (relationStr: string): string => {
   if (relation.includes('妹夫')) return '妹夫';
   if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return '小舅子';
   if (relation.includes('大舅子') || relation.includes('内兄') || relation.includes('妻兄')) return '大舅子';
-  if (relation.includes('小姑子') || relation.includes('小姨子')) return '小姨子';
-  if (relation.includes('大姑子') || relation.includes('大姨子')) return '大姨子';
+  if (relation.includes('小姨子')) return '小姨子'; // 妻子的妹妹
+  if (relation.includes('大姨子')) return '大姨子'; // 妻子的姐姐
+  if (relation.includes('小姑子')) return '小姑子'; // 丈夫的妹妹
   if (relation.includes('儿媳') || relation.includes('儿媳妇')) return '儿媳';
   if (relation.includes('女婿')) return '女婿';
   if (relation.includes('侄子')) return '侄子';
