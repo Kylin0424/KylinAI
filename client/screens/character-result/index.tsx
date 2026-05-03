@@ -50,8 +50,12 @@ const RELATION_TYPES = [
   { key: 'maternal_aunt', label: '姨妈', reverseKey: 'nephew', generateNPC: false },
   { key: 'father_in_law', label: '公公/岳父', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
   { key: 'mother_in_law', label: '婆婆/岳母', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
-  { key: 'brother_in_law', label: '姐夫/妹夫/小舅子', reverseKey: 'sister_in_law/brother_in_law', generateNPC: false },
-  { key: 'sister_in_law', label: '嫂子/弟妹/小姑子', reverseKey: 'brother_in_law/sister_in_law', generateNPC: false },
+  { key: '姐夫', label: '姐夫(妻姐之夫)', reverseKey: '小舅子', generateNPC: false },
+  { key: '妹夫', label: '妹夫(妻妹之夫)', reverseKey: '小舅子', generateNPC: false },
+  { key: '小舅子', label: '小舅子(妻之弟)', reverseKey: '姐夫', generateNPC: false },
+  { key: '大舅子', label: '大舅子(妻之兄)', reverseKey: '姐夫', generateNPC: false },
+  { key: '小姨子', label: '小姨子(妻之妹)', reverseKey: '妹夫', generateNPC: false },
+  { key: '大姨子', label: '大姨子(妻之姐)', reverseKey: '妹夫', generateNPC: false },
   { key: 'daughter_in_law', label: '儿媳', reverseKey: 'father_in_law/mother_in_law', generateNPC: false },
   { key: 'son_in_law', label: '女婿', reverseKey: 'father_in_law/mother_in_law', generateNPC: false },
   { key: 'nephew', label: '侄子', reverseKey: 'uncle', generateNPC: false },
@@ -101,6 +105,8 @@ const mapRelationToKey = (relationStr: string): string => {
   if (relation.includes('姨父')) return '姨父'; // 母系姨父
   if (relation.includes('公公') || relation.includes('岳父')) return '公公';
   if (relation.includes('婆婆') || relation.includes('岳母')) return '婆婆';
+  if (relation.includes('姐夫')) return '姐夫';
+  if (relation.includes('妹夫')) return '妹夫';
   if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return '小舅子';
   if (relation.includes('大舅子') || relation.includes('内兄') || relation.includes('妻兄')) return '大舅子';
   if (relation.includes('小姑子') || relation.includes('小姨子')) return '小姨子';
