@@ -488,24 +488,48 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
     return charGender === '男' ? '舅舅' : '姨妈';
   }
 
-  // 5. 堂表亲（双向对称关系）
-  if (r === '表哥' || r === '表弟' || r === '表姐' || r === '表妹') {
-    return r;
+  // 5. 堂亲关系（核心原则：根据被叫者性别选择）
+  // 堂哥/堂弟/堂姐/堂妹
+  if (r === '堂哥' || r === '堂兄') {
+    return charGender === '男' ? '堂弟' : '堂妹';
   }
-  if (r === '堂哥' || r === '堂弟' || r === '堂姐' || r === '堂妹') {
-    return r;
+  if (r === '堂弟') {
+    return charGender === '男' ? '堂哥' : '堂姐';
   }
+  if (r === '堂姐') {
+    return charGender === '男' ? '堂弟' : '堂妹';
+  }
+  if (r === '堂妹') {
+    return charGender === '男' ? '堂哥' : '堂姐';
+  }
+  // 堂兄弟/堂姐妹（统称）→ 根据性别返回具体称呼
   if (r === '堂兄弟') {
-    return '堂兄弟';
+    return charGender === '男' ? '堂弟' : '堂妹';
   }
   if (r === '堂姐妹') {
-    return '堂姐妹';
+    return charGender === '男' ? '堂哥' : '堂姐';
   }
+
+  // 5a. 表亲关系（核心原则：根据被叫者性别选择）
+  // 表哥/表弟/表姐/表妹
+  if (r === '表哥') {
+    return charGender === '男' ? '表弟' : '表妹';
+  }
+  if (r === '表弟') {
+    return charGender === '男' ? '表哥' : '表姐';
+  }
+  if (r === '表姐') {
+    return charGender === '男' ? '表弟' : '表妹';
+  }
+  if (r === '表妹') {
+    return charGender === '男' ? '表哥' : '表姐';
+  }
+  // 表兄弟/表姐妹（统称）→ 根据性别返回具体称呼
   if (r === '表兄弟') {
-    return '表兄弟';
+    return charGender === '男' ? '表弟' : '表妹';
   }
   if (r === '表姐妹') {
-    return '表姐妹';
+    return charGender === '男' ? '表哥' : '表姐';
   }
 
   // 6. 翁婿/婆媳关系
@@ -533,20 +557,31 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
   }
 
   // 7. 配偶兄弟姐妹（连襟/妯娌）
-  // 小舅子/大舅子（妻子的兄弟）：被叫者是男性
+  // 小舅子/大舅子（妻子的兄弟）：反向是姐夫/妹夫
+  // 注意：姐夫=妻子姐姐的丈夫，妹夫=妻子妹妹的丈夫
+  // 需要根据对方的性别选择
   if (r === '大舅子' || r === '小舅子' || r === '舅兄' || r === '舅弟') {
-    return charGender === '男' ? '妹夫' : '姐夫';
+    // 被叫者是丈夫（男）→ 你是姐夫（因为对方是妻子的姐姐）
+    // 被叫者是妻子（女）→ 你是嫂子
+    return charGender === '男' ? '姐夫' : '嫂子';
   }
-  // 小姨子/大姨子（妻子的姐妹）：被叫者是女性
+  // 小姨子/大姨子（妻子的姐妹）：反向是妹夫/弟媳
   if (r === '大姨子' || r === '小姨子' || r === '姨姐' || r === '姨妹') {
-    return charGender === '男' ? '妹夫' : '姐夫';
+    return charGender === '男' ? '妹夫' : '弟媳';
   }
-  // 姐夫/妹夫：被叫者是姐夫（男）时，叫小姨子；被叫者是妹夫（男）时，叫大姨子
+  // 姐夫/妹夫的反向
   if (r === '姐夫') {
-    return charGender === '男' ? '小姨子' : '大舅子';
+    return '小舅子';
   }
   if (r === '妹夫') {
-    return charGender === '男' ? '大姨子' : '大舅子';
+    return '小舅子';
+  }
+  // 嫂子/弟媳的反向
+  if (r === '嫂子') {
+    return '小叔子';
+  }
+  if (r === '弟媳' || r === '弟妹') {
+    return '大伯子';
   }
 
   // 8. 配偶关系（核心原则：根据被叫者性别选择）

@@ -31,8 +31,10 @@ const EXPO_PUBLIC_BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL ||
 const RELATION_TYPES = [
   { key: 'father', label: '父亲', reverseKey: 'child', generateNPC: true },
   { key: 'mother', label: '母亲', reverseKey: 'child', generateNPC: true },
-  { key: 'grandfather', label: '祖父/外祖父', reverseKey: 'grandchild', generateNPC: true },
-  { key: 'grandmother', label: '祖母/外祖母', reverseKey: 'grandchild', generateNPC: true },
+  { key: 'paternal_grandfather', label: '爷爷(父之父)', reverseKey: 'grandchild', generateNPC: true },
+  { key: 'paternal_grandmother', label: '奶奶(父之母)', reverseKey: 'grandchild', generateNPC: true },
+  { key: 'maternal_grandfather', label: '姥爷(母之父)', reverseKey: 'maternal_grandchild', generateNPC: true },
+  { key: 'maternal_grandmother', label: '姥姥(母之母)', reverseKey: 'maternal_grandchild', generateNPC: true },
   { key: 'husband', label: '丈夫', reverseKey: 'wife', generateNPC: false },
   { key: 'wife', label: '妻子', reverseKey: 'husband', generateNPC: false },
   { key: 'spouse', label: '配偶', reverseKey: 'spouse', generateNPC: false },
@@ -42,8 +44,10 @@ const RELATION_TYPES = [
   { key: 'brother', label: '兄弟', reverseKey: 'sibling', generateNPC: false },
   { key: 'sister', label: '姐妹', reverseKey: 'sibling', generateNPC: false },
   { key: 'sibling', label: '兄弟姐妹', reverseKey: 'sibling', generateNPC: false },
-  { key: 'uncle', label: '伯叔/舅舅', reverseKey: 'nephew/niece', generateNPC: false },
-  { key: 'aunt', label: '姑妈/姨妈', reverseKey: 'nephew/niece', generateNPC: false },
+  { key: 'paternal_uncle', label: '伯伯/叔叔', reverseKey: 'nephew', generateNPC: false },
+  { key: 'maternal_uncle', label: '舅舅', reverseKey: 'nephew', generateNPC: false },
+  { key: 'paternal_aunt', label: '姑姑', reverseKey: 'nephew', generateNPC: false },
+  { key: 'maternal_aunt', label: '姨妈', reverseKey: 'nephew', generateNPC: false },
   { key: 'father_in_law', label: '公公/岳父', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
   { key: 'mother_in_law', label: '婆婆/岳母', reverseKey: 'son_in_law/daughter_in_law', generateNPC: false },
   { key: 'brother_in_law', label: '姐夫/妹夫/小舅子', reverseKey: 'sister_in_law/brother_in_law', generateNPC: false },
@@ -67,27 +71,34 @@ const mapRelationToKey = (relationStr: string): string => {
   const relation = relationStr.trim();
   
   // 直系亲属 - 父母祖辈
-  // 将中文关系映射到英文key（保留用于某些需要英文ID的场景）
+  // 区分父系和母系
   if (relation.includes('父亲') || relation.includes('爸爸')) return '父亲';
   if (relation.includes('母亲') || relation.includes('妈妈')) return '母亲';
-  if (relation.includes('祖父') || relation.includes('爷爷')) return '爷爷';
-  if (relation.includes('祖母') || relation.includes('奶奶')) return '奶奶';
-  if (relation.includes('外祖父') || relation.includes('外公')) return '外公';
-  if (relation.includes('外祖母') || relation.includes('外婆')) return '外婆';
+  if (relation.includes('爷爷') || relation.includes('祖父')) return '爷爷'; // 父之父
+  if (relation.includes('奶奶') || relation.includes('祖母')) return '奶奶'; // 父之母
+  if (relation.includes('姥爷') || relation.includes('外祖父')) return '姥爷'; // 母之父
+  if (relation.includes('姥姥') || relation.includes('外祖母')) return '姥姥'; // 母之母
   if (relation.includes('丈夫') || relation.includes('老公')) return '丈夫';
   if (relation.includes('妻子') || relation.includes('老婆')) return '妻子';
   if (relation.includes('配偶')) return '配偶';
   if (relation.includes('儿子')) return '儿子';
   if (relation.includes('女儿')) return '女儿';
   if (relation.includes('子女')) return '子女';
+  if (relation.includes('孙子') && !relation.includes('外孙')) return '孙子'; // 父系孙子
+  if (relation.includes('孙女') && !relation.includes('外孙女')) return '孙女'; // 父系孙女
+  if (relation.includes('外孙')) return '外孙'; // 母系外孙
+  if (relation.includes('外孙女')) return '外孙女'; // 母系外孙女
   if (relation.includes('哥哥') || relation.includes('弟弟') || relation.includes('兄弟')) return '兄弟';
   if (relation.includes('姐姐') || relation.includes('妹妹') || relation.includes('姐妹')) return '姐妹';
   if (relation.includes('兄妹') || relation.includes('姐弟')) return '兄妹';
-  if (relation.includes('伯父') || relation.includes('伯伯')) return '伯伯';
-  if (relation.includes('叔叔')) return '叔叔';
-  if (relation.includes('姑妈') || relation.includes('姑姑')) return '姑姑';
-  if (relation.includes('舅舅')) return '舅舅';
-  if (relation.includes('姨妈') || relation.includes('阿姨')) return '姨妈';
+  if (relation.includes('伯父') || relation.includes('伯伯') || relation.includes('大爷')) return '伯伯'; // 父系伯父
+  if (relation.includes('叔叔')) return '叔叔'; // 父系叔父
+  if (relation.includes('姑姑') && !relation.includes('姑父')) return '姑姑'; // 父系姑母
+  if (relation.includes('姑父')) return '姑父'; // 父系姑父
+  if (relation.includes('舅舅')) return '舅舅'; // 母系舅父
+  if (relation.includes('舅妈') || relation.includes('舅母')) return '舅妈'; // 母系舅母
+  if (relation.includes('姨妈') || relation.includes('姨母')) return '姨妈'; // 母系姨母
+  if (relation.includes('姨父')) return '姨父'; // 母系姨父
   if (relation.includes('公公') || relation.includes('岳父')) return '公公';
   if (relation.includes('婆婆') || relation.includes('岳母')) return '婆婆';
   if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return '小舅子';
