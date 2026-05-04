@@ -104,8 +104,11 @@ const mapRelationToKey = (relationStr: string): string => {
   if (relation.includes('舅妈') || relation.includes('舅母')) return '舅妈'; // 母系舅母
   if (relation.includes('姨妈') || relation.includes('姨母')) return '姨妈'; // 母系姨母
   if (relation.includes('姨父')) return '姨父'; // 母系姨父
-  if (relation.includes('公公') || relation.includes('岳父')) return '公公';
-  if (relation.includes('婆婆') || relation.includes('岳母')) return '婆婆';
+  // 修复：先匹配岳父/岳母（男性主角），再匹配公公/婆婆（女性主角）
+  if (relation.includes('岳父') || relation.includes('丈人')) return '岳父';
+  if (relation.includes('岳母') || relation.includes('丈母娘')) return '岳母';
+  if (relation.includes('公公') || relation.includes('婆父')) return '公公';
+  if (relation.includes('婆婆') || relation.includes('婆母')) return '婆婆';
   if (relation.includes('姐夫')) return '姐夫';
   if (relation.includes('妹夫')) return '妹夫';
   if (relation.includes('小舅子') || relation.includes('内弟') || relation.includes('妻弟')) return '小舅子';

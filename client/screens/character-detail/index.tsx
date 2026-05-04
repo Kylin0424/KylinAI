@@ -111,8 +111,8 @@ export default function CharacterDetailScreen() {
     'maternal_uncle': '舅舅',
     'paternal_aunt': '姑姑',
     'maternal_aunt': '姨妈',
-    'father_in_law': '公公/岳父',
-    'mother_in_law': '婆婆/岳母',
+    'father_in_law': '岳父', // 男性主角叫岳父，女性主角叫公公
+    'mother_in_law': '岳母', // 男性主角叫岳母，女性主角叫婆婆
     '姐夫': '姐夫(妻姐之夫，即大姨子的丈夫)',
     '妹夫': '妹夫(妻妹之夫，即小姨子的丈夫)',
     '小舅子': '小舅子(妻子的弟弟)',
@@ -139,6 +139,12 @@ export default function CharacterDetailScreen() {
     '奶奶': '奶奶(父之母)',
     '姥爷': '姥爷(母之父)',
     '姥姥': '姥姥(母之母)',
+    '外公': '外公(母之父)',
+    '外婆': '外婆(母之母)',
+    '孙子': '孙子',
+    '孙女': '孙女',
+    '外孙': '外孙',
+    '外孙女': '外孙女',
     '丈夫': '丈夫',
     '妻子': '妻子',
     '配偶': '配偶',

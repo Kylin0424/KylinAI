@@ -394,7 +394,7 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
     return '父亲';
   }
   if (r === '女儿') {
-    return '母亲';
+    return charGender === '男' ? '父亲' : '母亲';
   }
 
   // 2. 祖父母与孙辈（父系）
@@ -413,6 +413,13 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
   }
   if (r === '孙女') {
     return '奶奶'; // 默认父系，可在设置关系时区分
+  }
+  // 外孙/外孙女的反向：外公/外婆
+  if (r === '外孙') {
+    return '外公'; // 或姥爷
+  }
+  if (r === '外孙女') {
+    return '外婆'; // 或姥姥
   }
 
   // 2a. 外祖父母与外孙辈（母系）
