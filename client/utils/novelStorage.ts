@@ -24,6 +24,11 @@ export interface Novel {
   updatedAt: number;
   status: 'draft' | 'writing' | 'completed';
   isImported?: boolean; // 是否为导入小说
+  // 小说专属数据
+  backgroundSettings?: string; // 背景设定
+  worldView?: string; // 世界观
+  currentScene?: string; // 当前场景状态
+  recentPlotPoints?: string[]; // 近期剧情要点（用于AI参考）
 }
 
 const NOVELS_KEY = '@novel_app_novels';
@@ -249,5 +254,114 @@ export const getNovelById = async (novelId: string): Promise<Novel | null> => {
   } catch (error) {
     console.error('Error getting novel:', error);
     return null;
+  }
+};
+
+// 记录角色经历
+export const recordCharacterExperience = async (
+  novelId: string,
+  newExperiences: string[],
+  currentContent: string
+): Promise<void> => {
+  try {
+    const novel = await getNovelById(novelId);
+    if (!novel) return;
+
+    const characters = await getAllCharacters();
+    const novelCharacters = characters.filter(c => c.novelId === novelId);
+    const leadCharacters = novelCharacters.filter(
+      c => c.id === novel.maleLeadId || c.id === novel.femaleLeadId
+    );
+
+    const SHORT_TERM_THRESHOLD = 10; // 短期经历累积阈值
+
+    let updated = false;
+
+    for (const char of leadCharacters) {
+      const shortTerm = char.shortTermMemory || [];
+      const longTerm = char.longTermMemory || [];
+      
+      // 追加新经历
+      const newShortTerm = [...shortTerm, ...newExperiences];
+      
+      // 如果短期经历达到阈值，触发整合
+      if (newShortTerm.length >= SHORT_TERM_THRESHOLD) {
+        // 使用AI整合经历
+        const summary = await summarizeExperiences(
+          char.name,
+          newShortTerm,
+          currentContent
+        );
+        
+        // 将摘要追加到长期记忆
+        if (summary) {
+          await updateCharacterMemory(
+            char.id,
+            [...longTerm, summary],
+            []
+          );
+        } else {
+          await updateCharacterMemory(char.id, longTerm, newShortTerm);
+        }
+      } else {
+        await updateCharacterMemory(char.id, longTerm, newShortTerm);
+      }
+      updated = true;
+    }
+
+    if (updated) {
+      // 更新小说的updatedAt
+      novel.updatedAt = Date.now();
+      await saveNovel(novel);
+    }
+  } catch (error) {
+    console.error('Error recording character experience:', error);
+  }
+};
+
+// AI整合经历摘要
+const summarizeExperiences = async (
+  characterName: string,
+  experiences: string[],
+  currentContent: string
+): Promise<string | null> => {
+  try {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/ai/summarize-experiences`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        characterName,
+        experiences,
+        currentContent
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.summary;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error summarizing experiences:', error);
+    return null;
+  }
+};
+
+// 更新角色记忆
+export const updateCharacterMemory = async (
+  characterId: string,
+  longTermMemory: string[],
+  shortTermMemory: string[]
+): Promise<void> => {
+  try {
+    const characters = await getAllCharacters();
+    const charIndex = characters.findIndex(c => c.id === characterId);
+    if (charIndex !== -1) {
+      characters[charIndex].longTermMemory = longTermMemory;
+      characters[charIndex].shortTermMemory = shortTermMemory;
+      await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
+    }
+  } catch (error) {
+    console.error('Error updating character memory:', error);
   }
 };

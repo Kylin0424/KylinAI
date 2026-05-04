@@ -26,6 +26,10 @@ export interface Character {
   roleType?: 'male_lead' | 'female_lead' | 'npc' | 'temp'; // 角色类型，temp为临时角色
   relationToProtagonist?: string; // 与主角的关系
   isTemporary?: boolean; // 是否为临时角色（AI自动创建）
+  // 角色记忆系统
+  shortTermMemory?: string[]; // 短期经历（每次续写追加的细节事件）
+  longTermMemory?: string[]; // 长期记忆（定期整合的精炼记忆）
+  memoryUpdateCount?: number; // 续写次数计数器（用于触发整合）
 }
 
 export interface CharacterRelation {

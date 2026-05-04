@@ -234,8 +234,44 @@ export default function NovelWritingScreen() {
   // 自动保存相关
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>('');
+  const continueLengthRef = useRef<number>(0); // 记录续写前的内容长度
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
+
+  // 记录短期经历
+  const recordShortTermMemory = async (newContent: string) => {
+    if (!params.novelId) return;
+
+    try {
+      // 更新角色库中主角的短期经历
+      if (maleCharacter && maleCharacter.shortTermMemory) {
+        const updatedMale = {
+          ...maleCharacter,
+          shortTermMemory: [...maleCharacter.shortTermMemory, newContent]
+        };
+        await updateCharacter(updatedMale);
+      }
+
+      if (femaleCharacter && femaleCharacter.shortTermMemory) {
+        const updatedFemale = {
+          ...femaleCharacter,
+          shortTermMemory: [...femaleCharacter.shortTermMemory, newContent]
+        };
+        await updateCharacter(updatedFemale);
+      }
+
+      // 检查是否需要整合记忆（累积10条后）
+      const shouldIntegrate = (maleCharacter?.shortTermMemory?.length || 0) >= 10 ||
+                              (femaleCharacter?.shortTermMemory?.length || 0) >= 10;
+
+      if (shouldIntegrate) {
+        // TODO: 调用AI进行记忆整合
+        console.log('【记忆系统】短期经历累积达到10条，建议进行记忆整合');
+      }
+    } catch (error) {
+      console.error('记录短期经历失败:', error);
+    }
+  };
 
   // 加载数据
   const loadData = async () => {
@@ -1197,6 +1233,9 @@ ${params.protagonistDoing || '暂无'}
     setShowContinueModal(false);
     setShowConflictModal(false);
 
+    // 记录续写前的内容长度
+    continueLengthRef.current = novelContent.length;
+
     try {
       const themeType = NOVEL_THEME_TYPES.find(t => t.id === novel.themeType);
       const themeName = themeType?.name || '都市';
@@ -1270,18 +1309,36 @@ ${params.protagonistDoing || '暂无'}
       // 构建角色信息
       let charactersInfo = '';
       
+      // 获取所有角色（包括主角和配角）的记忆信息
+      const getCharacterMemory = (char: Character | null): string => {
+        if (!char) return '';
+        const longTerm = char.socialExperiences?.filter(exp => !exp.startsWith('[短期]')) || [];
+        const shortTerm = char.socialExperiences?.filter(exp => exp.startsWith('[短期]')).map(exp => exp.replace('[短期]', '')) || [];
+        
+        let memoryInfo = '';
+        if (longTerm.length > 0) {
+          memoryInfo += `\n  【重要背景】${longTerm.join('；')}`;
+        }
+        if (shortTerm.length > 0) {
+          memoryInfo += `\n  【近期事件】${shortTerm.slice(-3).join('；')}（AI应了解但不一定每次都提及）`;
+        }
+        return memoryInfo;
+      };
+      
       // 添加男女主角信息
       if (maleCharacter) {
         const educationConstraint = maleCharacter.education 
           ? `\n  ${getEducationConstraintsPrompt(maleCharacter.education)}` 
           : '';
-        charactersInfo += `- 男主角：${maleCharacter.name}，${maleCharacter.occupation}，${maleCharacter.age}岁。性格：${maleCharacter.personality?.substring(0, 100) || '未知'}${educationConstraint}\n`;
+        const memoryInfo = getCharacterMemory(maleCharacter);
+        charactersInfo += `- 男主角：${maleCharacter.name}，${maleCharacter.occupation}，${maleCharacter.age}岁。性格：${maleCharacter.personality?.substring(0, 100) || '未知'}${educationConstraint}${memoryInfo}\n`;
       }
       if (femaleCharacter) {
         const educationConstraint = femaleCharacter.education 
           ? `\n  ${getEducationConstraintsPrompt(femaleCharacter.education)}` 
           : '';
-        charactersInfo += `- 女主角：${femaleCharacter.name}，${femaleCharacter.occupation}，${femaleCharacter.age}岁。性格：${femaleCharacter.personality?.substring(0, 100) || '未知'}${educationConstraint}\n`;
+        const memoryInfo = getCharacterMemory(femaleCharacter);
+        charactersInfo += `- 女主角：${femaleCharacter.name}，${femaleCharacter.occupation}，${femaleCharacter.age}岁。性格：${femaleCharacter.personality?.substring(0, 100) || '未知'}${educationConstraint}${memoryInfo}\n`;
       }
       
       // 添加其他已匹配角色
@@ -1290,7 +1347,8 @@ ${params.protagonistDoing || '暂无'}
           const educationConstraint = char.education 
             ? `\n  ${getEducationConstraintsPrompt(char.education)}` 
             : '';
-          charactersInfo += `- ${char.roleType === 'temp' ? '临时角色' : '配角'}：${char.name}，${char.occupation || '身份未知'}，${char.age || '?'}岁。性格：${char.personality?.substring(0, 50) || '未知'}${educationConstraint}\n`;
+          const memoryInfo = getCharacterMemory(char);
+          charactersInfo += `- ${char.roleType === 'temp' ? '临时角色' : '配角'}：${char.name}，${char.occupation || '身份未知'}，${char.age || '?'}岁。性格：${char.personality?.substring(0, 50) || '未知'}${educationConstraint}${memoryInfo}\n`;
         }
       });
       
@@ -1373,6 +1431,9 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
       const data = await response.json();
       setContent(prev => prev + '\n\n' + data.content);
       setContinueDirection(''); // 清空续写走向
+
+      // 记录角色短期经历
+      await recordCharacterExperience(novel, data.content, continueLengthRef.current);
 
       // 自动保存生成的内容
       await handleSave();
@@ -1517,6 +1578,10 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
           </View>
 
           <View style={styles.topBarRight}>
+            <TouchableOpacity style={styles.databaseButton} onPress={() => router.push(`/novel-database?novelId=${novel?.id || ''}`)}>
+              <Feather name="database" size={16} color={theme.textPrimary} />
+              <ThemedText variant="caption" color={theme.textPrimary} style={{ marginLeft: 4 }}>数据库</ThemedText>
+            </TouchableOpacity>
             <ThemedText 
               variant="caption" 
               color={wordCount >= WORD_COUNT_WARNING_THRESHOLD ? '#C8102E' : theme.textMuted}

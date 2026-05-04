@@ -5,6 +5,7 @@ import characterRouter from "./routes/character";
 import searchRouter from "./routes/search";
 import usageRouter from "./routes/usage";
 import importRouter from "./routes/import";
+import experienceRouter from "./routes/experience";
 
 const app = express();
 const port = process.env.PORT || 9091;
@@ -20,6 +21,7 @@ app.use('/api/v1/character', characterRouter);
 app.use('/api/v1/search', searchRouter);
 app.use('/api/v1/usage', usageRouter);
 app.use('/api/v1/import', importRouter);
+app.use('/api/v1/experience', experienceRouter);
 
 app.get('/api/v1/health', (req, res) => {
   console.log('Health check success');

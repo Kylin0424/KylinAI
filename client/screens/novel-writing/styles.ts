@@ -47,6 +47,17 @@ export const createStyles = (theme: Theme) => {
       borderRadius: 6,
       backgroundColor: theme.backgroundTertiary,
     },
+    databaseButton: {
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.sm,
+      borderRadius: BorderRadius.sm,
+      backgroundColor: theme.primary,
+    },
+    databaseButtonText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
     novelInfo: {
       flex: 1,
       marginHorizontal: Spacing.sm,
