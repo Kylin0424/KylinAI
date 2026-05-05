@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,58 +11,62 @@ import {
   Platform,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
-import { useRouter } from '@/hooks/useSafeRouter';
+import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Spacing, BorderRadius, Theme } from '@/constants/theme';
-import { NovelData, loadNovel, saveNovel } from '@/utils/novelStorage';
-import { CharacterData, loadCharacters, saveCharacter } from '@/utils/characterStorage';
+import { Novel, getNovelById, updateNovelCharacter } from '@/utils/novelStorage';
+import { Character, getAllCharacters, saveCharacter } from '@/utils/characterStorage';
 
 interface Props {
-  novelData: NovelData;
+  novelData: Novel;
   novelId: string;
 }
 
 export default function NovelDatabase({ novelData, novelId }: Props) {
-  const router = useRouter();
+  const router = useSafeRouter();
   const [activeTab, setActiveTab] = useState<'characters' | 'settings' | 'plot'>('characters');
-  const [characters, setCharacters] = useState<CharacterData[]>(() => {
-    return loadCharacters().filter(
-      (char) => char.novelId === novelId && char.roleType
-    );
-  });
-  const [selectedChar, setSelectedChar] = useState<CharacterData | null>(null);
-  const [editingChar, setEditingChar] = useState<CharacterData | null>(null);
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [selectedChar, setSelectedChar] = useState<Character | null>(null);
+  const [editingChar, setEditingChar] = useState<Character | null>(null);
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
 
+  // 加载角色数据
+  useEffect(() => {
+    const loadCharacters = async () => {
+      const allChars = await getAllCharacters();
+      const novelChars = allChars.filter(
+        (char: Character) => char.novelId === novelId && char.roleType
+      );
+      setCharacters(novelChars);
+    };
+    loadCharacters();
+  }, [novelId]);
+
   // 提取男性主角和女性主角
-  const maleLead = characters.find((c) => c.roleType === 'male_lead');
-  const femaleLead = characters.find((c) => c.roleType === 'female_lead');
+  const maleLead = characters.find((c: Character) => c.roleType === 'male_lead');
+  const femaleLead = characters.find((c: Character) => c.roleType === 'female_lead');
   const supportingChars = characters.filter(
-    (c) => !['male_lead', 'female_lead'].includes(c.roleType || '')
+    (c: Character) => !['male_lead', 'female_lead'].includes(c.roleType || '')
   );
 
   // 更新角色社会经历
   const handleSaveExperience = useCallback(() => {
     if (!editingChar) return;
     
-    // 保存到角色库
-    const allChars = loadCharacters();
-    const updatedChars = allChars.map((c) =>
-      c.id === editingChar.id ? editingChar : c
-    );
-    saveCharacter(updatedChars);
+    // 直接使用 updateNovelCharacter 更新小说专属的角色数据
+    updateNovelCharacter(novelId, editingChar);
     
     // 更新本地状态
     setCharacters((prev) =>
       prev.map((c) => (c.id === editingChar.id ? editingChar : c))
     );
+    
     setExperienceModalVisible(false);
-  }, [editingChar]);
+  }, [editingChar, novelId]);
 
   // 添加社会经历
-  const handleAddExperience = useCallback((char: CharacterData) => {
+  const handleAddExperience = useCallback((char: Character) => {
     setEditingChar({
       ...char,
-      socialExperiences: char.socialExperiences || [],
       shortTermMemory: char.shortTermMemory || [],
       longTermMemory: char.longTermMemory || [],
     });
@@ -80,7 +84,7 @@ export default function NovelDatabase({ novelData, novelId }: Props) {
   // 删除长期记忆
   const handleDeleteLongTermMemory = useCallback((index: number) => {
     if (!editingChar) return;
-    const newMemory = (editingChar.longTermMemory || []).filter((_, i) => i !== index);
+    const newMemory = (editingChar.longTermMemory || []).filter((_: string, i: number) => i !== index);
     setEditingChar({ ...editingChar, longTermMemory: newMemory });
   }, [editingChar]);
 
@@ -91,7 +95,7 @@ export default function NovelDatabase({ novelData, novelId }: Props) {
     setEditingChar({ ...editingChar, longTermMemory: newMemory });
   }, [editingChar]);
 
-  const renderCharacterCard = (char: CharacterData, label: string) => (
+  const renderCharacterCard = (char: Character, label: string) => (
     <View key={char.id} style={styles.charCard}>
       <View style={styles.charHeader}>
         <View>
@@ -211,14 +215,7 @@ export default function NovelDatabase({ novelData, novelId }: Props) {
             <View style={styles.settingCard}>
               <Text style={styles.settingTitle}>主角当前状态</Text>
               <Text style={styles.settingValue}>
-                {novelData.maleLead?.occupation || '未设置'}
-              </Text>
-            </View>
-            
-            <View style={styles.settingCard}>
-              <Text style={styles.settingTitle}>主角当前地点</Text>
-              <Text style={styles.settingValue}>
-                {novelData.maleLead?.location || '未设置'}
+                {maleLead?.occupation || '未设置'}
               </Text>
             </View>
           </View>

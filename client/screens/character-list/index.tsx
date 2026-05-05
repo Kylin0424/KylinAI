@@ -104,6 +104,7 @@ export default function CharacterListScreen() {
     mode?: string;
     returnTo?: string;
     novelId?: string;  // 添加novelId参数
+    characterId?: string; // 选择关系时传递当前角色ID
   }>();
 
   const isSelectMode = params.mode === 'select' || params.mode === 'select-relation';

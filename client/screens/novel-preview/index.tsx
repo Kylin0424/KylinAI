@@ -234,7 +234,8 @@ export default function NovelPreview() {
         themeType.toLowerCase(),
         undefined,
         undefined,
-        true // 标记为导入小说
+        [], // sideCharacterIds
+        true // isImported
       );
       setNovelId(novel.id);
 
@@ -479,6 +480,10 @@ export default function NovelPreview() {
       backgroundColor: theme.backgroundRoot,
     },
     searchResultInfo: {
+      padding: 8,
+      alignItems: 'center',
+    },
+    searchResultText: {
       fontSize: 12,
       color: theme.textMuted,
     },
@@ -668,7 +673,7 @@ export default function NovelPreview() {
         {searchResults.length > 0 && (
           <>
             <View style={styles.searchResultInfo}>
-              <Text>找到 {searchResults.length} 个结果，当前第 {currentSearchIndex + 1} 个</Text>
+              <Text style={styles.searchResultText}>找到 {searchResults.length} 个结果，当前第 {currentSearchIndex + 1} 个</Text>
             </View>
             <View style={styles.navButtons}>
               <TouchableOpacity

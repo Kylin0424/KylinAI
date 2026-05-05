@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { deleteCharacter, getAllCharacters } from './characterStorage';
+import { deleteCharacters, getAllCharacters, Character } from './characterStorage';
 
 export interface NovelChapter {
   id: string;
@@ -18,6 +18,7 @@ export interface Novel {
   themeType: string; // 小说主题类型
   maleCharacterId?: string; // 男主ID
   femaleCharacterId?: string; // 女主ID
+  sideCharacterIds: string[]; // 配角ID列表
   chapters: NovelChapter[];
   content: string; // 当前续写内容
   createdAt: number;
@@ -29,6 +30,10 @@ export interface Novel {
   worldView?: string; // 世界观
   currentScene?: string; // 当前场景状态
   recentPlotPoints?: string[]; // 近期剧情要点（用于AI参考）
+  // 小说专属角色数据（从角色库转移过来）
+  maleCharacterData?: Character; // 男主完整数据
+  femaleCharacterData?: Character; // 女主完整数据
+  sideCharacters?: Character[]; // 配角完整数据列表
 }
 
 const NOVELS_KEY = '@novel_app_novels';
@@ -84,8 +89,51 @@ export const createNovel = async (
   themeType: string,
   maleCharacterId?: string,
   femaleCharacterId?: string,
+  sideCharacterIds: string[] = [],
   isImported?: boolean
 ): Promise<Novel> => {
+  // 如果有主角/女主/配角ID，转移到小说专属数据
+  const sideCharactersData: Character[] = [];
+  if (sideCharacterIds.length > 0) {
+    const allCharacters = await getAllCharacters();
+    for (const charId of sideCharacterIds) {
+      const char = allCharacters.find(c => c.id === charId);
+      if (char) {
+        // 复制到小说专属数据，保留原有数据
+        sideCharactersData.push({
+          ...char,
+          shortTermMemory: char.shortTermMemory || [],
+          longTermMemory: char.longTermMemory || [],
+        });
+      }
+    }
+    // 从闲置角色库删除已绑定的角色
+    await deleteCharacters(sideCharacterIds);
+  }
+
+  // 获取主角和女主数据
+  let maleCharacterData: Character | undefined;
+  let femaleCharacterData: Character | undefined;
+  if (maleCharacterId || femaleCharacterId) {
+    const allCharacters = await getAllCharacters();
+    if (maleCharacterId) {
+      const char = allCharacters.find(c => c.id === maleCharacterId);
+      if (char) {
+        maleCharacterData = char;
+        // 从闲置角色库删除主角
+        await deleteCharacters([maleCharacterId]);
+      }
+    }
+    if (femaleCharacterId) {
+      const char = allCharacters.find(c => c.id === femaleCharacterId);
+      if (char) {
+        femaleCharacterData = char;
+        // 从闲置角色库删除女主
+        await deleteCharacters([femaleCharacterId]);
+      }
+    }
+  }
+
   const novel: Novel = {
     id: generateId(),
     title,
@@ -93,6 +141,10 @@ export const createNovel = async (
     themeType,
     maleCharacterId,
     femaleCharacterId,
+    sideCharacterIds,
+    maleCharacterData,
+    femaleCharacterData,
+    sideCharacters: sideCharactersData,
     chapters: [],
     content: '',
     createdAt: Date.now(),
@@ -235,9 +287,10 @@ export const deleteNovel = async (novelId: string): Promise<void> => {
     if (novel) {
       const characters = await getAllCharacters();
       const lockedCharacters = characters.filter(c => c.novelId === novelId);
+      const idsToDelete = lockedCharacters.map(c => c.id);
       
-      for (const character of lockedCharacters) {
-        await deleteCharacter(character.id);
+      if (idsToDelete.length > 0) {
+        await deleteCharacters(idsToDelete);
       }
     }
   } catch (error) {
@@ -270,7 +323,7 @@ export const recordCharacterExperience = async (
     const characters = await getAllCharacters();
     const novelCharacters = characters.filter(c => c.novelId === novelId);
     const leadCharacters = novelCharacters.filter(
-      c => c.id === novel.maleLeadId || c.id === novel.femaleLeadId
+      c => c.id === novel.maleCharacterId || c.id === novel.femaleCharacterId
     );
 
     const SHORT_TERM_THRESHOLD = 10; // 短期经历累积阈值
@@ -296,15 +349,16 @@ export const recordCharacterExperience = async (
         // 将摘要追加到长期记忆
         if (summary) {
           await updateCharacterMemory(
+            novelId,
             char.id,
             [...longTerm, summary],
             []
           );
         } else {
-          await updateCharacterMemory(char.id, longTerm, newShortTerm);
+          await updateCharacterMemory(novelId, char.id, longTerm, newShortTerm);
         }
       } else {
-        await updateCharacterMemory(char.id, longTerm, newShortTerm);
+        await updateCharacterMemory(novelId, char.id, longTerm, newShortTerm);
       }
       updated = true;
     }
@@ -347,21 +401,122 @@ const summarizeExperiences = async (
   }
 };
 
-// 更新角色记忆
+// 更新角色记忆（存储在Novel对象中）
 export const updateCharacterMemory = async (
+  novelId: string,
   characterId: string,
   longTermMemory: string[],
   shortTermMemory: string[]
 ): Promise<void> => {
   try {
-    const characters = await getAllCharacters();
-    const charIndex = characters.findIndex(c => c.id === characterId);
-    if (charIndex !== -1) {
-      characters[charIndex].longTermMemory = longTermMemory;
-      characters[charIndex].shortTermMemory = shortTermMemory;
-      await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
+    const novels = await getAllNovels();
+    const novelIndex = novels.findIndex(n => n.id === novelId);
+    if (novelIndex === -1) return;
+
+    const novel = novels[novelIndex];
+
+    // 更新男主数据
+    if (novel.maleCharacterData && novel.maleCharacterData.id === characterId) {
+      novels[novelIndex].maleCharacterData = {
+        ...novel.maleCharacterData,
+        longTermMemory,
+        shortTermMemory,
+      };
     }
+    // 更新女主数据
+    else if (novel.femaleCharacterData && novel.femaleCharacterData.id === characterId) {
+      novels[novelIndex].femaleCharacterData = {
+        ...novel.femaleCharacterData,
+        longTermMemory,
+        shortTermMemory,
+      };
+    }
+    // 更新配角数据
+    else if (novel.sideCharacters) {
+      const sideCharIndex = novel.sideCharacters.findIndex(c => c.id === characterId);
+      if (sideCharIndex !== -1 && novel.sideCharacters[sideCharIndex]) {
+        const updatedNovel = { ...novel };
+        updatedNovel.sideCharacters = [...(updatedNovel.sideCharacters || [])];
+        updatedNovel.sideCharacters[sideCharIndex] = {
+          ...updatedNovel.sideCharacters[sideCharIndex],
+          longTermMemory,
+          shortTermMemory,
+        };
+        await saveNovel(updatedNovel);
+        return;
+      }
+    }
+
+    await saveNovel(novel);
   } catch (error) {
     console.error('Error updating character memory:', error);
+  }
+};
+
+// 更新小说专属的角色数据（不操作全局角色库）
+export const updateNovelCharacter = async (
+  novelId: string,
+  character: Character
+): Promise<void> => {
+  try {
+    const novels = await getAllNovels();
+    const novelIndex = novels.findIndex(n => n.id === novelId);
+    if (novelIndex === -1) return;
+
+    const novel = novels[novelIndex];
+
+    // 更新男主数据
+    if (novel.maleCharacterData && novel.maleCharacterData.id === character.id) {
+      novels[novelIndex].maleCharacterData = character;
+    }
+    // 更新女主数据
+    else if (novel.femaleCharacterData && novel.femaleCharacterData.id === character.id) {
+      novels[novelIndex].femaleCharacterData = character;
+    }
+    // 更新配角数据
+    else if (novel.sideCharacters) {
+      const sideIndex = novel.sideCharacters.findIndex(c => c.id === character.id);
+      if (sideIndex !== -1) {
+        novels[novelIndex].sideCharacters![sideIndex] = character;
+      }
+    }
+
+    novels[novelIndex].updatedAt = Date.now();
+    await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+  } catch (error) {
+    console.error('Error updating novel character:', error);
+  }
+};
+
+// 添加配角到小说
+export const addSideCharacterToNovel = async (
+  novelId: string,
+  character: Character
+): Promise<void> => {
+  try {
+    const novels = await getAllNovels();
+    const novelIndex = novels.findIndex(n => n.id === novelId);
+    if (novelIndex === -1) return;
+
+    // 初始化 sideCharacters 数组
+    if (!novels[novelIndex].sideCharacters) {
+      novels[novelIndex].sideCharacters = [];
+    }
+
+    // 检查是否已存在
+    const exists = novels[novelIndex].sideCharacters!.some(c => c.id === character.id);
+    if (!exists) {
+      novels[novelIndex].sideCharacters!.push(character);
+      // 更新 sideCharacterIds
+      if (!novels[novelIndex].sideCharacterIds) {
+        novels[novelIndex].sideCharacterIds = [];
+      }
+      novels[novelIndex].sideCharacterIds!.push(character.id);
+    }
+
+    novels[novelIndex].updatedAt = Date.now();
+    await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+  } catch (error) {
+    console.error('Error adding side character to novel:', error);
   }
 };

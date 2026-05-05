@@ -29,6 +29,8 @@ import {
   createNovel,
   addChapter,
   updateChapter,
+  updateNovelCharacter,
+  addSideCharacterToNovel,
 } from '@/utils/novelStorage';
 import {
   Character,
@@ -84,6 +86,7 @@ export default function NovelWritingScreen() {
     femaleCharacterId?: string;
     importData?: string;
     selectedCharacterId?: string;
+    selectedCharacterIds?: string; // 多个角色ID，逗号分隔
   }>();
 
   const [novel, setNovel] = useState<Novel | null>(null);
@@ -238,26 +241,45 @@ export default function NovelWritingScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
 
-  // 记录短期经历
+  // 记录短期经历（保存到小说专属数据）
   const recordShortTermMemory = async (newContent: string) => {
     if (!params.novelId) return;
 
     try {
-      // 更新角色库中主角的短期经历
-      if (maleCharacter && maleCharacter.shortTermMemory) {
-        const updatedMale = {
+      // 更新小说专属数据中主角的短期经历
+      if (maleCharacter) {
+        const updatedMale: Character = {
           ...maleCharacter,
-          shortTermMemory: [...maleCharacter.shortTermMemory, newContent]
+          shortTermMemory: [...(maleCharacter.shortTermMemory || []), newContent]
         };
-        await updateCharacter(updatedMale);
+        await updateNovelCharacter(params.novelId, updatedMale);
+        setMaleCharacter(updatedMale); // 更新本地状态
       }
 
-      if (femaleCharacter && femaleCharacter.shortTermMemory) {
-        const updatedFemale = {
+      if (femaleCharacter) {
+        const updatedFemale: Character = {
           ...femaleCharacter,
-          shortTermMemory: [...femaleCharacter.shortTermMemory, newContent]
+          shortTermMemory: [...(femaleCharacter.shortTermMemory || []), newContent]
         };
-        await updateCharacter(updatedFemale);
+        await updateNovelCharacter(params.novelId, updatedFemale);
+        setFemaleCharacter(updatedFemale); // 更新本地状态
+      }
+
+      // 更新配角短期经历
+      if (sideCharacters.length > 0) {
+        for (const char of sideCharacters) {
+          const updatedChar: Character = {
+            ...char,
+            shortTermMemory: [...(char.shortTermMemory || []), newContent]
+          };
+          await updateNovelCharacter(params.novelId, updatedChar);
+        }
+        // 更新本地状态
+        const updatedSide = sideCharacters.map(char => ({
+          ...char,
+          shortTermMemory: [...(char.shortTermMemory || []), newContent]
+        }));
+        setSideCharacters(updatedSide);
       }
 
       // 检查是否需要整合记忆（累积10条后）
@@ -286,18 +308,43 @@ export default function NovelWritingScreen() {
       setNovel(novelData);
 
     if (novelData) {
-      // 加载角色：优先使用参数传递的主角ID，其次使用小说数据中的ID
-      const maleId = params.maleCharacterId || novelData.maleCharacterId;
-      const femaleId = params.femaleCharacterId || novelData.femaleCharacterId;
+      // 优先从小说专属数据加载角色（确保AI读取的是小说专属数据）
+      if (novelData.maleCharacterData) {
+        setMaleCharacter(novelData.maleCharacterData);
+      } else if (params.maleCharacterId) {
+        // 兼容旧数据：如果小说数据中没有，从角色库读取
+        const male = await getCharacterById(params.maleCharacterId);
+        setMaleCharacter(male);
+      }
 
-    if (maleId) {
-    const male = await getCharacterById(maleId);
-    setMaleCharacter(male);
-}
-if (femaleId) {
-  const female = await getCharacterById(femaleId);
-  setFemaleCharacter(female);
-}
+      if (novelData.femaleCharacterData) {
+        setFemaleCharacter(novelData.femaleCharacterData);
+      } else if (params.femaleCharacterId) {
+        // 兼容旧数据：如果小说数据中没有，从角色库读取
+        const female = await getCharacterById(params.femaleCharacterId);
+        setFemaleCharacter(female);
+      }
+
+      // 加载配角列表
+      if (novelData.sideCharacters && novelData.sideCharacters.length > 0) {
+        setSideCharacters(novelData.sideCharacters);
+      }
+
+      // 处理从角色库选择的配角（新增绑定）
+      const selectedIds = params.selectedCharacterIds;
+      if (selectedIds) {
+        const ids = selectedIds.split(",").filter(Boolean);
+        const charsToAdd: Character[] = [];
+        for (const id of ids) {
+          const char = await getCharacterById(id);
+          if (char && !sideCharacters.find(s => s.id === char.id)) {
+            charsToAdd.push(char);
+          }
+        }
+        if (charsToAdd.length > 0) {
+          setSideCharacters(prev => [...prev, ...charsToAdd]);
+        }
+      }
 
       // 如果当前没有选中的章节
       if (!currentChapterId) {
@@ -364,7 +411,8 @@ if (femaleId) {
         '导入',
         undefined,
         undefined,
-        true
+        [], // sideCharacterIds
+        true // isImported
       );
 
       // 创建角色
@@ -454,6 +502,11 @@ if (femaleId) {
 
   // 处理从角色库选择的角色
   const handleSelectedCharacter = async (characterId: string) => {
+    if (!params.novelId) {
+      Alert.alert('错误', '小说未加载');
+      return;
+    }
+
     try {
       const character = await getCharacterById(characterId);
       if (!character) {
@@ -468,7 +521,9 @@ if (femaleId) {
         return;
       }
 
-      // 添加到配角列表
+      // 添加到小说专属配角列表
+      await addSideCharacterToNovel(params.novelId, character);
+      // 同时更新本地状态
       setSideCharacters((prev) => [...prev, character]);
       Alert.alert('成功', `已添加角色：${character.name}`);
     } catch (error) {
@@ -477,14 +532,20 @@ if (femaleId) {
     }
   };
 
-  // 处理从角色库选择的多个角色
+  // 处理从角色库选择的多个角色（保存到小说专属数据）
   const handleSelectedCharacters = async (characterIds: string) => {
+    if (!params.novelId) {
+      Alert.alert('错误', '小说未加载');
+      return;
+    }
+
     const ids = characterIds.split(',').filter(id => id.trim());
     if (ids.length === 0) return;
 
     try {
       let addedCount = 0;
       let duplicateCount = 0;
+      const newCharacters: Character[] = [];
 
       for (const id of ids) {
         const character = await getCharacterById(id);
@@ -500,9 +561,15 @@ if (femaleId) {
           continue;
         }
 
-        // 添加到配角列表
-        setSideCharacters((prev) => [...prev, character]);
+        // 添加到小说专属配角列表
+        await addSideCharacterToNovel(params.novelId, character);
+        newCharacters.push(character);
         addedCount++;
+      }
+
+      // 批量更新本地状态
+      if (newCharacters.length > 0) {
+        setSideCharacters((prev) => [...prev, ...newCharacters]);
       }
 
       if (addedCount > 0) {
@@ -696,7 +763,7 @@ ${params.protagonistDoing || '暂无'}
             setCurrentChapterId(chapter.id);
             setCurrentChapterName('第一章');
             setContent(fullContent);
-            setHasGeneratedFirstChapter(true);
+            hasGeneratedFirstChapter.current = true;
           }
           sse.close();
           setIsGeneratingFirstChapter(false);
@@ -1214,6 +1281,55 @@ ${params.protagonistDoing || '暂无'}
     }
   };
 
+  // 保存小说内容
+  const handleSave = async () => {
+    if (!novel) return;
+    try {
+      if (currentChapterId) {
+        await updateChapter(novel.id, currentChapterId, { content });
+      } else {
+        await updateNovelContent(novel.id, content);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+    }
+  };
+
+  // 记录角色经历
+  const recordCharacterExperience = async (novelData: Novel, newContent: string, contentLength: number) => {
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/experience/record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          novelId: novelData.id,
+          content: newContent,
+          contentLength,
+          maleCharacterId: maleCharacter?.id,
+          femaleCharacterId: femaleCharacter?.id,
+          sideCharacterIds: sideCharacters.map(c => c.id),
+        }),
+      });
+      
+      if (response.ok) {
+        // 刷新角色数据
+        const updatedNovel = await getNovelById(novelData.id);
+        if (updatedNovel) {
+          setNovel(updatedNovel);
+          // 刷新本地角色状态
+          if (updatedNovel.maleCharacterData) {
+            setMaleCharacter(updatedNovel.maleCharacterData);
+          }
+          if (updatedNovel.femaleCharacterData) {
+            setFemaleCharacter(updatedNovel.femaleCharacterData);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Record experience error:', error);
+    }
+  };
+
   // 生成小说内容
   const handleGenerate = async (skipConflictCheck = false) => {
     if (!novel) return;
@@ -1234,7 +1350,7 @@ ${params.protagonistDoing || '暂无'}
     setShowConflictModal(false);
 
     // 记录续写前的内容长度
-    continueLengthRef.current = novelContent.length;
+    continueLengthRef.current = content.length;
 
     try {
       const themeType = NOVEL_THEME_TYPES.find(t => t.id === novel.themeType);
@@ -1312,8 +1428,8 @@ ${params.protagonistDoing || '暂无'}
       // 获取所有角色（包括主角和配角）的记忆信息
       const getCharacterMemory = (char: Character | null): string => {
         if (!char) return '';
-        const longTerm = char.socialExperiences?.filter(exp => !exp.startsWith('[短期]')) || [];
-        const shortTerm = char.socialExperiences?.filter(exp => exp.startsWith('[短期]')).map(exp => exp.replace('[短期]', '')) || [];
+        const longTerm = char.longTermMemory || [];
+        const shortTerm = char.shortTermMemory || [];
         
         let memoryInfo = '';
         if (longTerm.length > 0) {
@@ -1339,6 +1455,17 @@ ${params.protagonistDoing || '暂无'}
           : '';
         const memoryInfo = getCharacterMemory(femaleCharacter);
         charactersInfo += `- 女主角：${femaleCharacter.name}，${femaleCharacter.occupation}，${femaleCharacter.age}岁。性格：${femaleCharacter.personality?.substring(0, 100) || '未知'}${educationConstraint}${memoryInfo}\n`;
+      }
+      
+      // 添加小说专属配角信息（从小说数据库读取）
+      if (sideCharacters.length > 0) {
+        sideCharacters.forEach(char => {
+          const educationConstraint = char.education 
+            ? `\n  ${getEducationConstraintsPrompt(char.education)}` 
+            : '';
+          const memoryInfo = getCharacterMemory(char);
+          charactersInfo += `- 配角：${char.name}，${char.occupation || '身份未知'}，${char.age || '?'}岁。性格：${char.personality?.substring(0, 50) || '未知'}${educationConstraint}${memoryInfo}\n`;
+        });
       }
       
       // 添加其他已匹配角色

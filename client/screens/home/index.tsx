@@ -990,6 +990,14 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
               </View>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.smallActionButton}
+            onPress={() => router.push('/novel-database')}
+          >
+            <Feather name="database" size={12} color={theme.textPrimary} />
+            <ThemedText variant="caption" color={theme.textPrimary}>小说数据库</ThemedText>
+          </TouchableOpacity>
         </View>
       </View>
 

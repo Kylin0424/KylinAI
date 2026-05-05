@@ -122,6 +122,11 @@ export const deleteCharacter = async (characterId: string): Promise<void> => {
   }
 };
 
+// 批量删除角色
+export const deleteCharacters = async (characterIds: string[]): Promise<void> => {
+  await Promise.all(characterIds.map(id => forceDeleteCharacters([id])));
+};
+
 // 强制批量删除角色（无论是否被小说绑定）
 export const forceDeleteCharacters = async (characterIds: string[]): Promise<void> => {
   try {

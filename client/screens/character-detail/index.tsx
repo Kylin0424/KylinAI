@@ -141,20 +141,16 @@ export default function CharacterDetailScreen() {
     '姥姥': '姥姥(母之母)',
     '外公': '外公(母之父)',
     '外婆': '外婆(母之母)',
-    '孙子': '孙子',
-    '孙女': '孙女',
-    '外孙': '外孙',
-    '外孙女': '外孙女',
+    '孙子': '孙子(父系)',
+    '孙女': '孙女(父系)',
+    '外孙': '外孙(母系)',
+    '外孙女': '外孙女(母系)',
     '丈夫': '丈夫',
     '妻子': '妻子',
     '配偶': '配偶',
     '儿子': '儿子',
     '女儿': '女儿',
     '子女': '子女',
-    '孙子': '孙子(父系)',
-    '孙女': '孙女(父系)',
-    '外孙': '外孙(母系)',
-    '外孙女': '外孙女(母系)',
     '兄弟': '兄弟',
     '姐妹': '姐妹',
     '兄妹': '兄妹',
@@ -165,10 +161,6 @@ export default function CharacterDetailScreen() {
     '姨妈': '姨妈',
     '公公': '公公',
     '婆婆': '婆婆',
-    '小舅子': '小舅子',
-    '大舅子': '大舅子',
-    '小姨子': '小姨子',
-    '大姨子': '大姨子',
     '儿媳': '儿媳',
     '女婿': '女婿',
     '侄子': '侄子',
@@ -284,7 +276,8 @@ export default function CharacterDetailScreen() {
 
             if (libraryChar.novelId !== character.novelId) {
               console.log('[AddRelation] 将角色添加到当前小说:', libraryChar.name);
-              await updateCharacter(params.selectedRelationCharacterId, {
+              await updateCharacter({
+                ...libraryChar,
                 novelId: character.novelId,
               });
 
@@ -426,7 +419,7 @@ export default function CharacterDetailScreen() {
       console.log('[AddRelation] availableCharacters:', availableCharacters.map(c => ({ id: c.id, name: c.name })));
 
       // 尝试从不同来源查找角色
-      let targetChar = availableCharacters.find(c => c.id === selectedTargetId);
+      let targetChar: Character | null | undefined = availableCharacters.find(c => c.id === selectedTargetId);
 
       if (!targetChar) {
         console.log('[AddRelation] 从可用角色列表未找到，尝试从角色库查找');
@@ -437,7 +430,8 @@ export default function CharacterDetailScreen() {
           // 如果角色存在但不属于当前小说，将其添加到小说中
           if (targetChar && targetChar.novelId !== character.novelId) {
             console.log('[AddRelation] 角色不属于当前小说，将其添加到小说中');
-            await updateCharacter(selectedTargetId, {
+            await updateCharacter({
+              ...targetChar,
               novelId: character.novelId,
             });
             targetChar.novelId = character.novelId;

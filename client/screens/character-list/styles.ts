@@ -336,9 +336,7 @@ export const createStyles = (theme: Theme) => {
       paddingVertical: Spacing.sm,
       borderRadius: 6,
     },
-    cancelButton: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    },
+
     deleteSelectedButton: {
       backgroundColor: '#FFFFFF',
     },
