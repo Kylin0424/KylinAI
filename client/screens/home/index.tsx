@@ -248,7 +248,16 @@ export default function HomeScreen() {
         selectedThemeType || 'urban',
         maleCharacter?.id,
         femaleCharacter?.id,
-        sideCharacterIds
+        sideCharacterIds,
+        undefined, // isImported
+        { // 世界设定信息
+          worldName: worldName.trim(),
+          eraBackground: eraBackground.trim() || '现代社会',
+          seasonSetting: seasonSetting.trim() || '春季',
+          protagonistDoing: protagonistDoing.trim(),
+          region: region.trim(),
+          cityLocation: `${provinceInput.trim()}${cityInput.trim()}${districtInput.trim()}`,
+        }
       );
 
       // 锁定选中的角色到当前小说

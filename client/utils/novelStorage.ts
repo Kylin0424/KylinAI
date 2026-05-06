@@ -25,6 +25,14 @@ export interface Novel {
   updatedAt: number;
   status: 'draft' | 'writing' | 'completed';
   isImported?: boolean; // 是否为导入小说
+  // 世界设定信息
+  worldName?: string; // 世界名称
+  eraBackground?: string; // 年代背景
+  seasonSetting?: string; // 季节设定
+  protagonistDoing?: string; // 主角当前活动
+  region?: string; // 地区
+  cityLocation?: string; // 城市位置
+  plotSummary?: string; // 剧情概要
   // 小说专属数据
   backgroundSettings?: string; // 背景设定
   worldView?: string; // 世界观
@@ -90,7 +98,15 @@ export const createNovel = async (
   maleCharacterId?: string,
   femaleCharacterId?: string,
   sideCharacterIds: string[] = [],
-  isImported?: boolean
+  isImported?: boolean,
+  worldSettings?: {
+    worldName?: string;
+    eraBackground?: string;
+    seasonSetting?: string;
+    protagonistDoing?: string;
+    region?: string;
+    cityLocation?: string;
+  }
 ): Promise<Novel> => {
   // 如果有主角/女主/配角ID，转移到小说专属数据
   const sideCharactersData: Character[] = [];
@@ -151,6 +167,13 @@ export const createNovel = async (
     updatedAt: Date.now(),
     status: 'draft',
     isImported: isImported || false,
+    // 世界设定信息
+    worldName: worldSettings?.worldName,
+    eraBackground: worldSettings?.eraBackground,
+    seasonSetting: worldSettings?.seasonSetting,
+    protagonistDoing: worldSettings?.protagonistDoing,
+    region: worldSettings?.region,
+    cityLocation: worldSettings?.cityLocation,
   };
   await saveNovel(novel);
   return novel;

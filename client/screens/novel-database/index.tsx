@@ -65,6 +65,26 @@ export default function NovelDatabaseScreen() {
     router.push('/novel-database', { novelId: novel.id });
   };
 
+  // 删除小说
+  const handleDeleteNovel = useCallback((novel: Novel, e: any) => {
+    e.stopPropagation();
+    Alert.alert(
+      '确认删除',
+      `确定要删除小说"${novel.name}"吗？此操作不可恢复。`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteNovel(novel.id);
+            loadNovels();
+          }
+        }
+      ]
+    );
+  }, [loadNovels]);
+
   // 返回上一页
   const handleBack = () => {
     router.back();
@@ -138,6 +158,12 @@ export default function NovelDatabaseScreen() {
             {novel.chapters && novel.chapters.length > 0 ? ` | 📄 ${novel.chapters.length}章节` : ''}
           </Text>
         </View>
+        <TouchableOpacity
+          style={styles.deleteNovelBtn}
+          onPress={(e) => handleDeleteNovel(novel, e)}
+        >
+          <Text style={styles.deleteNovelBtnText}>删除</Text>
+        </TouchableOpacity>
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
     );
@@ -533,6 +559,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  deleteNovelBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  deleteNovelBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   novelIcon: {
     width: 50,

@@ -100,6 +100,15 @@ export default function NovelWritingScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false); // 手动保存状态
+  // 世界设定状态（确保从小说数据加载后持久化）
+  const [worldSettings, setWorldSettings] = useState<{
+    worldName?: string;
+    eraBackground?: string;
+    seasonSetting?: string;
+    protagonistDoing?: string;
+    region?: string;
+    cityLocation?: string;
+  }>({});
   const [showChapterList, setShowChapterList] = useState(false);
   const [showChapterInput, setShowChapterInput] = useState(false);
   const [newChapterName, setNewChapterName] = useState('');
@@ -308,6 +317,16 @@ export default function NovelWritingScreen() {
       setNovel(novelData);
 
     if (novelData) {
+      // 从小说对象加载世界设定信息（确保数据持久化）
+      setWorldSettings({
+        worldName: novelData.worldName || params.worldName || '',
+        eraBackground: novelData.eraBackground || params.eraBackground || '现代社会',
+        seasonSetting: novelData.seasonSetting || params.seasonSetting || '春季',
+        protagonistDoing: novelData.protagonistDoing || params.protagonistDoing || '',
+        region: novelData.region || params.region || '',
+        cityLocation: novelData.cityLocation || params.cityLocation || '',
+      });
+      
       // 优先从小说专属数据加载角色（确保AI读取的是小说专属数据）
       if (novelData.maleCharacterData) {
         setMaleCharacter(novelData.maleCharacterData);
@@ -710,6 +729,16 @@ export default function NovelWritingScreen() {
   // 生成第一章开头
   const generateFirstChapterOpening = async () => {
     if (!novel || !params.worldName) return;
+    
+    // 确保角色数据已加载
+    if (!maleCharacter && !femaleCharacter) {
+      console.log('等待角色数据加载...');
+      // 等待最多3秒让角色数据加载完成
+      for (let i = 0; i < 30; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (maleCharacter || femaleCharacter) break;
+      }
+    }
 
     setIsGeneratingFirstChapter(true);
     setFirstChapterContent('');
@@ -717,14 +746,14 @@ export default function NovelWritingScreen() {
     try {
       // 构建世界背景设定
       const worldSetting = `【世界背景】
-世界：${params.worldName}
-年代：${params.eraBackground || '现代社会'}
-季节：${params.seasonSetting || '春季'}
-地区：${params.region || ''}
-城市：${params.cityLocation || ''}
+世界：${worldSettings.worldName || '未设置'}
+年代：${worldSettings.eraBackground || '现代社会'}
+季节：${worldSettings.seasonSetting || '春季'}
+地区：${worldSettings.region || ''}
+城市：${worldSettings.cityLocation || ''}
 
 【主角当前活动】
-${params.protagonistDoing || '暂无'}
+${worldSettings.protagonistDoing || '暂无'}
 `;
 
       const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
@@ -1773,11 +1802,11 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
             </View>
             <View style={styles.firstChapterHint}>
               <ThemedText variant="caption" color={theme.textMuted}>
-                世界：{params.worldName} · 年代：{params.eraBackground || '现代社会'} · 季节：{params.seasonSetting || '春季'}
+                世界：{worldSettings.worldName || '未设置'} · 年代：{worldSettings.eraBackground || '现代社会'} · 季节：{worldSettings.seasonSetting || '春季'}
               </ThemedText>
-              {params.protagonistDoing && (
+              {worldSettings.protagonistDoing && (
                 <ThemedText variant="caption" color={theme.textMuted}>
-                  主角正在：{params.protagonistDoing}
+                  主角正在：{worldSettings.protagonistDoing}
                 </ThemedText>
               )}
             </View>
