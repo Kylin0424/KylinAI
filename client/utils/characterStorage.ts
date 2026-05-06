@@ -294,10 +294,10 @@ export const getCharacterById = async (characterId: string): Promise<Character |
 };
 
 // 获取可用角色（按性别筛选）
-export const getAvailableCharactersByGender = async (gender?: '男' | '女'): Promise<Character[]> => {
+export const getAvailableCharactersByGender = async (gender?: '男' | '女' | 'all'): Promise<Character[]> => {
   try {
     const characters = await getAvailableCharacters();
-    if (!gender) return characters;
+    if (!gender || gender === 'all') return characters;
     return characters.filter(c => c.gender === gender);
   } catch (error) {
     console.error('Error getting available characters by gender:', error);

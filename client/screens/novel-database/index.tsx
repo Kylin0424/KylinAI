@@ -65,9 +65,9 @@ export default function NovelDatabaseScreen() {
     router.push('/novel-database', { novelId: novel.id });
   };
 
-  // 返回小说列表
-  const handleBackToNovels = () => {
-    router.replace('/novel-database');
+  // 返回上一页
+  const handleBack = () => {
+    router.back();
   };
 
   // 更新角色社会经历
@@ -189,7 +189,7 @@ export default function NovelDatabaseScreen() {
   const renderNovelList = () => (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackToNovels} style={styles.backBtn}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <Text style={styles.backBtnText}>‹ 返回</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>小说数据库</Text>
@@ -218,7 +218,7 @@ export default function NovelDatabaseScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBackToNovels} style={styles.backBtn}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
             <Text style={styles.backBtnText}>‹ 返回小说列表</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{currentNovel.name}</Text>
@@ -264,7 +264,10 @@ export default function NovelDatabaseScreen() {
               {supportingChars.length > 0 && (
                 <>
                   <Text style={styles.sectionTitle}>配角 ({supportingChars.length})</Text>
-                  {supportingChars.map((char) => renderCharacterCard(char, char.name))}
+                  {supportingChars.map((char) => {
+                    const label = char.isTemporary ? `[临时] ${char.name}` : char.name;
+                    return renderCharacterCard(char, label);
+                  })}
                 </>
               )}
               

@@ -805,5 +805,73 @@ export const createStyles = (theme: Theme) => {
     exportOptionContent: {
       flex: 1,
     },
+
+    // 配角相关样式
+    sideCharacterContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundTertiary,
+      borderRadius: 12,
+      padding: Spacing.xs,
+      minHeight: 48,
+    },
+    selectedSideChars: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    sideCharChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundDefault,
+      borderRadius: 16,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      marginRight: 6,
+    },
+    removeBtn: {
+      marginLeft: 4,
+      padding: 2,
+    },
+    clearAllBtn: {
+      padding: 6,
+      justifyContent: 'center',
+    },
+    addSideCharBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundDefault,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    addSideCharText: {
+      marginLeft: 4,
+    },
+    emptyCharacterList: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 40,
+    },
+    characterItemSelected: {
+      backgroundColor: theme.backgroundTertiary,
+      borderWidth: 1,
+      borderColor: '#C8102E',
+    },
+    selectedCount: {
+      alignItems: 'center',
+      paddingVertical: Spacing.xs,
+    },
+    confirmSideCharButton: {
+      backgroundColor: '#C8102E',
+      paddingVertical: Spacing.sm,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginTop: Spacing.sm,
+    },
+    confirmSideCharButtonDisabled: {
+      opacity: 0.5,
+    },
   });
 };

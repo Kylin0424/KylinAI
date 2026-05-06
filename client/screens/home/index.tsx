@@ -70,6 +70,7 @@ export default function HomeScreen() {
   // 角色选择状态
   const [maleCharacter, setMaleCharacter] = useState<Character | null>(null);
   const [femaleCharacter, setFemaleCharacter] = useState<Character | null>(null);
+  const [selectedSideCharacters, setSelectedSideCharacters] = useState<Character[]>([]);
   const [activeGenderTab, setActiveGenderTab] = useState<'male' | 'female'>('male');
 
   // 小说主题选择
@@ -79,6 +80,10 @@ export default function HomeScreen() {
   // 角色选择弹窗
   const [showCharacterModal, setShowCharacterModal] = useState(false);
   const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
+
+  // 配角选择弹窗
+  const [showSideCharacterModal, setShowSideCharacterModal] = useState(false);
+  const [availableSideCharacters, setAvailableSideCharacters] = useState<Character[]>([]);
 
   // 正在写作的小说
   const [writingNovels, setWritingNovels] = useState<Novel[]>([]);
@@ -184,6 +189,39 @@ export default function HomeScreen() {
     router.push('/character-detail', { characterId });
   };
 
+  // 打开配角选择弹窗
+  const handleOpenSideCharacterModal = async () => {
+    const allChars = await getAvailableCharactersByGender('all');
+    // 过滤掉已经选中的主角和已选中的配角
+    const available = allChars.filter(c => 
+      c.id !== maleCharacter?.id && 
+      c.id !== femaleCharacter?.id &&
+      !selectedSideCharacters.find(sc => sc.id === c.id)
+    );
+    setAvailableSideCharacters(available);
+    setShowSideCharacterModal(true);
+  };
+
+  // 切换选择配角
+  const handleToggleSideCharacter = (character: Character) => {
+    const isSelected = selectedSideCharacters.find(c => c.id === character.id);
+    if (isSelected) {
+      setSelectedSideCharacters(prev => prev.filter(c => c.id !== character.id));
+    } else {
+      setSelectedSideCharacters(prev => [...prev, character]);
+    }
+  };
+
+  // 清除单个配角选择
+  const handleRemoveSideCharacter = (characterId: string) => {
+    setSelectedSideCharacters(prev => prev.filter(c => c.id !== characterId));
+  };
+
+  // 清除所有配角选择
+  const handleClearAllSideCharacters = () => {
+    setSelectedSideCharacters([]);
+  };
+
   // 开始创作 - 打开世界背景设定弹窗
   const handleGenerate = () => {
     if (!novelTitle.trim()) {
@@ -203,12 +241,14 @@ export default function HomeScreen() {
     setIsCreatingNovel(true);
 
     try {
+      const sideCharacterIds = selectedSideCharacters.map(c => c.id);
       const novel = await createNovel(
         novelTitle.trim(),
         selectedThemeType || '都市',
         selectedThemeType || 'urban',
         maleCharacter?.id,
-        femaleCharacter?.id
+        femaleCharacter?.id,
+        sideCharacterIds
       );
 
       // 锁定选中的角色到当前小说
@@ -217,6 +257,10 @@ export default function HomeScreen() {
       }
       if (femaleCharacter?.id) {
         await linkCharacterToNovel(femaleCharacter.id, novel.id, 'female_lead');
+      }
+      // 锁定配角
+      for (const sideChar of selectedSideCharacters) {
+        await linkCharacterToNovel(sideChar.id, novel.id, 'side');
       }
 
       // 关闭世界设定弹窗
@@ -230,6 +274,7 @@ export default function HomeScreen() {
       setProtagonistDoing('');
       setMaleCharacter(null);
       setFemaleCharacter(null);
+      setSelectedSideCharacters([]);
       setSelectedThemeType(null);
       setRegion('');
       setProvinceInput('');
@@ -247,6 +292,7 @@ export default function HomeScreen() {
         cityLocation: `${provinceInput.trim()}${cityInput.trim()}${districtInput.trim()}`,
         maleCharacterId: maleCharacter?.id,
         femaleCharacterId: femaleCharacter?.id,
+        selectedCharacterIds: selectedSideCharacters.map(c => c.id).join(','),
         autoGeneratePrologue: 'true'
       });
     } catch (error) {
@@ -913,6 +959,45 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
           </View>
         </View>
 
+        {/* 配角选择 */}
+        <View style={styles.section}>
+          <View style={styles.labelRow}>
+            <View style={styles.labelIconSmall}>
+              <Feather name="users" size={12} color={theme.textPrimary} />
+            </View>
+            <ThemedText variant="small" color={theme.textPrimary} style={styles.labelText}>
+              配角 ({selectedSideCharacters.length})
+            </ThemedText>
+          </View>
+          <View style={styles.sideCharacterContainer}>
+            {/* 已选配角 */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectedSideChars}>
+              {selectedSideCharacters.map(char => (
+                <View key={char.id} style={styles.sideCharChip}>
+                  <ThemedText variant="caption" color={theme.textPrimary} numberOfLines={1}>
+                    {char.name}
+                  </ThemedText>
+                  <TouchableOpacity onPress={() => handleRemoveSideCharacter(char.id)} style={styles.removeBtn}>
+                    <Feather name="x" size={10} color={theme.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {selectedSideCharacters.length > 0 && (
+                <TouchableOpacity style={styles.clearAllBtn} onPress={handleClearAllSideCharacters}>
+                  <Feather name="trash-2" size={12} color={theme.textMuted} />
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+            {/* 添加配角按钮 */}
+            <TouchableOpacity style={styles.addSideCharBtn} onPress={handleOpenSideCharacterModal}>
+              <Feather name="plus" size={16} color={theme.textPrimary} />
+              <ThemedText variant="caption" color={theme.textPrimary} style={styles.addSideCharText}>
+                添加配角
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 小说主题 */}
         <View style={styles.section}>
           <View style={styles.labelRow}>
@@ -1041,6 +1126,67 @@ ${chapter.content || '（暂无章节内容，请根据标题自由创作）'}
                 </TouchableOpacity>
               </View>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* 配角选择弹窗 */}
+      <Modal visible={showSideCharacterModal} transparent animationType="slide" onRequestClose={() => setShowSideCharacterModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText variant="smallMedium" color={theme.textPrimary}>选择配角</ThemedText>
+              <TouchableOpacity onPress={() => setShowSideCharacterModal(false)}>
+                <Feather name="x" size={22} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.characterList}>
+              {availableSideCharacters.length === 0 ? (
+                <View style={styles.emptyCharacterList}>
+                  <Feather name="users" size={40} color={theme.textMuted} />
+                  <ThemedText variant="small" color={theme.textMuted} style={{ marginTop: 12 }}>
+                    暂无可用的配角角色
+                  </ThemedText>
+                </View>
+              ) : (
+                availableSideCharacters.map(character => {
+                  const isSelected = selectedSideCharacters.find(c => c.id === character.id);
+                  return (
+                    <TouchableOpacity
+                      key={character.id}
+                      style={[styles.characterItem, isSelected && styles.characterItemSelected]}
+                      onPress={() => handleToggleSideCharacter(character)}
+                    >
+                      <View style={styles.characterInfo}>
+                        <View style={styles.characterNameRow}>
+                          <ThemedText variant="small" color={theme.textPrimary}>{character.name}</ThemedText>
+                          {isSelected && <Feather name="check" size={14} color="#C8102E" style={{ marginLeft: 8 }} />}
+                        </View>
+                        <ThemedText variant="caption" color={theme.textMuted}>
+                          {character.occupation || '未设定职业'} | {character.age ? `${character.age}岁` : '年龄未知'}
+                        </ThemedText>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+            {selectedSideCharacters.length > 0 && (
+              <View style={styles.selectedCount}>
+                <ThemedText variant="caption" color={theme.textMuted}>
+                  已选择 {selectedSideCharacters.length} 个配角
+                </ThemedText>
+              </View>
+            )}
+            <TouchableOpacity
+              style={[styles.confirmSideCharButton, selectedSideCharacters.length === 0 && styles.confirmSideCharButtonDisabled]}
+              onPress={() => setShowSideCharacterModal(false)}
+              disabled={selectedSideCharacters.length === 0}
+            >
+              <ThemedText variant="small" color="#FFFFFF">
+                确认选择 ({selectedSideCharacters.length})
+              </ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
