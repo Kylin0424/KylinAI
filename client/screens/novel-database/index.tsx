@@ -11,49 +11,71 @@ import {
   Platform,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
-import { useSafeRouter } from '@/hooks/useSafeRouter';
+import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { Spacing, BorderRadius, Theme } from '@/constants/theme';
-import { Novel, getNovelById, updateNovelCharacter } from '@/utils/novelStorage';
+import { Novel, getAllNovels, getNovelById, updateNovelCharacter } from '@/utils/novelStorage';
 import { Character, getAllCharacters, saveCharacter } from '@/utils/characterStorage';
 
-interface Props {
-  novelData: Novel;
-  novelId: string;
-}
-
-export default function NovelDatabase({ novelData, novelId }: Props) {
+export default function NovelDatabaseScreen() {
   const router = useSafeRouter();
-  const [activeTab, setActiveTab] = useState<'characters' | 'settings' | 'plot'>('characters');
+  const params = useSafeSearchParams<{ novelId?: string }>();
+  
+  const [allNovels, setAllNovels] = useState<Novel[]>([]);
+  const [currentNovel, setCurrentNovel] = useState<Novel | null>(null);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedChar, setSelectedChar] = useState<Character | null>(null);
   const [editingChar, setEditingChar] = useState<Character | null>(null);
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'characters' | 'settings' | 'plot'>('characters');
 
-  // 加载角色数据
+  // 如果有传入的 novelId，加载对应小说
   useEffect(() => {
-    const loadCharacters = async () => {
-      const allChars = await getAllCharacters();
-      const novelChars = allChars.filter(
-        (char: Character) => char.novelId === novelId && char.roleType
-      );
-      setCharacters(novelChars);
-    };
-    loadCharacters();
-  }, [novelId]);
+    if (params.novelId) {
+      loadNovel(params.novelId);
+    } else {
+      // 没有传入 novelId，加载所有小说列表
+      loadAllNovels();
+    }
+  }, [params.novelId]);
 
-  // 提取男性主角和女性主角
-  const maleLead = characters.find((c: Character) => c.roleType === 'male_lead');
-  const femaleLead = characters.find((c: Character) => c.roleType === 'female_lead');
-  const supportingChars = characters.filter(
-    (c: Character) => !['male_lead', 'female_lead'].includes(c.roleType || '')
-  );
+  // 加载所有小说
+  const loadAllNovels = async () => {
+    const novels = await getAllNovels();
+    setAllNovels(novels);
+    setCurrentNovel(null);
+    setCharacters([]);
+  };
+
+  // 加载指定小说
+  const loadNovel = async (novelId: string) => {
+    const novel = await getNovelById(novelId);
+    if (novel) {
+      setCurrentNovel(novel);
+      // 从小说对象中获取角色数据
+      const novelChars: Character[] = [];
+      if (novel.maleCharacterData) novelChars.push(novel.maleCharacterData);
+      if (novel.femaleCharacterData) novelChars.push(novel.femaleCharacterData);
+      if (novel.sideCharacters) novelChars.push(...novel.sideCharacters);
+      setCharacters(novelChars);
+    }
+  };
+
+  // 选择小说
+  const handleSelectNovel = (novel: Novel) => {
+    router.push('/novel-database', { novelId: novel.id });
+  };
+
+  // 返回小说列表
+  const handleBackToNovels = () => {
+    router.replace('/novel-database');
+  };
 
   // 更新角色社会经历
   const handleSaveExperience = useCallback(() => {
-    if (!editingChar) return;
+    if (!editingChar || !currentNovel) return;
     
-    // 直接使用 updateNovelCharacter 更新小说专属的角色数据
-    updateNovelCharacter(novelId, editingChar);
+    // 更新小说中的角色数据
+    updateNovelCharacter(currentNovel.id, editingChar);
     
     // 更新本地状态
     setCharacters((prev) =>
@@ -61,7 +83,7 @@ export default function NovelDatabase({ novelData, novelId }: Props) {
     );
     
     setExperienceModalVisible(false);
-  }, [editingChar, novelId]);
+  }, [editingChar, currentNovel]);
 
   // 添加社会经历
   const handleAddExperience = useCallback((char: Character) => {
@@ -95,519 +117,649 @@ export default function NovelDatabase({ novelData, novelId }: Props) {
     setEditingChar({ ...editingChar, longTermMemory: newMemory });
   }, [editingChar]);
 
+  // 渲染小说卡片
+  const renderNovelCard = (novel: Novel) => {
+    const hasCharacters = (novel.maleCharacterData || novel.femaleCharacterData || (novel.sideCharacters && novel.sideCharacters.length > 0));
+    
+    return (
+      <TouchableOpacity
+        key={novel.id}
+        style={styles.novelCard}
+        onPress={() => handleSelectNovel(novel)}
+      >
+        <View style={styles.novelIcon}>
+          <Text style={styles.novelIconText}>📖</Text>
+        </View>
+        <View style={styles.novelInfo}>
+          <Text style={styles.novelTitle}>{novel.name}</Text>
+          <Text style={styles.novelMeta}>
+            {hasCharacters ? '✅ 已绑定角色' : '⏳ 未绑定角色'}
+            {novel.worldSettings ? ' | 📝 世界设定' : ''}
+            {novel.chapters && novel.chapters.length > 0 ? ` | 📄 ${novel.chapters.length}章节` : ''}
+          </Text>
+        </View>
+        <Text style={styles.arrow}>›</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  // 渲染角色卡片
   const renderCharacterCard = (char: Character, label: string) => (
     <View key={char.id} style={styles.charCard}>
       <View style={styles.charHeader}>
-        <View>
-          <Text style={styles.charLabel}>{label}</Text>
-          <Text style={styles.charName}>{char.name}</Text>
-        </View>
-        <View style={styles.charMeta}>
-          <Text style={styles.charMetaText}>
-            {char.gender} · {char.age}岁 · {char.occupation}
-          </Text>
-        </View>
+        <Text style={styles.charLabel}>{label}</Text>
+        <TouchableOpacity onPress={() => setSelectedChar(char)}>
+          <Text style={styles.viewDetail}>查看详情</Text>
+        </TouchableOpacity>
       </View>
+      <Text style={styles.charName}>{char.name}</Text>
+      <Text style={styles.charRole}>{char.age}岁 | {char.occupation}</Text>
       
-      {/* 记忆统计 */}
-      <View style={styles.memoryStats}>
-        <View style={styles.memoryStat}>
-          <Text style={styles.memoryStatLabel}>长期记忆</Text>
-          <Text style={styles.memoryStatValue}>
-            {char.longTermMemory?.length || 0} 条
-          </Text>
+      {/* 短期记忆预览 */}
+      {char.shortTermMemory && char.shortTermMemory.length > 0 && (
+        <View style={styles.memorySection}>
+          <Text style={styles.memoryTitle}>近期经历 ({char.shortTermMemory.length}条)</Text>
         </View>
-        <View style={styles.memoryStat}>
-          <Text style={styles.memoryStatLabel}>短期经历</Text>
-          <Text style={styles.memoryStatValue}>
-            {char.shortTermMemory?.length || 0} 条
-          </Text>
+      )}
+      
+      {/* 长期记忆预览 */}
+      {char.longTermMemory && char.longTermMemory.length > 0 && (
+        <View style={styles.memorySection}>
+          <Text style={styles.memoryTitle}>重要记忆 ({char.longTermMemory.length}条)</Text>
         </View>
-      </View>
-
+      )}
+      
       <TouchableOpacity
-        style={styles.experienceButton}
+        style={styles.addMemoryBtn}
         onPress={() => handleAddExperience(char)}
       >
-        <Text style={styles.experienceButtonText}>查看/编辑社会经历</Text>
+        <Text style={styles.addMemoryText}>+ 添加/查看记忆</Text>
       </TouchableOpacity>
     </View>
   );
 
-  return (
-    <Screen>
+  // 提取男性主角和女性主角
+  const maleLead = characters.find((c: Character) => c.roleType === 'male_lead');
+  const femaleLead = characters.find((c: Character) => c.roleType === 'female_lead');
+  const supportingChars = characters.filter(
+    (c: Character) => !['male_lead', 'female_lead'].includes(c.roleType || '')
+  );
+
+  // 渲染小说列表视图
+  const renderNovelList = () => (
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← 返回</Text>
+        <TouchableOpacity onPress={handleBackToNovels} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>‹ 返回</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>小说数据库</Text>
         <View style={styles.placeholder} />
       </View>
+      
+      {allNovels.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📚</Text>
+          <Text style={styles.emptyText}>暂无小说</Text>
+          <Text style={styles.emptySubtext}>在首页创建小说后，可以在这里查看和管理小说数据</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.scrollView}>
+          <Text style={styles.sectionTitle}>全部小说 ({allNovels.length})</Text>
+          {allNovels.map(renderNovelCard)}
+        </ScrollView>
+      )}
+    </View>
+  );
 
-      {/* Tab切换 */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'characters' && styles.tabActive]}
-          onPress={() => setActiveTab('characters')}
+  // 渲染小说详情视图
+  const renderNovelDetail = () => {
+    if (!currentNovel) return null;
+    
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBackToNovels} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>‹ 返回小说列表</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{currentNovel.name}</Text>
+          <View style={styles.placeholder} />
+        </View>
+        
+        {/* 标签切换 */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'characters' && styles.activeTab]}
+            onPress={() => setActiveTab('characters')}
+          >
+            <Text style={[styles.tabText, activeTab === 'characters' && styles.activeTabText]}>
+              角色 ({characters.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'settings' && styles.activeTab]}
+            onPress={() => setActiveTab('settings')}
+          >
+            <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
+              世界设定
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'plot' && styles.activeTab]}
+            onPress={() => setActiveTab('plot')}
+          >
+            <Text style={[styles.tabText, activeTab === 'plot' && styles.activeTabText]}>
+              剧情概要
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        <ScrollView style={styles.scrollView}>
+          {activeTab === 'characters' && (
+            <>
+              {/* 主角 */}
+              {maleLead && renderCharacterCard(maleLead, '男主角')}
+              {femaleLead && renderCharacterCard(femaleLead, '女主角')}
+              
+              {/* 配角 */}
+              {supportingChars.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>配角 ({supportingChars.length})</Text>
+                  {supportingChars.map((char) => renderCharacterCard(char, char.name))}
+                </>
+              )}
+              
+              {characters.length === 0 && (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>👤</Text>
+                  <Text style={styles.emptyText}>暂无角色</Text>
+                  <Text style={styles.emptySubtext}>在创作页面绑定角色后，这里将显示角色信息</Text>
+                </View>
+              )}
+            </>
+          )}
+          
+          {activeTab === 'settings' && (
+            <View style={styles.contentSection}>
+              {currentNovel.worldSettings ? (
+                <Text style={styles.contentText}>{currentNovel.worldSettings}</Text>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>🌍</Text>
+                  <Text style={styles.emptyText}>暂无世界设定</Text>
+                  <Text style={styles.emptySubtext}>在创作页面设置世界背景后，这里将显示设定内容</Text>
+                </View>
+              )}
+            </View>
+          )}
+          
+          {activeTab === 'plot' && (
+            <View style={styles.contentSection}>
+              {currentNovel.plotSummary ? (
+                <Text style={styles.contentText}>{currentNovel.plotSummary}</Text>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>📝</Text>
+                  <Text style={styles.emptyText}>暂无剧情概要</Text>
+                  <Text style={styles.emptySubtext}>开始创作后，剧情概要将自动生成</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </ScrollView>
+        
+        {/* 角色详情弹窗 */}
+        <Modal
+          visible={!!selectedChar}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedChar(null)}
         >
-          <Text style={[styles.tabText, activeTab === 'characters' && styles.tabTextActive]}>
-            角色库
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'settings' && styles.tabActive]}
-          onPress={() => setActiveTab('settings')}
-        >
-          <Text style={[styles.tabText, activeTab === 'settings' && styles.tabTextActive]}>
-            设定资料
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'plot' && styles.tabActive]}
-          onPress={() => setActiveTab('plot')}
-        >
-          <Text style={[styles.tabText, activeTab === 'plot' && styles.tabTextActive]}>
-            剧情概要
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {activeTab === 'characters' && (
-          <View style={styles.section}>
-            {/* 主角 */}
-            {maleLead && renderCharacterCard(maleLead, '男主')}
-            {femaleLead && renderCharacterCard(femaleLead, '女主')}
-            
-            {/* 配角 */}
-            {supportingChars.length > 0 && (
-              <View style={styles.supportingSection}>
-                <Text style={styles.sectionTitle}>配角</Text>
-                {supportingChars.map((char) =>
-                  renderCharacterCard(char, char.name)
+          <KeyboardAvoidingView
+            style={styles.modalOverlay}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={styles.detailModal}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{selectedChar?.name}</Text>
+                <TouchableOpacity onPress={() => setSelectedChar(null)}>
+                  <Text style={styles.closeBtn}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalContent}>
+                {selectedChar && (
+                  <>
+                    <View style={styles.detailSection}>
+                      <Text style={styles.detailLabel}>基本信息</Text>
+                      <Text style={styles.detailText}>
+                        年龄: {selectedChar.age}岁{'\n'}
+                        职业: {selectedChar.occupation}{'\n'}
+                        性别: {selectedChar.gender === 'male' ? '男' : '女'}
+                      </Text>
+                    </View>
+                    
+                    {selectedChar.personalityDescription && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>性格特点</Text>
+                        <Text style={styles.detailText}>{selectedChar.personalityDescription}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.background && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>背景故事</Text>
+                        <Text style={styles.detailText}>{selectedChar.background}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.appearanceDescription && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>外貌特征</Text>
+                        <Text style={styles.detailText}>{selectedChar.appearanceDescription}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.shortTermMemory && selectedChar.shortTermMemory.length > 0 && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>近期经历</Text>
+                        {selectedChar.shortTermMemory.map((exp, idx) => (
+                          <Text key={idx} style={styles.memoryItem}>• {exp}</Text>
+                        ))}
+                      </View>
+                    )}
+                    
+                    {selectedChar.longTermMemory && selectedChar.longTermMemory.length > 0 && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>重要记忆</Text>
+                        {selectedChar.longTermMemory.map((mem, idx) => (
+                          <Text key={idx} style={styles.memoryItem}>• {mem}</Text>
+                        ))}
+                      </View>
+                    )}
+                  </>
                 )}
-              </View>
-            )}
-
-            {characters.length === 0 && (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>暂无角色</Text>
-                <Text style={styles.emptyHint}>
-                  请在角色库中添加角色后再编辑社会经历
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {activeTab === 'settings' && (
-          <View style={styles.section}>
-            <View style={styles.settingCard}>
-              <Text style={styles.settingTitle}>小说标题</Text>
-              <Text style={styles.settingValue}>{novelData.title}</Text>
+              </ScrollView>
             </View>
-            
-            <View style={styles.settingCard}>
-              <Text style={styles.settingTitle}>世界背景</Text>
-              <Text style={styles.settingValue}>{novelData.worldView || '未设置'}</Text>
-            </View>
-            
-            <View style={styles.settingCard}>
-              <Text style={styles.settingTitle}>主角当前状态</Text>
-              <Text style={styles.settingValue}>
-                {maleLead?.occupation || '未设置'}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {activeTab === 'plot' && (
-          <View style={styles.section}>
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>暂无剧情概要</Text>
-              <Text style={styles.emptyHint}>
-                AI续写完成后会自动生成剧情概要
-              </Text>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* 社会经历编辑弹窗 */}
-      <Modal
-        visible={experienceModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <KeyboardAvoidingView
-          style={styles.modalContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          </KeyboardAvoidingView>
+        </Modal>
+        
+        {/* 编辑记忆弹窗 */}
+        <Modal
+          visible={experienceModalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setExperienceModalVisible(false)}
         >
-          {editingChar && (
-            <View style={styles.modalContent}>
+          <KeyboardAvoidingView
+            style={styles.modalOverlay}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={styles.experienceModal}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>
-                  {editingChar.name} - 社会经历
+                  {editingChar?.name} - 角色记忆
                 </Text>
                 <TouchableOpacity onPress={() => setExperienceModalVisible(false)}>
                   <Text style={styles.closeBtn}>✕</Text>
                 </TouchableOpacity>
               </View>
-
-              <ScrollView style={styles.modalBody}>
-                {/* 长期记忆 */}
-                <View style={styles.memorySection}>
-                  <Text style={styles.memorySectionTitle}>
-                    长期记忆 ({editingChar.longTermMemory?.length || 0}条)
-                  </Text>
-                  <Text style={styles.memoryHint}>
-                    这些是角色的重要经历摘要，AI创作时会参考
-                  </Text>
-                  
-                  {(editingChar.longTermMemory || []).map((memory, index) => (
-                    <View key={index} style={styles.memoryItem}>
-                      <TextInput
-                        style={styles.memoryInput}
-                        value={memory}
-                        onChangeText={(text) => handleUpdateLongTermMemory(index, text)}
-                        placeholder="输入经历摘要..."
-                        multiline
-                      />
-                      <TouchableOpacity
-                        style={styles.deleteBtn}
-                        onPress={() => handleDeleteLongTermMemory(index)}
-                      >
-                        <Text style={styles.deleteBtnText}>删除</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                  
-                  <TouchableOpacity
-                    style={styles.addMemoryBtn}
-                    onPress={handleAddLongTermMemory}
-                  >
-                    <Text style={styles.addMemoryBtnText}>+ 添加经历</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* 短期经历 */}
-                <View style={styles.memorySection}>
-                  <Text style={styles.memorySectionTitle}>
-                    短期经历 ({editingChar.shortTermMemory?.length || 0}条)
-                  </Text>
-                  <Text style={styles.memoryHint}>
-                    AI续写时自动记录，用于生成长期记忆
-                  </Text>
-                  
-                  {(editingChar.shortTermMemory || []).map((memory, index) => (
-                    <View key={index} style={styles.shortTermItem}>
-                      <Text style={styles.shortTermText}>{memory}</Text>
-                    </View>
-                  ))}
-                  
-                  {(!editingChar.shortTermMemory || editingChar.shortTermMemory.length === 0) && (
-                    <Text style={styles.noShortTermText}>暂无短期经历</Text>
-                  )}
-                </View>
+              
+              <ScrollView style={styles.modalContent}>
+                <Text style={styles.memorySectionTitle}>
+                  重要记忆（由AI定期总结）
+                </Text>
+                
+                {(editingChar?.longTermMemory || []).map((mem, idx) => (
+                  <View key={idx} style={styles.memoryRow}>
+                    <TextInput
+                      style={styles.memoryInput}
+                      value={mem}
+                      onChangeText={(text) => handleUpdateLongTermMemory(idx, text)}
+                      placeholder="输入记忆内容..."
+                      multiline
+                    />
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={() => handleDeleteLongTermMemory(idx)}
+                    >
+                      <Text style={styles.deleteBtnText}>删除</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                
+                <TouchableOpacity
+                  style={styles.addBtn}
+                  onPress={handleAddLongTermMemory}
+                >
+                  <Text style={styles.addBtnText}>+ 添加新记忆</Text>
+                </TouchableOpacity>
               </ScrollView>
-
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={styles.cancelBtn}
-                  onPress={() => setExperienceModalVisible(false)}
-                >
-                  <Text style={styles.cancelBtnText}>取消</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveBtn}
-                  onPress={handleSaveExperience}
-                >
-                  <Text style={styles.saveBtnText}>保存</Text>
-                </TouchableOpacity>
-              </View>
+              
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={handleSaveExperience}
+              >
+                <Text style={styles.saveBtnText}>保存</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </KeyboardAvoidingView>
-      </Modal>
-    </Screen>
-  );
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
+    );
+  };
+
+  // 根据是否有当前小说决定渲染哪个视图
+  return currentNovel ? renderNovelDetail() : renderNovelList();
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 0.5,
+    paddingVertical: Spacing.md,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
   },
   backBtn: {
     padding: Spacing.xs,
   },
   backBtnText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#4F46E5',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#333',
   },
   placeholder: {
-    width: 50,
+    width: 60,
   },
-  tabBar: {
+  tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
+    backgroundColor: '#fff',
+    paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   tab: {
     flex: 1,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
   },
-  tabActive: {
+  activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#4F46E5',
   },
   tabText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#666',
   },
-  tabTextActive: {
-    color: '#007AFF',
+  activeTabText: {
+    color: '#4F46E5',
     fontWeight: '600',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  section: {
-    padding: Spacing.md,
-  },
-  supportingSection: {
-    marginTop: Spacing.md,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#666',
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.lg,
     marginBottom: Spacing.sm,
   },
-  charCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
+  novelCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.xs,
     padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  novelIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#F0F0F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  novelIconText: {
+    fontSize: 24,
+  },
+  novelInfo: {
+    flex: 1,
+  },
+  novelTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  novelMeta: {
+    fontSize: 12,
+    color: '#999',
+  },
+  arrow: {
+    fontSize: 24,
+    color: '#CCC',
+  },
+  charCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.xs,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   charHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
   },
   charLabel: {
     fontSize: 12,
-    color: '#8E8E93',
-    marginBottom: 2,
+    color: '#4F46E5',
+    fontWeight: '600',
+  },
+  viewDetail: {
+    fontSize: 12,
+    color: '#666',
   },
   charName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#333',
+    marginBottom: 4,
   },
-  charMeta: {
-    alignItems: 'flex-end',
-  },
-  charMetaText: {
+  charRole: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#999',
+    marginBottom: Spacing.sm,
   },
-  memoryStats: {
-    flexDirection: 'row',
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 0.5,
-    borderTopColor: '#E0E0E0',
+  memorySection: {
+    marginTop: Spacing.xs,
+    paddingTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
   },
-  memoryStat: {
-    flex: 1,
+  memoryTitle: {
+    fontSize: 12,
+    color: '#666',
   },
-  memoryStatLabel: {
-    fontSize: 11,
-    color: '#8E8E93',
-  },
-  memoryStatValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1A1A1A',
-  },
-  experienceButton: {
+  addMemoryBtn: {
     marginTop: Spacing.sm,
     paddingVertical: Spacing.xs,
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F5F5F5',
     borderRadius: BorderRadius.sm,
   },
-  experienceButtonText: {
+  addMemoryText: {
     fontSize: 13,
-    color: '#007AFF',
+    color: '#4F46E5',
   },
-  settingCard: {
-    backgroundColor: '#FFFFFF',
+  contentSection: {
+    backgroundColor: '#fff',
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.md,
+    padding: Spacing.lg,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
   },
-  settingTitle: {
-    fontSize: 13,
-    color: '#8E8E93',
-    marginBottom: 4,
+  contentText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 22,
   },
-  settingValue: {
-    fontSize: 15,
-    color: '#1A1A1A',
-  },
-  emptyState: {
-    padding: Spacing.xl,
+  emptyContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
   },
   emptyText: {
-    fontSize: 15,
-    color: '#8E8E93',
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+    marginBottom: Spacing.xs,
   },
-  emptyHint: {
+  emptySubtext: {
     fontSize: 13,
-    color: '#C7C7CC',
-    marginTop: 4,
+    color: '#999',
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
-  // 弹窗样式
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
-  modalContent: {
-    flex: 1,
+  detailModal: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+  },
+  experienceModal: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 0.5,
+    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#333',
   },
   closeBtn: {
     fontSize: 20,
-    color: '#8E8E93',
+    color: '#999',
     padding: Spacing.xs,
   },
-  modalBody: {
-    flex: 1,
+  modalContent: {
     padding: Spacing.md,
+    maxHeight: 400,
   },
-  memorySection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+  detailSection: {
+    marginBottom: Spacing.lg,
   },
-  memorySectionTitle: {
-    fontSize: 15,
+  detailLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 4,
+    color: '#333',
+    marginBottom: Spacing.xs,
   },
-  memoryHint: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginBottom: Spacing.sm,
+  detailText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 22,
   },
   memoryItem: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  memorySectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: Spacing.md,
+  },
+  memoryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: Spacing.sm,
   },
   memoryInput: {
-    backgroundColor: '#F2F2F7',
+    flex: 1,
+    backgroundColor: '#F5F5F5',
     borderRadius: BorderRadius.sm,
     padding: Spacing.sm,
     fontSize: 14,
-    color: '#1A1A1A',
     minHeight: 60,
     textAlignVertical: 'top',
+    marginRight: Spacing.sm,
   },
   deleteBtn: {
-    alignSelf: 'flex-end',
-    paddingVertical: 4,
+    padding: Spacing.sm,
   },
   deleteBtnText: {
     fontSize: 13,
-    color: '#FF3B30',
+    color: '#F43F5E',
   },
-  addMemoryBtn: {
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: BorderRadius.sm,
-    borderStyle: 'dashed',
-  },
-  addMemoryBtnText: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  shortTermItem: {
-    paddingVertical: Spacing.xs,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E0E0E0',
-  },
-  shortTermText: {
-    fontSize: 13,
-    color: '#3C3C43',
-  },
-  noShortTermText: {
-    fontSize: 13,
-    color: '#C7C7CC',
-    textAlign: 'center',
-    paddingVertical: Spacing.md,
-  },
-  modalFooter: {
-    flexDirection: 'row',
+  addBtn: {
     padding: Spacing.md,
-    gap: Spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 0.5,
-    borderTopColor: '#E0E0E0',
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F5F5F5',
     borderRadius: BorderRadius.sm,
+    marginTop: Spacing.sm,
   },
-  cancelBtnText: {
-    fontSize: 15,
-    color: '#8E8E93',
+  addBtnText: {
+    fontSize: 14,
+    color: '#4F46E5',
   },
   saveBtn: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
+    margin: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: '#4F46E5',
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: BorderRadius.sm,
   },
   saveBtnText: {
-    fontSize: 15,
-    color: '#FFFFFF',
+    fontSize: 16,
+    color: '#fff',
     fontWeight: '600',
   },
 });
