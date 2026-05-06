@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAllNovels } from './novelStorage';
+import { getAllNovels, getNovelById } from './novelStorage';
 
 export interface Character {
   id: string;
@@ -238,6 +238,16 @@ export const getAvailableCharacters = async (): Promise<Character[]> => {
 // 获取指定小说的角色
 export const getNovelCharacters = async (novelId: string): Promise<Character[]> => {
   try {
+    // 首先从小说对象中获取角色数据
+    const novel = await getNovelById(novelId);
+    if (novel) {
+      const chars: Character[] = [];
+      if (novel.maleCharacterData) chars.push(novel.maleCharacterData);
+      if (novel.femaleCharacterData) chars.push(novel.femaleCharacterData);
+      if (novel.sideCharacters) chars.push(...novel.sideCharacters);
+      if (chars.length > 0) return chars;
+    }
+    // 兼容旧数据：从全局角色库获取
     const characters = await getAllCharacters();
     return characters.filter(c => c.novelId === novelId);
   } catch (error) {
