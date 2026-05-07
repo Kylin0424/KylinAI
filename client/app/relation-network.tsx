@@ -1,1 +1,1 @@
-export { default } from '@/screens/relation-network';
+export { default } from "@/screens/relation-network";

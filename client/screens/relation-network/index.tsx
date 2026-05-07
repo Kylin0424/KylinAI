@@ -1,333 +1,629 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-  ScrollView,
   View,
-  TouchableOpacity,
-  Alert,
   Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  FlatList,
   Dimensions,
-  Animated,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { useTheme } from '@/hooks/useTheme';
 import { Screen } from '@/components/Screen';
-import { ThemedText } from '@/components/ThemedText';
-import { useSafeRouter } from '@/hooks/useSafeRouter';
-import { FloatingBall } from '@/components/FloatingBall';
-import { NetworkGraph } from '@/components/NetworkGraph';
-import { createStyles } from './styles';
-import {
-  RelationNetworkNode,
-  getRelationNetwork,
-} from '@/utils/characterStorage';
-import { Novel, getWritingNovels } from '@/utils/novelStorage';
+import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Character, CharacterRelation, RELATION_OPTIONS } from '@/utils/characterStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const GRAPH_HEIGHT = 400;
+const CENTER_SIZE = 120;
+const NODE_SIZE = 80;
+const MAX_RELATIONS = 8;
+
+interface RelationNode {
+  id: string;
+  character: Character | null;
+  relation: string | null;
+  relationTo: string | null; // 对方对这个角色的称呼
+  angle: number;
+}
 
 export default function RelationNetworkScreen() {
-  const { theme, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useSafeRouter();
+  const params = useSafeSearchParams<{
+    protagonistId: string;
+    protagonistGender: string;
+    protagonistName: string;
+  }>();
 
-  const [novels, setNovels] = useState<Novel[]>([]);
-  const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
-  const [network, setNetwork] = useState<RelationNetworkNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showNovelPicker, setShowNovelPicker] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<RelationNetworkNode | null>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    const writingNovels = await getWritingNovels();
-    setNovels(writingNovels);
-    if (writingNovels.length > 0 && !selectedNovel) {
-      const firstNovel = writingNovels[0];
-      setSelectedNovel(firstNovel);
-      const networkData = await getRelationNetwork(firstNovel.id);
-      setNetwork(networkData);
-    } else if (selectedNovel) {
-      const networkData = await getRelationNetwork(selectedNovel.id);
-      setNetwork(networkData);
-    }
-    setIsLoading(false);
+  // 主角信息
+  const protagonist = {
+    id: params.protagonistId || '',
+    name: params.protagonistName || '主角',
+    gender: params.protagonistGender || '男',
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
-
-  // 动画显示
-  useEffect(() => {
-    if (!isLoading && network.length > 0) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
+  // 关系节点（围绕主角）
+  const [relationNodes, setRelationNodes] = useState<RelationNode[]>(() => {
+    const nodes: RelationNode[] = [];
+    for (let i = 0; i < MAX_RELATIONS; i++) {
+      const angle = (i / MAX_RELATIONS) * 2 * Math.PI - Math.PI / 2;
+      nodes.push({
+        id: `node-${i}`,
+        character: null,
+        relation: null,
+        relationTo: null,
+        angle,
+      });
     }
-  }, [isLoading, network]);
+    return nodes;
+  });
 
-  const handleSelectNovel = async (novel: Novel) => {
-    setSelectedNovel(novel);
-    setShowNovelPicker(false);
+  // 已选择的角色ID（用于过滤）
+  const selectedCharacterIds = useMemo(() => {
+    return relationNodes
+      .filter(n => n.character)
+      .map(n => n.character!.id);
+  }, [relationNodes]);
+
+  // 可选择的角色列表
+  const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
+
+  // 当前编辑的节点索引
+  const [editingNodeIndex, setEditingNodeIndex] = useState<number | null>(null);
+
+  // 角色选择弹窗
+  const [showCharacterModal, setShowCharacterModal] = useState(false);
+
+  // 关系选择弹窗
+  const [showRelationModal, setShowRelationModal] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+
+  // 打开角色选择弹窗
+  const handleOpenCharacterSelect = useCallback(async (nodeIndex: number) => {
+    const allChars = await getAllCharacters();
+    // 过滤掉已选择的角色和主角自己
+    const available = allChars.filter(
+      c => !selectedCharacterIds.includes(c.id) && c.id !== protagonist.id
+    );
+    setAvailableCharacters(available);
+    setEditingNodeIndex(nodeIndex);
+    setShowCharacterModal(true);
+  }, [selectedCharacterIds, protagonist.id]);
+
+  // 选择角色
+  const handleSelectCharacter = useCallback((character: Character) => {
+    setSelectedCharacter(character);
+    setShowCharacterModal(false);
+    setShowRelationModal(true);
+  }, []);
+
+  // 确认关系
+  const handleConfirmRelation = useCallback((relation: string, relationTo: string) => {
+    if (editingNodeIndex === null || !selectedCharacter) return;
+
+    setRelationNodes(prev => {
+      const updated = [...prev];
+      updated[editingNodeIndex] = {
+        ...updated[editingNodeIndex],
+        character: selectedCharacter,
+        relation,
+        relationTo,
+      };
+      return updated;
+    });
+
+    setShowRelationModal(false);
     setSelectedCharacter(null);
-    const networkData = await getRelationNetwork(novel.id);
-    setNetwork(networkData);
-  };
+    setEditingNodeIndex(null);
+  }, [editingNodeIndex, selectedCharacter]);
 
-  const handleNodePress = useCallback((characterId: string) => {
-    const node = network.find(n => n.characterId === characterId);
-    if (node) {
-      setSelectedCharacter(node);
+  // 移除关系
+  const handleRemoveRelation = useCallback((nodeIndex: number) => {
+    setRelationNodes(prev => {
+      const updated = [...prev];
+      updated[nodeIndex] = {
+        ...updated[nodeIndex],
+        character: null,
+        relation: null,
+        relationTo: null,
+      };
+      return updated;
+    });
+  }, []);
+
+  // 完成设置
+  const handleComplete = useCallback(() => {
+    // 构建关系数据
+    const relations = relationNodes
+      .filter(n => n.character && n.relation)
+      .map(n => ({
+        targetId: n.character!.id,
+        relation: n.relation!,
+        relationTo: n.relationTo,
+      }));
+
+    // 返回上一页，传递关系数据
+    router.back();
+    // 注意：这里需要通过某种方式传递数据回去
+    // 可以通过URL参数传递
+  }, [relationNodes, router]);
+
+  // 计算节点位置
+  const getNodePosition = useCallback((angle: number, isCenter: boolean = false) => {
+    const radius = isCenter ? 0 : 140;
+    const size = isCenter ? CENTER_SIZE : NODE_SIZE;
+    return {
+      left: SCREEN_WIDTH / 2 + Math.cos(angle) * radius - size / 2,
+      top: 250 + Math.sin(angle) * radius - size / 2,
+    };
+  }, []);
+
+  // 获取关系标签（从主角角度）
+  const getRelationLabelText = useCallback((node: RelationNode) => {
+    if (!node.relation || !node.character) return '';
+    // 根据主角性别选择合适的称呼
+    if (protagonist.gender === '男') {
+      return node.relation;
+    } else {
+      // 女性视角
+      const femaleRelation = RELATION_OPTIONS.find(r => r.value === node.relation);
+      return femaleRelation?.femaleLabel || node.relation;
     }
-  }, [network]);
+  }, [protagonist.gender]);
 
-  const getGenderColor = (gender: string) => {
-    if (gender === '男') return '#3B82F6';
-    if (gender === '女') return '#EC4899';
-    return '#C8102E';
-  };
-
-  const graphWidth = SCREEN_WIDTH - 32; // 减去水平padding
+  // 获取反向关系标签（对方对主角的称呼）
+  const getReverseRelationLabel = useCallback((node: RelationNode) => {
+    if (!node.relationTo || !node.character) return '';
+    return `(${node.relationTo})`;
+  }, []);
 
   return (
-    <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
-      {/* Header with Back Button */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color={theme.textPrimary} />
-          <ThemedText variant="small" color={theme.textPrimary} style={styles.backText}>
-            返回
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
+    <Screen>
+      <View style={styles.container}>
+        {/* 顶部标题 */}
         <View style={styles.header}>
-          <View style={styles.decorativeLine} />
-          <ThemedText variant="h2" color={theme.textPrimary} style={styles.title}>
-            关系网络
-          </ThemedText>
-          <ThemedText variant="caption" color={theme.textMuted} style={styles.subtitle}>
-            查看小说中角色之间的关系
-          </ThemedText>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backBtn}>‹ 返回</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>设置关系网络</Text>
+          <View style={{ width: 50 }} />
         </View>
 
-        {/* 小说选择器 */}
-        {novels.length > 0 && (
-          <View style={styles.novelSelector}>
-            <ThemedText variant="caption" color={theme.textMuted} style={styles.novelSelectorLabel}>
-              选择小说
-            </ThemedText>
-            <TouchableOpacity 
-              style={styles.novelSelectorRow}
-              onPress={() => setShowNovelPicker(!showNovelPicker)}
-            >
-              <ThemedText variant="body" color={theme.textPrimary} style={styles.novelSelectorValue}>
-                {selectedNovel?.title || '请选择小说'}
-              </ThemedText>
-              <Feather 
-                name={showNovelPicker ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={theme.textMuted} 
-              />
-            </TouchableOpacity>
-            {showNovelPicker && (
-              <View style={{ marginTop: 8 }}>
-                {novels.map(novel => (
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* 说明文字 */}
+          <Text style={styles.desc}>
+            点击周围的空位添加关系角色，然后设置他们与主角的关系
+          </Text>
+
+          {/* 关系网络图 */}
+          <View style={styles.networkContainer}>
+            {/* 中心主角 */}
+            <View style={[styles.centerNode, getNodePosition(0, true)]}>
+              <Text style={styles.protagonistName}>{protagonist.name}</Text>
+              <Text style={styles.protagonistLabel}>主角</Text>
+            </View>
+
+            {/* 关系节点 */}
+            {relationNodes.map((node, index) => {
+              const position = getNodePosition(node.angle);
+              
+              if (node.character) {
+                // 已添加的角色节点
+                return (
                   <TouchableOpacity
-                    key={novel.id}
-                    style={{
-                      paddingVertical: 12,
-                      borderBottomWidth: 1,
-                      borderBottomColor: theme.border,
-                    }}
-                    onPress={() => handleSelectNovel(novel)}
+                    key={node.id}
+                    style={[styles.relationNode, styles.filledNode, position]}
+                    onPress={() => setEditingNodeIndex(index)}
                   >
-                    <ThemedText 
-                      variant="body" 
-                      color={selectedNovel?.id === novel.id ? '#C8102E' : theme.textPrimary}
+                    <Text style={styles.nodeName} numberOfLines={1}>
+                      {node.character.name}
+                    </Text>
+                    <Text style={styles.nodeRelation}>
+                      {getRelationLabelText(node)}
+                    </Text>
+                    <Text style={styles.nodeRelationTo}>
+                      {getReverseRelationLabel(node)}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.removeBtn}
+                      onPress={() => handleRemoveRelation(index)}
                     >
-                      {novel.title}
-                    </ThemedText>
+                      <Text style={styles.removeBtnText}>×</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {isLoading ? (
-          <View style={styles.emptyContainer}>
-            <ThemedText variant="body" color={theme.textMuted}>
-              加载中...
-            </ThemedText>
-          </View>
-        ) : novels.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Feather name="book-open" size={48} color={theme.textMuted} />
-            <ThemedText variant="body" color={theme.textMuted} style={styles.emptyText}>
-              暂无正在创作的小说
-            </ThemedText>
-            <ThemedText variant="caption" color={theme.textMuted}>
-              创建小说后即可查看角色关系网络
-            </ThemedText>
-          </View>
-        ) : network.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Feather name="git-branch" size={48} color={theme.textMuted} />
-            <ThemedText variant="body" color={theme.textMuted} style={styles.emptyText}>
-              暂无角色关系数据
-            </ThemedText>
-            <ThemedText variant="caption" color={theme.textMuted}>
-              在创作过程中添加角色关系后即可查看
-            </ThemedText>
-          </View>
-        ) : (
-          <>
-            {/* 图例 */}
-            <View style={styles.legend}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.maleDot]} />
-                <ThemedText variant="caption" color={theme.textSecondary}>男性角色</ThemedText>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.femaleDot]} />
-                <ThemedText variant="caption" color={theme.textSecondary}>女性角色</ThemedText>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.relationDot]} />
-                <ThemedText variant="caption" color={theme.textSecondary}>关系连线</ThemedText>
-              </View>
-            </View>
-
-            {/* 关系网络图 */}
-            <Animated.View style={[styles.graphWrapper, { opacity: fadeAnim }]}>
-              <NetworkGraph
-                network={network}
-                width={graphWidth}
-                height={GRAPH_HEIGHT}
-                onNodePress={handleNodePress}
-              />
-            </Animated.View>
-
-            {/* 提示 */}
-            <View style={styles.tipContainer}>
-              <Feather name="info" size={14} color={theme.textMuted} />
-              <ThemedText variant="caption" color={theme.textMuted} style={styles.tipText}>
-                点击角色节点查看详细信息
-              </ThemedText>
-            </View>
-
-            {/* 选中角色的详细信息 */}
-            {selectedCharacter && (
-              <View style={styles.characterDetail}>
-                <View style={styles.detailHeader}>
-                  <TouchableOpacity 
-                    style={styles.closeButton}
-                    onPress={() => setSelectedCharacter(null)}
-                  >
-                    <Feather name="x" size={18} color={theme.textMuted} />
-                  </TouchableOpacity>
-                </View>
-                
-                <View style={styles.detailContent}>
-                  <View style={styles.characterInfo}>
-                    <View style={[styles.characterAvatar, { borderColor: getGenderColor(selectedCharacter.characterGender) }]}>
-                      <Text style={[styles.avatarText, { color: getGenderColor(selectedCharacter.characterGender) }]}>
-                        {selectedCharacter.characterName[0]}
-                      </Text>
-                    </View>
-                    <View style={styles.characterMeta}>
-                      <ThemedText variant="h3" color={theme.textPrimary}>
-                        {selectedCharacter.characterName}
-                      </ThemedText>
-                      <ThemedText variant="caption" color={getGenderColor(selectedCharacter.characterGender)}>
-                        {selectedCharacter.characterGender}
-                      </ThemedText>
-                    </View>
-                  </View>
-                  
-                  {selectedCharacter.relations.length > 0 ? (
-                    <View style={styles.relationsList}>
-                      <ThemedText variant="small" color={theme.textMuted} style={styles.relationsTitle}>
-                        关系列表
-                      </ThemedText>
-                      {selectedCharacter.relations.map((relation, index) => (
-                        <View key={index} style={styles.relationItem}>
-                          <View style={styles.relationType}>
-                            <Text style={styles.relationTypeText}>{relation.relationType}</Text>
-                          </View>
-                          <Feather 
-                            name="arrow-right" 
-                            size={14} 
-                            color={theme.textMuted} 
-                          />
-                          <ThemedText variant="body" color={theme.textPrimary}>
-                            {relation.targetName}
-                          </ThemedText>
-                          <ThemedText 
-                            variant="caption" 
-                            color={getGenderColor(relation.targetGender)}
-                            style={styles.targetGender}
-                          >
-                            {relation.targetGender}
-                          </ThemedText>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <View style={styles.noRelations}>
-                      <ThemedText variant="small" color={theme.textMuted}>
-                        暂无关系数据
-                      </ThemedText>
-                    </View>
-                  )}
-                </View>
-              </View>
-            )}
-
-            {/* 角色列表（简化版） */}
-            <View style={styles.characterList}>
-              <ThemedText variant="small" color={theme.textMuted} style={styles.listTitle}>
-                角色列表 ({network.length})
-              </ThemedText>
-              <View style={styles.characterGrid}>
-                {network.map(node => (
+                );
+              } else {
+                // 空位节点
+                return (
                   <TouchableOpacity
-                    key={node.characterId}
-                    style={[
-                      styles.characterCard,
-                      selectedCharacter?.characterId === node.characterId && styles.characterCardActive,
-                    ]}
-                    onPress={() => setSelectedCharacter(node)}
+                    key={node.id}
+                    style={[styles.relationNode, styles.emptyNode, position]}
+                    onPress={() => handleOpenCharacterSelect(index)}
                   >
-                    <View style={[styles.miniAvatar, { borderColor: getGenderColor(node.characterGender) }]}>
-                      <Text style={[styles.miniAvatarText, { color: getGenderColor(node.characterGender) }]}>
-                        {node.characterName[0]}
+                    <Text style={styles.plusIcon}>+</Text>
+                    <Text style={styles.addText}>添加关系</Text>
+                  </TouchableOpacity>
+                );
+              }
+            })}
+
+            {/* 连接线（简化版，只画到已填充的节点） */}
+            {relationNodes
+              .filter(n => n.character)
+              .map((node, index) => {
+                const startAngle = Math.PI / 2;
+                const endAngle = node.angle + Math.PI / 2;
+                const midAngle = (startAngle + endAngle) / 2;
+                return (
+                  <View
+                    key={`line-${index}`}
+                    style={[
+                      styles.connectionLine,
+                      {
+                        left: SCREEN_WIDTH / 2 + Math.cos(midAngle) * 70 - 20,
+                        top: 250 + Math.sin(midAngle) * 70 - 1,
+                        transform: [{ rotate: `${midAngle + Math.PI / 2}rad` }],
+                      },
+                    ]}
+                  />
+                );
+              })}
+          </View>
+
+          {/* 已设置的关系列表 */}
+          <View style={styles.relationList}>
+            <Text style={styles.sectionTitle}>已设置的关系</Text>
+            {relationNodes.filter(n => n.character).length === 0 ? (
+              <Text style={styles.emptyText}>暂未设置任何关系</Text>
+            ) : (
+              relationNodes
+                .filter(n => n.character)
+                .map(node => (
+                  <View key={node.id} style={styles.relationItem}>
+                    <Text style={styles.relationItemText}>
+                      {protagonist.name}
+                      <Text style={styles.relationHighlight}>【{getRelationLabelText(node)}】</Text>
+                      {node.character!.name}
+                      <Text style={styles.relationTo}>（{node.relationTo}）</Text>
+                    </Text>
+                  </View>
+                ))
+            )}
+          </View>
+        </ScrollView>
+
+        {/* 完成按钮 */}
+        <TouchableOpacity style={styles.completeBtn} onPress={handleComplete}>
+          <Text style={styles.completeBtnText}>完成设置</Text>
+        </TouchableOpacity>
+
+        {/* 角色选择弹窗 */}
+        <Modal visible={showCharacterModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>选择角色</Text>
+                <TouchableOpacity onPress={() => setShowCharacterModal(false)}>
+                  <Text style={styles.closeBtn}>×</Text>
+                </TouchableOpacity>
+              </View>
+              {availableCharacters.length === 0 ? (
+                <Text style={styles.emptyText}>没有可选择的角色</Text>
+              ) : (
+                <FlatList
+                  data={availableCharacters}
+                  keyExtractor={item => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.characterItem}
+                      onPress={() => handleSelectCharacter(item)}
+                    >
+                      <Text style={styles.characterName}>{item.name}</Text>
+                      <Text style={styles.characterGender}>
+                        {item.basicInfo?.gender === '男' ? '♂' : '♀'}
                       </Text>
-                    </View>
-                    <ThemedText variant="caption" color={theme.textPrimary} numberOfLines={1}>
-                      {node.characterName}
-                    </ThemedText>
-                    <ThemedText variant="caption" color={theme.textMuted}>
-                      {node.relations.length} 关系
-                    </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* 关系选择弹窗 */}
+        <Modal visible={showRelationModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  设置与{selectedCharacter?.name}的关系
+                </Text>
+                <TouchableOpacity onPress={() => setShowRelationModal(false)}>
+                  <Text style={styles.closeBtn}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView>
+                <Text style={styles.relationHint}>
+                  请选择 {protagonist.name} 对 {selectedCharacter?.name} 的称呼：
+                </Text>
+                {RELATION_OPTIONS.map(option => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={styles.relationOption}
+                    onPress={() => {
+                      handleConfirmRelation(option.value, option.reverseLabel || option.label);
+                    }}
+                  >
+                    <Text style={styles.relationOptionText}>{option.label}</Text>
+                    {option.femaleLabel && (
+                      <Text style={styles.relationOptionFemale}>
+                        （女：{option.femaleLabel}）
+                      </Text>
+                    )}
+                    <Text style={styles.relationOptionReverse}>
+                      ↔ {option.reverseLabel}
+                    </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
-          </>
-        )}
-      </ScrollView>
-
-      <FloatingBall />
+          </View>
+        </Modal>
+      </View>
     </Screen>
   );
 }
+
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  backBtn: {
+    fontSize: 18,
+    color: theme.primary,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.text,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  desc: {
+    textAlign: 'center',
+    color: theme.textSecondary,
+    fontSize: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  networkContainer: {
+    position: 'relative',
+    height: 500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerNode: {
+    position: 'absolute',
+    width: CENTER_SIZE,
+    height: CENTER_SIZE,
+    borderRadius: CENTER_SIZE / 2,
+    backgroundColor: theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  protagonistName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  protagonistLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+  },
+  relationNode: {
+    position: 'absolute',
+    width: NODE_SIZE,
+    height: NODE_SIZE,
+    borderRadius: NODE_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
+  emptyNode: {
+    backgroundColor: theme.surface,
+    borderWidth: 2,
+    borderColor: theme.border,
+    borderStyle: 'dashed',
+  },
+  filledNode: {
+    backgroundColor: theme.surface,
+    borderWidth: 2,
+    borderColor: theme.primary,
+  },
+  plusIcon: {
+    fontSize: 24,
+    color: theme.textSecondary,
+  },
+  addText: {
+    fontSize: 10,
+    color: theme.textSecondary,
+  },
+  nodeName: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: theme.text,
+  },
+  nodeRelation: {
+    fontSize: 10,
+    color: theme.primary,
+    marginTop: 2,
+  },
+  nodeRelationTo: {
+    fontSize: 9,
+    color: theme.textSecondary,
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ff4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  connectionLine: {
+    position: 'absolute',
+    width: 2,
+    height: 60,
+    backgroundColor: theme.border,
+  },
+  relationList: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.text,
+    marginBottom: 12,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: theme.textSecondary,
+    fontSize: 14,
+    paddingVertical: 20,
+  },
+  relationItem: {
+    backgroundColor: theme.surface,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  relationItemText: {
+    fontSize: 14,
+    color: theme.text,
+    lineHeight: 22,
+  },
+  relationHighlight: {
+    color: theme.primary,
+    fontWeight: 'bold',
+  },
+  relationTo: {
+    color: theme.textSecondary,
+  },
+  completeBtn: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    height: 50,
+    backgroundColor: theme.primary,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completeBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    paddingBottom: 30,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.text,
+  },
+  closeBtn: {
+    fontSize: 28,
+    color: theme.textSecondary,
+  },
+  characterItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  characterName: {
+    fontSize: 16,
+    color: theme.text,
+  },
+  characterGender: {
+    fontSize: 18,
+    color: theme.textSecondary,
+  },
+  relationHint: {
+    padding: 16,
+    fontSize: 14,
+    color: theme.textSecondary,
+  },
+  relationOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  relationOptionText: {
+    fontSize: 16,
+    color: theme.text,
+    flex: 1,
+  },
+  relationOptionFemale: {
+    fontSize: 14,
+    color: theme.textSecondary,
+    marginLeft: 8,
+  },
+  relationOptionReverse: {
+    fontSize: 14,
+    color: theme.primary,
+  },
+});

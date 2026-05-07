@@ -303,7 +303,8 @@ export default function CharacterScreen() {
       position: member.position || '未设定',
     }));
 
-    router.push('/character-result', {
+    // 准备主角信息
+    const characterInfo = {
       sliders: JSON.stringify(sliderValues),
       name: name.trim(),
       gender: finalGender,
@@ -319,8 +320,22 @@ export default function CharacterScreen() {
       familyMembersBrief: familyMembersBrief.trim() || '未设定',
       familyBackground: familyBackground.trim() || '未设定',
       socialExperience: finalSocialExperience,
-      familyMembersData: JSON.stringify(familyMembersData), // 传递已设置的家庭成员数据
-    });
+      familyMembersData: JSON.stringify(familyMembersData),
+    };
+
+    // 如果有家庭成员，跳转到关系网络设置页面
+    if (membersToUse.length > 0) {
+      // 跳转到关系网络设置页面
+      router.push('/relation-network', {
+        characterInfo: JSON.stringify(characterInfo),
+        familyMembersData: JSON.stringify(familyMembersData),
+        mainCharacterName: name.trim(),
+        mainCharacterGender: finalGender,
+      });
+    } else {
+      // 没有家庭成员，直接跳转到角色生成结果页面
+      router.push('/character-result', characterInfo);
+    }
 
     setIsGenerating(false);
   };

@@ -60,6 +60,94 @@ export interface RelationNetworkNode {
 const CHARACTERS_KEY = '@novel_app_characters';
 const RELATIONS_KEY = '@novel_app_relations';
 
+// 关系选项配置（包含正向、反向关系）
+export interface RelationOption {
+  value: string;
+  label: string;
+  femaleLabel?: string;
+  reverseLabel: string;
+  reverseFemaleLabel?: string;
+}
+
+export const RELATION_OPTIONS: RelationOption[] = [
+  // 夫妻关系
+  { value: '丈夫', label: '丈夫', femaleLabel: '丈夫', reverseLabel: '妻子', reverseFemaleLabel: '妻子' },
+  { value: '妻子', label: '妻子', femaleLabel: '妻子', reverseLabel: '丈夫', reverseFemaleLabel: '丈夫' },
+  
+  // 父母关系
+  { value: '父亲', label: '父亲', femaleLabel: '公公', reverseLabel: '儿子', reverseFemaleLabel: '女儿' },
+  { value: '母亲', label: '母亲', femaleLabel: '婆婆', reverseLabel: '儿子', reverseFemaleLabel: '女儿' },
+  { value: '岳父', label: '岳父', reverseLabel: '女婿' },
+  { value: '岳母', label: '岳母', reverseLabel: '女婿' },
+  
+  // 兄弟姐妹关系
+  { value: '哥哥', label: '哥哥', femaleLabel: '大伯子', reverseLabel: '弟弟', reverseFemaleLabel: '妹妹' },
+  { value: '弟弟', label: '弟弟', femaleLabel: '小叔子', reverseLabel: '哥哥', reverseFemaleLabel: '姐姐' },
+  { value: '姐姐', label: '姐姐', femaleLabel: '大姑子', reverseLabel: '妹妹', reverseFemaleLabel: '弟弟' },
+  { value: '妹妹', label: '妹妹', femaleLabel: '小姑子', reverseLabel: '姐姐', reverseFemaleLabel: '哥哥' },
+  
+  // 伯叔姑舅姨关系
+  { value: '伯伯', label: '伯伯', femaleLabel: '伯母', reverseLabel: '侄子', reverseFemaleLabel: '侄女' },
+  { value: '叔叔', label: '叔叔', femaleLabel: '婶婶', reverseLabel: '侄子', reverseFemaleLabel: '侄女' },
+  { value: '姑姑', label: '姑姑', femaleLabel: '姑父', reverseLabel: '侄子', reverseFemaleLabel: '侄女' },
+  { value: '舅舅', label: '舅舅', femaleLabel: '舅妈', reverseLabel: '外甥', reverseFemaleLabel: '外甥女' },
+  { value: '姨姨', label: '姨姨', femaleLabel: '姨父', reverseLabel: '外甥', reverseFemaleLabel: '外甥女' },
+  
+  // 祖孙关系
+  { value: '爷爷', label: '爷爷', femaleLabel: '姥爷', reverseLabel: '孙子', reverseFemaleLabel: '孙女' },
+  { value: '奶奶', label: '奶奶', femaleLabel: '姥姥', reverseLabel: '孙子', reverseFemaleLabel: '孙女' },
+  
+  // 翁婿/婆媳关系
+  { value: '公公', label: '公公', reverseLabel: '儿媳' },
+  { value: '婆婆', label: '婆婆', reverseLabel: '儿媳' },
+  { value: '儿媳', label: '儿媳', reverseLabel: '公公' },
+  
+  // 连襟/妯娌关系
+  { value: '大舅子', label: '大舅子（妻之兄）', reverseLabel: '妹夫', reverseFemaleLabel: '姐夫' },
+  { value: '小舅子', label: '小舅子（妻之弟）', reverseLabel: '姐夫', reverseFemaleLabel: '妹夫' },
+  { value: '大姨子', label: '大姨子（妻之姐）', reverseLabel: '妹夫', reverseFemaleLabel: '姐夫' },
+  { value: '小姨子', label: '小姨子（妻之妹）', reverseLabel: '姐夫', reverseFemaleLabel: '妹夫' },
+  
+  // 兄弟姐妹配偶关系
+  { value: '嫂子', label: '嫂子', reverseLabel: '小叔子', reverseFemaleLabel: '小姑子' },
+  { value: '弟妹', label: '弟妹', reverseLabel: '大伯子', reverseFemaleLabel: '大姑子' },
+  { value: '姐夫', label: '姐夫', reverseLabel: '小舅子', reverseFemaleLabel: '大舅子' },
+  { value: '妹夫', label: '妹夫', reverseLabel: '大舅子', reverseFemaleLabel: '小舅子' },
+  
+  // 表/堂兄弟姐妹
+  { value: '表哥', label: '表哥', femaleLabel: '表姐', reverseLabel: '表弟', reverseFemaleLabel: '表妹' },
+  { value: '表弟', label: '表弟', femaleLabel: '表妹', reverseLabel: '表哥', reverseFemaleLabel: '表姐' },
+  { value: '表姐', label: '表姐', femaleLabel: '表姐', reverseLabel: '表妹', reverseFemaleLabel: '表弟' },
+  { value: '表妹', label: '表妹', femaleLabel: '表妹', reverseLabel: '表哥', reverseFemaleLabel: '表弟' },
+  { value: '堂哥', label: '堂哥', femaleLabel: '堂姐', reverseLabel: '堂弟', reverseFemaleLabel: '堂妹' },
+  { value: '堂弟', label: '堂弟', femaleLabel: '堂妹', reverseLabel: '堂哥', reverseFemaleLabel: '堂姐' },
+  { value: '堂姐', label: '堂姐', femaleLabel: '堂姐', reverseLabel: '堂妹', reverseFemaleLabel: '堂弟' },
+  { value: '堂妹', label: '堂妹', femaleLabel: '堂妹', reverseLabel: '堂哥', reverseFemaleLabel: '堂姐' },
+  
+  // 朋友/其他关系
+  { value: '朋友', label: '朋友', femaleLabel: '闺蜜', reverseLabel: '朋友' },
+  { value: '闺蜜', label: '闺蜜', femaleLabel: '闺蜜', reverseLabel: '闺蜜' },
+  { value: '同学', label: '同学', reverseLabel: '同学' },
+  { value: '同事', label: '同事', reverseLabel: '同事' },
+  { value: '老师', label: '老师', reverseLabel: '学生' },
+  { value: '学生', label: '学生', reverseLabel: '老师' },
+  { value: '上司', label: '上司', reverseLabel: '下属' },
+  { value: '下属', label: '下属', reverseLabel: '上司' },
+  { value: '老板', label: '老板', reverseLabel: '员工' },
+  { value: '员工', label: '员工', reverseLabel: '老板' },
+  { value: '室友', label: '室友', reverseLabel: '室友' },
+  { value: '邻居', label: '邻居', reverseLabel: '邻居' },
+  { value: '青梅竹马', label: '青梅竹马', femaleLabel: '青梅竹马', reverseLabel: '青梅竹马' },
+  { value: '初恋', label: '初恋', femaleLabel: '初恋', reverseLabel: '初恋' },
+  { value: '前任', label: '前任', femaleLabel: '前任', reverseLabel: '前任' },
+  { value: '恩人', label: '恩人', reverseLabel: '受恩者' },
+  { value: '仇人', label: '仇人', reverseLabel: '仇人' },
+  { value: '情人', label: '情人', femaleLabel: '情人', reverseLabel: '情人' },
+  { value: '暧昧对象', label: '暧昧对象', femaleLabel: '暧昧对象', reverseLabel: '暧昧对象' },
+  { value: '生意伙伴', label: '生意伙伴', reverseLabel: '生意伙伴' },
+  { value: '竞争对手', label: '竞争对手', reverseLabel: '竞争对手' },
+];
+
 // 生成唯一ID
 export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
