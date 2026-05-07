@@ -67,23 +67,10 @@ export default function NovelDatabaseScreen() {
   };
 
   // 删除小说
-  const handleDeleteNovel = useCallback((novel: Novel, e: any) => {
-    e.stopPropagation();
-    Alert.alert(
-      '确认删除',
-      `确定要删除小说"${novel.name}"吗？此操作不可恢复。`,
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteNovel(novel.id);
-            loadAllNovels();
-          }
-        }
-      ]
-    );
+  const handleDeleteNovel = useCallback(async (novel: Novel, e: any) => {
+    e?.stopPropagation?.();
+    await deleteNovel(novel.id);
+    await loadAllNovels();
   }, [loadAllNovels]);
 
   // 返回上一页
