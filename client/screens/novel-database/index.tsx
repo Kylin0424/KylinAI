@@ -84,7 +84,7 @@ export default function NovelDatabaseScreen() {
         }
       ]
     );
-  }, [loadNovels]);
+  }, [loadAllNovels]);
 
   // 返回上一页
   const handleBack = () => {
