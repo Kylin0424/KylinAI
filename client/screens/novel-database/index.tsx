@@ -9,6 +9,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
@@ -78,7 +79,7 @@ export default function NovelDatabaseScreen() {
           style: 'destructive',
           onPress: async () => {
             await deleteNovel(novel.id);
-            loadNovels();
+            loadAllNovels();
           }
         }
       ]
