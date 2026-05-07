@@ -6,6 +6,7 @@ export const createStyles = (theme: Theme) => {
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
       paddingHorizontal: Spacing.md,
       paddingTop: Spacing.md,
       paddingBottom: Spacing.sm,
@@ -19,6 +20,15 @@ export const createStyles = (theme: Theme) => {
       borderRadius: 6,
     },
     backText: {
+      marginLeft: Spacing.xs,
+    },
+    saveStatus: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.sm,
+    },
+    saveStatusText: {
       marginLeft: Spacing.xs,
     },
     scrollContent: {

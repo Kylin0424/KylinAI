@@ -100,15 +100,20 @@ export default function CharacterScreen() {
   // 还能选择多少个关系
   const remainingSlots = maxRelations - selectedRelations.length;
 
+  // 保存状态
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
   // 状态持久化：加载保存的表单数据
   useEffect(() => {
     loadFormData();
   }, []);
 
-  // 状态持久化：保存表单数据
+  // 状态持久化：保存表单数据（每次输入变化时立即保存）
   useEffect(() => {
+    // 立即保存，不等待
     saveFormData();
-  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience]);
+  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience, familyMembersData]);
 
   // 加载保存的表单数据
   const loadFormData = async () => {
@@ -124,14 +129,22 @@ export default function CharacterScreen() {
         if (data.selectedRelations) setSelectedRelations(data.selectedRelations);
         if (data.familyBackground) setFamilyBackground(data.familyBackground);
         if (data.socialExperience) setSocialExperience(data.socialExperience);
+        if (data.familyMembersData) {
+          try {
+            const members = JSON.parse(data.familyMembersData);
+            setFamilyMembersData(members);
+          } catch (e) {}
+        }
+        console.log('[Character] Form data restored from storage');
       }
     } catch (error) {
       console.error('[Character] Failed to load form data:', error);
     }
   };
 
-  // 保存表单数据
+  // 保存表单数据（同步版本，确保立即保存）
   const saveFormData = async () => {
+    setIsSaving(true);
     try {
       const dataToSave = {
         name,
@@ -142,10 +155,15 @@ export default function CharacterScreen() {
         selectedRelations,
         familyBackground,
         socialExperience,
+        familyMembersData: JSON.stringify(familyMembersData),
+        lastModified: new Date().toISOString(),
       };
       await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
+      setLastSaved(new Date());
     } catch (error) {
       console.error('[Character] Failed to save form data:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -153,6 +171,7 @@ export default function CharacterScreen() {
   const clearFormData = async () => {
     try {
       await AsyncStorage.removeItem(CHARACTER_FORM_STORAGE_KEY);
+      console.log('[Character] Form data cleared');
     } catch (error) {
       console.error('[Character] Failed to clear form data:', error);
     }
@@ -325,6 +344,10 @@ export default function CharacterScreen() {
 
     // 如果有家庭成员，跳转到关系网络设置页面
     if (membersToUse.length > 0) {
+      // 先保存数据，确保不丢失
+      await saveFormData();
+      console.log('[Character] Form saved, navigating to relation network...');
+      
       // 跳转到关系网络设置页面
       router.push('/relation-network', {
         characterInfo: JSON.stringify(characterInfo),
@@ -334,6 +357,7 @@ export default function CharacterScreen() {
       });
     } else {
       // 没有家庭成员，直接跳转到角色生成结果页面
+      await saveFormData();
       router.push('/character-result', characterInfo);
     }
 
@@ -516,7 +540,7 @@ export default function CharacterScreen() {
 
   return (
     <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
-      {/* Header with Back Button */}
+      {/* Header with Back Button and Save Status */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
           <Feather name="arrow-left" size={20} color={theme.textPrimary} />
@@ -524,6 +548,24 @@ export default function CharacterScreen() {
             返回首页
           </ThemedText>
         </TouchableOpacity>
+        {/* 保存状态指示器 */}
+        <View style={styles.saveStatus}>
+          {isSaving ? (
+            <>
+              <Feather name="loader" size={12} color={theme.textMuted} />
+              <ThemedText variant="tiny" color={theme.textMuted} style={styles.saveStatusText}>
+                保存中...
+              </ThemedText>
+            </>
+          ) : lastSaved ? (
+            <>
+              <Feather name="check-circle" size={12} color="#22c55e" />
+              <ThemedText variant="tiny" color={theme.textMuted} style={styles.saveStatusText}>
+                已保存
+              </ThemedText>
+            </>
+          ) : null}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
