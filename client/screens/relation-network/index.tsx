@@ -17,7 +17,17 @@ import { Character, CharacterRelation, RELATION_OPTIONS } from '@/utils/characte
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CENTER_SIZE = 120;
 const NODE_SIZE = 80;
-const MAX_RELATIONS = 8;
+const INITIAL_NODES = 6; // 初始显示6个位置
+const MAX_NODES_PER_RING = 12; // 每圈最多12个节点
+
+interface RelationNode {
+  id: string;
+  character: Character | null;
+  relation: string | null;
+  relationTo: string | null; // 对方对这个角色的称呼
+  angle: number;
+  radius: number; // 距离中心的半径
+}
 
 interface RelationNode {
   id: string;
@@ -30,9 +40,10 @@ interface RelationNode {
 export default function RelationNetworkScreen() {
   const router = useSafeRouter();
   const params = useSafeSearchParams<{
-    protagonistId: string;
-    protagonistGender: string;
-    protagonistName: string;
+    mainCharacterName?: string;
+    mainCharacterGender?: string;
+    characterInfo?: string;
+    familyMembersData?: string;
   }>();
 
   const { theme } = useTheme();
@@ -40,26 +51,68 @@ export default function RelationNetworkScreen() {
 
   // 主角信息
   const protagonist = {
-    id: params.protagonistId || '',
-    name: params.protagonistName || '主角',
-    gender: params.protagonistGender || '男',
+    id: 'protagonist-' + Date.now(),
+    name: params.mainCharacterName || '主角',
+    gender: params.mainCharacterGender || '男',
   };
 
-  // 关系节点（围绕主角）
+  // 关系节点（围绕主角）- 支持多圈布局
   const [relationNodes, setRelationNodes] = useState<RelationNode[]>(() => {
     const nodes: RelationNode[] = [];
-    for (let i = 0; i < MAX_RELATIONS; i++) {
-      const angle = (i / MAX_RELATIONS) * 2 * Math.PI - Math.PI / 2;
+    // 初始显示6个位置，分两圈排列
+    const firstRingCount = Math.min(INITIAL_NODES, MAX_NODES_PER_RING);
+    for (let i = 0; i < firstRingCount; i++) {
+      const angle = (i / firstRingCount) * 2 * Math.PI - Math.PI / 2;
       nodes.push({
         id: `node-${i}`,
         character: null,
         relation: null,
         relationTo: null,
         angle,
+        radius: 140, // 第一圈距离
       });
     }
     return nodes;
   });
+
+  // 添加更多节点
+  const handleAddMoreNodes = useCallback(() => {
+    setRelationNodes(prev => {
+      const filledCount = prev.filter(n => !n.character).length;
+      // 如果有空位，先用空位
+      if (filledCount > 0) {
+        return prev;
+      }
+      // 需要添加新节点
+      const lastRingCount = prev.filter(n => n.radius === prev[0]?.radius).length;
+      const currentRadius = prev[0]?.radius || 140;
+      
+      if (lastRingCount >= MAX_NODES_PER_RING) {
+        // 需要开新的一圈
+        const newRadius = currentRadius + 80;
+        const newAngle = -Math.PI / 2;
+        return [...prev, {
+          id: `node-${Date.now()}`,
+          character: null,
+          relation: null,
+          relationTo: null,
+          angle: newAngle,
+          radius: newRadius,
+        }];
+      } else {
+        // 在当前圈添加
+        const newAngle = ((lastRingCount + 1) / MAX_NODES_PER_RING) * 2 * Math.PI - Math.PI / 2;
+        return [...prev, {
+          id: `node-${Date.now()}`,
+          character: null,
+          relation: null,
+          relationTo: null,
+          angle: newAngle,
+          radius: currentRadius,
+        }];
+      }
+    });
+  }, []);
 
   // 已选择的角色ID（用于过滤）
   const selectedCharacterIds = useMemo(() => {
@@ -152,9 +205,8 @@ export default function RelationNetworkScreen() {
   }, [relationNodes, router]);
 
   // 计算节点位置
-  const getNodePosition = useCallback((angle: number, isCenter: boolean = false) => {
-    const radius = isCenter ? 0 : 140;
-    const size = isCenter ? CENTER_SIZE : NODE_SIZE;
+  const getNodePosition = useCallback((angle: number, radius: number = 140) => {
+    const size = NODE_SIZE;
     return {
       left: SCREEN_WIDTH / 2 + Math.cos(angle) * radius - size / 2,
       top: 250 + Math.sin(angle) * radius - size / 2,
@@ -208,7 +260,7 @@ export default function RelationNetworkScreen() {
 
             {/* 关系节点 */}
             {relationNodes.map((node, index) => {
-              const position = getNodePosition(node.angle);
+              const position = getNodePosition(node.angle, node.radius);
               
               if (node.character) {
                 // 已添加的角色节点
@@ -272,6 +324,11 @@ export default function RelationNetworkScreen() {
                 );
               })}
           </View>
+
+          {/* 添加更多关系按钮 */}
+          <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddMoreNodes}>
+            <Text style={styles.addMoreBtnText}>+ 添加更多关系</Text>
+          </TouchableOpacity>
 
           {/* 已设置的关系列表 */}
           <View style={styles.relationList}>
@@ -501,6 +558,21 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 2,
     height: 60,
     backgroundColor: theme.border,
+  },
+  addMoreBtn: {
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: theme.primary,
+    borderStyle: 'dashed',
+    marginTop: 16,
+  },
+  addMoreBtnText: {
+    color: theme.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   relationList: {
     marginTop: 24,
