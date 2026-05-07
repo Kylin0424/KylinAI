@@ -14,7 +14,7 @@ import {
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { Spacing, BorderRadius, Theme } from '@/constants/theme';
-import { Novel, getAllNovels, getNovelById, updateNovelCharacter } from '@/utils/novelStorage';
+import { Novel, getAllNovels, getNovelById, updateNovelCharacter, deleteNovel } from '@/utils/novelStorage';
 import { Character, getAllCharacters, saveCharacter } from '@/utils/characterStorage';
 
 export default function NovelDatabaseScreen() {
