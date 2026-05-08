@@ -113,7 +113,7 @@ export default function CharacterScreen() {
   useEffect(() => {
     // 立即保存，不等待
     saveFormData();
-  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience, familyMembersData]);
+  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience, stagedFamilyMembers]);
 
   // 加载保存的表单数据
   const loadFormData = async () => {
