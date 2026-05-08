@@ -161,55 +161,55 @@ export default function CharacterScreen() {
 
   // 状态持久化：保存表单数据（每次输入变化时立即保存）
   useEffect(() => {
-    saveFormData();
+    const saveData = async () => {
+      setIsSaving(true);
+      try {
+        const dataToSave = {
+          // 主角基本信息
+          name,
+          gender,
+          ageInput,
+          heightInput,
+          weightInput,
+          groupInput,
+          positionInput,
+          occupation,
+          education,
+          // 家庭设置
+          memberCount,
+          selectedRelations,
+          familyMembersBrief,
+          familyBackground,
+          socialExperience,
+          // 家庭成员数据
+          familyMembersData: JSON.stringify(stagedFamilyMembers),
+          // 当前正在设置的家庭成员
+          currentMemberIndex,
+          currentRelationType,
+          currentMember: {
+            memberName,
+            memberGender,
+            memberAge,
+            memberHeight,
+            memberWeight,
+            memberOccupation,
+            memberEducation,
+            memberGroup,
+            memberPosition,
+          },
+          lastModified: new Date().toISOString(),
+        };
+        await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('[Character] Failed to save form data:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    };
+    saveData();
   }, [name, gender, ageInput, heightInput, weightInput, groupInput, positionInput, occupation, education, memberCount, selectedRelations, familyMembersBrief, familyBackground, socialExperience, stagedFamilyMembers, currentMemberIndex, currentRelationType, memberName, memberGender, memberAge, memberHeight, memberWeight, memberOccupation, memberEducation, memberGroup, memberPosition]);
 
-  // 保存表单数据
-  const saveFormData = async () => {
-    setIsSaving(true);
-    try {
-      const dataToSave = {
-        // 主角基本信息
-        name,
-        gender,
-        ageInput,
-        heightInput,
-        weightInput,
-        groupInput,
-        positionInput,
-        occupation,
-        education,
-        // 家庭设置
-        memberCount,
-        selectedRelations,
-        familyMembersBrief,
-        familyBackground,
-        socialExperience,
-        // 家庭成员数据
-        familyMembersData: JSON.stringify(stagedFamilyMembers),
-        // 当前正在设置的家庭成员
-        currentMemberIndex,
-        currentRelationType,
-        currentMember: {
-          memberName,
-          memberGender,
-          memberAge,
-          memberHeight,
-          memberWeight,
-          memberOccupation,
-          memberEducation,
-          memberGroup,
-          memberPosition,
-        },
-        lastModified: new Date().toISOString(),
-      };
-      await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('[Character] Failed to save form data:', error);
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   // 清除保存的表单数据
@@ -485,6 +485,30 @@ export default function CharacterScreen() {
   };
 
   const handleCancelFamilyMemberSetup = () => {
+    // 取消时先保存当前正在编辑的家庭成员
+    if (memberName.trim()) {
+      const member = {
+        relation: currentRelationType,
+        name: memberName.trim(),
+        gender: memberGender,
+        age: memberAge,
+        height: `${memberHeight.trim()}cm`,
+        weight: `${memberWeight.trim()}kg`,
+        occupation: memberOccupation,
+        education: memberEducation === '手动输入' ? memberEducationCustom.trim() || '未设定' : memberEducation,
+        group: memberGroup.trim() || '未设定',
+        position: memberPosition.trim() || '未设定',
+      };
+      // 更新已存在的成员或添加新成员
+      const existingIndex = stagedFamilyMembers.findIndex(m => m.relation === currentRelationType);
+      if (existingIndex >= 0) {
+        const updated = [...stagedFamilyMembers];
+        updated[existingIndex] = member;
+        setStagedFamilyMembers(updated);
+      } else {
+        setStagedFamilyMembers([...stagedFamilyMembers, member]);
+      }
+    }
     setShowFamilyMemberSetupModal(false);
   };
 
