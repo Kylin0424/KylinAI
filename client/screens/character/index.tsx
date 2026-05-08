@@ -268,7 +268,7 @@ export default function CharacterScreen() {
     proceedToGeneration();
   };
 
-  const proceedToGeneration = (finalMembers?: any[]) => {
+  const proceedToGeneration = async (finalMembers?: any[]) => {
     setIsGenerating(true);
     // 如果传入了最终成员列表，使用它；否则使用 state
     const membersToUse = finalMembers || stagedFamilyMembers;
