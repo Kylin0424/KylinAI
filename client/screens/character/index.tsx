@@ -364,7 +364,7 @@ export default function CharacterScreen() {
     setIsGenerating(false);
   };
 
-  const handleSaveFamilyMember = () => {
+  const handleSaveFamilyMember = async () => {
     // 验证必填字段
     if (!memberName.trim()) {
       alert('请输入姓名');
