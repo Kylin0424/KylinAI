@@ -132,7 +132,7 @@ export default function CharacterScreen() {
         if (data.familyMembersData) {
           try {
             const members = JSON.parse(data.familyMembersData);
-            setFamilyMembersData(members);
+            setStagedFamilyMembers(members);
           } catch (e) {}
         }
         console.log('[Character] Form data restored from storage');
@@ -155,7 +155,7 @@ export default function CharacterScreen() {
         selectedRelations,
         familyBackground,
         socialExperience,
-        familyMembersData: JSON.stringify(familyMembersData),
+        familyMembersData: JSON.stringify(stagedFamilyMembers),
         lastModified: new Date().toISOString(),
       };
       await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
