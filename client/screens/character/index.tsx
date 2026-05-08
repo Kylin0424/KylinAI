@@ -111,14 +111,23 @@ export default function CharacterScreen() {
         const savedData = await AsyncStorage.getItem(CHARACTER_FORM_STORAGE_KEY);
         if (savedData) {
           const data = JSON.parse(savedData);
+          // 主角基本信息
           setName(data.name || '');
           setGender(data.gender || '');
           setAgeInput(data.ageInput || '');
+          setHeightInput(data.heightInput || '');
+          setWeightInput(data.weightInput || '');
+          setGroupInput(data.groupInput || '');
+          setPositionInput(data.positionInput || '');
           setOccupation(data.occupation || '');
-          setMemberCount(data.memberCount || 0);
+          setEducation(data.education || '');
+          // 家庭设置
+          setMemberCount(data.memberCount || 3);
           setSelectedRelations(data.selectedRelations || []);
+          setFamilyMembersBrief(data.familyMembersBrief || '');
           setFamilyBackground(data.familyBackground || '');
           setSocialExperience(data.socialExperience || '');
+          // 家庭成员数据
           if (data.familyMembersData) {
             try {
               const members = JSON.parse(data.familyMembersData);
@@ -126,6 +135,20 @@ export default function CharacterScreen() {
             } catch (e) {
               console.error('[Character] Failed to parse family members:', e);
             }
+          }
+          // 当前正在设置的家庭成员
+          setCurrentMemberIndex(data.currentMemberIndex || 0);
+          setCurrentRelationType(data.currentRelationType || '');
+          if (data.currentMember) {
+            setMemberName(data.currentMember.memberName || '');
+            setMemberGender(data.currentMember.memberGender || '');
+            setMemberAge(data.currentMember.memberAge || '');
+            setMemberHeight(data.currentMember.memberHeight || '');
+            setMemberWeight(data.currentMember.memberWeight || '');
+            setMemberOccupation(data.currentMember.memberOccupation || '');
+            setMemberEducation(data.currentMember.memberEducation || '');
+            setMemberGroup(data.currentMember.memberGroup || '');
+            setMemberPosition(data.currentMember.memberPosition || '');
           }
           console.log('[Character] Form data restored from storage');
         }
@@ -138,24 +161,46 @@ export default function CharacterScreen() {
 
   // 状态持久化：保存表单数据（每次输入变化时立即保存）
   useEffect(() => {
-    // 立即保存，不等待
     saveFormData();
-  }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience, stagedFamilyMembers]);
+  }, [name, gender, ageInput, heightInput, weightInput, groupInput, positionInput, occupation, education, memberCount, selectedRelations, familyMembersBrief, familyBackground, socialExperience, stagedFamilyMembers, currentMemberIndex, currentRelationType, memberName, memberGender, memberAge, memberHeight, memberWeight, memberOccupation, memberEducation, memberGroup, memberPosition]);
 
-  // 保存表单数据（同步版本，确保立即保存）
+  // 保存表单数据
   const saveFormData = async () => {
     setIsSaving(true);
     try {
       const dataToSave = {
+        // 主角基本信息
         name,
         gender,
         ageInput,
+        heightInput,
+        weightInput,
+        groupInput,
+        positionInput,
         occupation,
+        education,
+        // 家庭设置
         memberCount,
         selectedRelations,
+        familyMembersBrief,
         familyBackground,
         socialExperience,
+        // 家庭成员数据
         familyMembersData: JSON.stringify(stagedFamilyMembers),
+        // 当前正在设置的家庭成员
+        currentMemberIndex,
+        currentRelationType,
+        currentMember: {
+          memberName,
+          memberGender,
+          memberAge,
+          memberHeight,
+          memberWeight,
+          memberOccupation,
+          memberEducation,
+          memberGroup,
+          memberPosition,
+        },
         lastModified: new Date().toISOString(),
       };
       await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
