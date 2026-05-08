@@ -106,7 +106,34 @@ export default function CharacterScreen() {
 
   // 状态持久化：加载保存的表单数据
   useEffect(() => {
-    loadFormData();
+    const loadData = async () => {
+      try {
+        const savedData = await AsyncStorage.getItem(CHARACTER_FORM_STORAGE_KEY);
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          setName(data.name || '');
+          setGender(data.gender || '');
+          setAgeInput(data.ageInput || '');
+          setOccupation(data.occupation || '');
+          setMemberCount(data.memberCount || 0);
+          setSelectedRelations(data.selectedRelations || []);
+          setFamilyBackground(data.familyBackground || '');
+          setSocialExperience(data.socialExperience || '');
+          if (data.familyMembersData) {
+            try {
+              const members = JSON.parse(data.familyMembersData);
+              setStagedFamilyMembers(members || []);
+            } catch (e) {
+              console.error('[Character] Failed to parse family members:', e);
+            }
+          }
+          console.log('[Character] Form data restored from storage');
+        }
+      } catch (error) {
+        console.error('[Character] Failed to load form data:', error);
+      }
+    };
+    loadData();
   }, []);
 
   // 状态持久化：保存表单数据（每次输入变化时立即保存）
@@ -114,33 +141,6 @@ export default function CharacterScreen() {
     // 立即保存，不等待
     saveFormData();
   }, [name, gender, ageInput, occupation, memberCount, selectedRelations, familyBackground, socialExperience, stagedFamilyMembers]);
-
-  // 加载保存的表单数据
-  const loadFormData = async () => {
-    try {
-      const savedData = await AsyncStorage.getItem(CHARACTER_FORM_STORAGE_KEY);
-      if (savedData) {
-        const data = JSON.parse(savedData);
-        if (data.name) setName(data.name);
-        if (data.gender) setGender(data.gender);
-        if (data.ageInput) setAgeInput(data.ageInput);
-        if (data.occupation) setOccupation(data.occupation);
-        if (data.memberCount !== undefined) setMemberCount(data.memberCount);
-        if (data.selectedRelations) setSelectedRelations(data.selectedRelations);
-        if (data.familyBackground) setFamilyBackground(data.familyBackground);
-        if (data.socialExperience) setSocialExperience(data.socialExperience);
-        if (data.familyMembersData) {
-          try {
-            const members = JSON.parse(data.familyMembersData);
-            setStagedFamilyMembers(members);
-          } catch (e) {}
-        }
-        console.log('[Character] Form data restored from storage');
-      }
-    } catch (error) {
-      console.error('[Character] Failed to load form data:', error);
-    }
-  };
 
   // 保存表单数据（同步版本，确保立即保存）
   const saveFormData = async () => {
