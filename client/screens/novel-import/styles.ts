@@ -43,7 +43,7 @@ export const createStyles = (theme: any) =>
 
     // 上传区域
     uploadSection: {
-      backgroundColor: theme.surface,
+      backgroundColor: backgroundTertiary,
       borderRadius: 12,
       padding: Spacing.xl,
       alignItems: 'center',
@@ -78,7 +78,7 @@ export const createStyles = (theme: any) =>
 
     // 进度区域
     progressSection: {
-      backgroundColor: theme.surface,
+      backgroundColor: backgroundTertiary,
       borderRadius: 12,
       padding: Spacing.lg,
       marginBottom: Spacing.lg,
@@ -109,7 +109,7 @@ export const createStyles = (theme: any) =>
 
     // 结果区域
     resultSection: {
-      backgroundColor: theme.surface,
+      backgroundColor: backgroundTertiary,
       borderRadius: 12,
       padding: Spacing.lg,
       marginBottom: Spacing.lg,
@@ -363,6 +363,6 @@ export const createStyles = (theme: any) =>
       borderWidth: 1,
       borderColor: theme.border,
       alignItems: 'center',
-      backgroundColor: theme.surface,
+      backgroundColor: backgroundTertiary,
     },
   });

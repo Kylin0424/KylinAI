@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Character, CharacterRelation, RELATION_OPTIONS } from '@/utils/characterStorage';
+import { useThemeContext } from '@/contexts/ThemeContext';
+import { Character, CharacterRelation, RELATION_OPTIONS, getAllCharacters } from '@/utils/characterStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CENTER_SIZE = 120;
@@ -46,7 +46,7 @@ export default function RelationNetworkScreen() {
     familyMembersData?: string;
   }>();
 
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   // 主角信息
@@ -505,13 +505,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     zIndex: 5,
   },
   emptyNode: {
-    backgroundColor: theme.surface,
+    backgroundColor: backgroundTertiary,
     borderWidth: 2,
     borderColor: theme.border,
     borderStyle: 'dashed',
   },
   filledNode: {
-    backgroundColor: theme.surface,
+    backgroundColor: backgroundTertiary,
     borderWidth: 2,
     borderColor: theme.primary,
   },
@@ -591,7 +591,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: 20,
   },
   relationItem: {
-    backgroundColor: theme.surface,
+    backgroundColor: backgroundTertiary,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,

@@ -106,6 +106,8 @@ export default function CharacterScreen() {
   const [selectedMemberOccupationCategory, setSelectedMemberOccupationCategory] = useState<string | null>(null);
   const [memberCustomOccupation, setMemberCustomOccupation] = useState('');
   const [showMemberCustomOccupationInput, setShowMemberCustomOccupationInput] = useState(false);
+  const [memberBrief, setMemberBrief] = useState(''); // 家庭成员简述
+  const [currentMemberRelation, setCurrentMemberRelation] = useState(''); // 当前设置的关系（与主角）
 
   // 最多可选的关系数 = 家庭成员人数 - 1（减去自己）
   const maxRelations = memberCount - 1;

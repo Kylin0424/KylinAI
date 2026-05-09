@@ -855,7 +855,7 @@ export const createStyles = (theme: Theme) => {
       paddingVertical: 40,
     },
     characterItem: {
-      backgroundColor: theme.surface,
+      backgroundColor: theme.backgroundTertiary,
       borderRadius: 12,
       padding: Spacing.sm,
       marginBottom: Spacing.xs,
