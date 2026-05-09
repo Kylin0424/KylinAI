@@ -210,8 +210,6 @@ export default function CharacterScreen() {
     saveData();
   }, [name, gender, ageInput, heightInput, weightInput, groupInput, positionInput, occupation, education, memberCount, selectedRelations, familyMembersBrief, familyBackground, socialExperience, stagedFamilyMembers, currentMemberIndex, currentRelationType, memberName, memberGender, memberAge, memberHeight, memberWeight, memberOccupation, memberEducation, memberGroup, memberPosition]);
 
-  };
-
   // 清除保存的表单数据
   const clearFormData = async () => {
     try {
