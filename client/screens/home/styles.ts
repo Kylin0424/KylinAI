@@ -854,6 +854,21 @@ export const createStyles = (theme: Theme) => {
       justifyContent: 'center',
       paddingVertical: 40,
     },
+    characterItem: {
+      backgroundColor: theme.surface,
+      borderRadius: 12,
+      padding: Spacing.sm,
+      marginBottom: Spacing.xs,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    characterInfo: {
+      flex: 1,
+    },
+    characterNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
     characterItemSelected: {
       backgroundColor: theme.backgroundTertiary,
       borderWidth: 1,

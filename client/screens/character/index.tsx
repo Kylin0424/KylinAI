@@ -56,7 +56,7 @@ export default function CharacterScreen() {
     groupInput: '', positionInput: '', occupation: '', customOccupation: '', education: '',
     customEducation: '', memberCount: 3, selectedRelations: [] as string[],
     familyMembersBrief: '', familyBackground: '', socialExperience: '',
-    stagedFamilyMembers: [] as FamilyMember[],
+    stagedFamilyMembers: [] as any[],
     currentMemberIndex: -1, currentMemberRelation: '',
     memberName: '', memberGender: '', memberAge: '', memberHeight: '',
     memberWeight: '', memberOccupation: '', memberEducation: '',
