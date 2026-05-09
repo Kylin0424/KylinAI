@@ -50,6 +50,19 @@ export default function CharacterScreen() {
 
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 使用 ref 存储最新的 state，用于在回调中访问最新值
+  const stateRef = useRef({
+    name: '', gender: '', customGender: '', ageInput: '', heightInput: '', weightInput: '',
+    groupInput: '', positionInput: '', occupation: '', customOccupation: '', education: '',
+    customEducation: '', memberCount: 3, selectedRelations: [] as string[],
+    familyMembersBrief: '', familyBackground: '', socialExperience: '',
+    stagedFamilyMembers: [] as FamilyMember[],
+    currentMemberIndex: -1, currentMemberRelation: '',
+    memberName: '', memberGender: '', memberAge: '', memberHeight: '',
+    memberWeight: '', memberOccupation: '', memberEducation: '',
+    memberGroup: '', memberPosition: '', memberBrief: ''
+  });
+
   // 手动输入的基本信息
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
@@ -104,6 +117,27 @@ export default function CharacterScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  // 保存表单数据的函数（使用 ref 获取最新值）
+  const saveFormData = async () => {
+    try {
+      const formData = {
+        name, gender, customGender, ageInput, heightInput, weightInput,
+        groupInput, positionInput, occupation, customOccupation, education, customEducation,
+        memberCount, selectedRelations,
+        familyMembersBrief, familyBackground, socialExperience,
+        stagedFamilyMembers,
+        currentMemberIndex, currentMemberRelation,
+        memberName, memberGender, memberAge, memberHeight,
+        memberWeight, memberOccupation, memberEducation,
+        memberGroup, memberPosition, memberBrief
+      };
+      await AsyncStorage.setItem(CHARACTER_FORM_STORAGE_KEY, JSON.stringify(formData));
+      setLastSaved(new Date());
+    } catch (e) {
+      console.error('保存失败:', e);
+    }
+  };
+
   // 状态持久化：加载保存的表单数据
   useEffect(() => {
     const loadData = async () => {
@@ -128,27 +162,33 @@ export default function CharacterScreen() {
           setFamilyBackground(data.familyBackground || '');
           setSocialExperience(data.socialExperience || '');
           // 家庭成员数据
-          if (data.familyMembersData) {
+          if (data.stagedFamilyMembers) {
+            setStagedFamilyMembers(data.stagedFamilyMembers || []);
+          } else if (data.familyMembersData) {
+            // 兼容旧格式
             try {
-              const members = JSON.parse(data.familyMembersData);
+              const members = typeof data.familyMembersData === 'string' 
+                ? JSON.parse(data.familyMembersData) 
+                : data.familyMembersData;
               setStagedFamilyMembers(members || []);
             } catch (e) {
               console.error('[Character] Failed to parse family members:', e);
             }
           }
           // 当前正在设置的家庭成员
-          setCurrentMemberIndex(data.currentMemberIndex || 0);
-          setCurrentRelationType(data.currentRelationType || '');
-          if (data.currentMember) {
-            setMemberName(data.currentMember.memberName || '');
-            setMemberGender(data.currentMember.memberGender || '');
-            setMemberAge(data.currentMember.memberAge || '');
-            setMemberHeight(data.currentMember.memberHeight || '');
-            setMemberWeight(data.currentMember.memberWeight || '');
-            setMemberOccupation(data.currentMember.memberOccupation || '');
-            setMemberEducation(data.currentMember.memberEducation || '');
-            setMemberGroup(data.currentMember.memberGroup || '');
-            setMemberPosition(data.currentMember.memberPosition || '');
+          setCurrentMemberIndex(data.currentMemberIndex ?? 0);
+          setCurrentRelationType(data.currentMemberRelation || '');
+          if (data.memberName || data.memberGender) {
+            setMemberName(data.memberName || '');
+            setMemberGender(data.memberGender || '');
+            setMemberAge(data.memberAge || '');
+            setMemberHeight(data.memberHeight || '');
+            setMemberWeight(data.memberWeight || '');
+            setMemberOccupation(data.memberOccupation || '');
+            setMemberEducation(data.memberEducation || '');
+            setMemberGroup(data.memberGroup || '');
+            setMemberPosition(data.memberPosition || '');
+            setMemberBrief(data.memberBrief || '');
           }
           console.log('[Character] Form data restored from storage');
         }
