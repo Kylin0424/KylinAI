@@ -139,10 +139,10 @@ export default function NovelDatabaseScreen() {
           <Text style={styles.novelIconText}>📖</Text>
         </View>
         <View style={styles.novelInfo}>
-          <Text style={styles.novelTitle}>{novel.name}</Text>
+          <Text style={styles.novelTitle}>{novel.title}</Text>
           <Text style={styles.novelMeta}>
             {hasCharacters ? '✅ 已绑定角色' : '⏳ 未绑定角色'}
-            {novel.worldSettings ? ' | 📝 世界设定' : ''}
+            {(novel.worldName || novel.eraBackground) ? ' | 📝 世界设定' : ''}
             {novel.chapters && novel.chapters.length > 0 ? ` | 📄 ${novel.chapters.length}章节` : ''}
           </Text>
         </View>

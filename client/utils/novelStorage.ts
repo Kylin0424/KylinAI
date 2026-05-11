@@ -14,6 +14,7 @@ export interface NovelChapter {
 export interface Novel {
   id: string;
   title: string;
+  name?: string; // 别名，与 title 相同
   theme: string;
   themeType: string; // 小说主题类型
   maleCharacterId?: string; // 男主ID
@@ -21,6 +22,7 @@ export interface Novel {
   sideCharacterIds: string[]; // 配角ID列表
   chapters: NovelChapter[];
   content: string; // 当前续写内容
+  worldSettings?: string; // 世界设定（背景设定）
   createdAt: number;
   updatedAt: number;
   status: 'draft' | 'writing' | 'completed';

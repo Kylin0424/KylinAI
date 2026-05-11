@@ -75,6 +75,22 @@ export default function RelationNetworkScreen() {
     return nodes;
   });
 
+  // 解析 familyMembersData 获取可用角色列表
+  const [availableFamilyMembers, setAvailableFamilyMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (params.familyMembersData) {
+      try {
+        const parsed = JSON.parse(params.familyMembersData);
+        if (Array.isArray(parsed)) {
+          setAvailableFamilyMembers(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to parse familyMembersData:', e);
+      }
+    }
+  }, [params.familyMembersData]);
+
   // 添加更多节点
   const handleAddMoreNodes = useCallback(() => {
     setRelationNodes(prev => {
@@ -134,17 +150,16 @@ export default function RelationNetworkScreen() {
   const [showRelationModal, setShowRelationModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
 
-  // 打开角色选择弹窗
-  const handleOpenCharacterSelect = useCallback(async (nodeIndex: number) => {
-    const allChars = await getAllCharacters();
+  // 打开角色选择弹窗 - 使用从URL参数传递的角色数据
+  const handleOpenCharacterSelect = useCallback((nodeIndex: number) => {
     // 过滤掉已选择的角色和主角自己
-    const available = allChars.filter(
+    const available = availableFamilyMembers.filter(
       c => !selectedCharacterIds.includes(c.id) && c.id !== protagonist.id
     );
     setAvailableCharacters(available);
     setEditingNodeIndex(nodeIndex);
     setShowCharacterModal(true);
-  }, [selectedCharacterIds, protagonist.id]);
+  }, [availableFamilyMembers, selectedCharacterIds, protagonist.id]);
 
   // 选择角色
   const handleSelectCharacter = useCallback((character: Character) => {
@@ -362,13 +377,25 @@ export default function RelationNetworkScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShowCharacterModal(false)} style={styles.backButton}>
+                  <Text style={styles.backButtonText}>← 返回</Text>
+                </TouchableOpacity>
                 <Text style={styles.modalTitle}>选择角色</Text>
                 <TouchableOpacity onPress={() => setShowCharacterModal(false)}>
                   <Text style={styles.closeBtn}>×</Text>
                 </TouchableOpacity>
               </View>
               {availableCharacters.length === 0 ? (
-                <Text style={styles.emptyText}>没有可选择的角色</Text>
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>没有可选择的角色</Text>
+                  <Text style={styles.emptyHint}>请先在角色生成页面添加家庭成员</Text>
+                  <TouchableOpacity 
+                    style={styles.goBackButton}
+                    onPress={() => setShowCharacterModal(false)}
+                  >
+                    <Text style={styles.goBackButtonText}>返回上一页</Text>
+                  </TouchableOpacity>
+                </View>
               ) : (
                 <FlatList
                   data={availableCharacters}
