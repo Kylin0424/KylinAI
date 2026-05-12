@@ -102,20 +102,34 @@ export const FloatingBall: React.FC<FloatingBallProps> = ({ onNavigate }) => {
   // 菜单旋转角度
   const menuRotation = useSharedValue(0);
 
-  // 菜单项动画（8个菜单项）
-  const menuItemScales = useRef<SharedValue<number>[]>(
-    Array.from({ length: 8 }, () => useSharedValue(0))
-  ).current;
-  const menuItemOpacities = useRef<SharedValue<number>[]>(
-    Array.from({ length: 8 }, () => useSharedValue(0))
-  ).current;
+  // 菜单项动画（8个菜单项）- 使用单独的 SharedValue 数组
+  const menuItemScales = [
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+  ];
+  const menuItemOpacities = [
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+  ];
 
   // 重置菜单动画
   const resetMenuAnimations = useCallback(() => {
     menuItemScales.forEach(scale => { scale.value = 0; });
     menuItemOpacities.forEach(opacity => { opacity.value = 0; });
     menuRotation.value = 0;
-  }, []);
+  }, [menuItemScales, menuItemOpacities, menuRotation]);
 
   // 菜单项配置
   const menuItems: MenuItem[] = [

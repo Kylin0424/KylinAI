@@ -214,7 +214,7 @@ export const createStyles = (theme: Theme) =>
       backgroundColor: '#F5F0E6',
     },
     themeOptionSystem: {
-      backgroundColor: 'linear-gradient(135deg, #FFFFFF 50%, #1C1C1E 50%)',
+      experimental_backgroundImage: 'linear-gradient(135deg, #FFFFFF 50%, #1C1C1E 50%)',
       borderWidth: 1,
       borderColor: '#E5E7EB',
     },

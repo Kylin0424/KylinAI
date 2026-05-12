@@ -29,14 +29,6 @@ interface RelationNode {
   radius: number; // 距离中心的半径
 }
 
-interface RelationNode {
-  id: string;
-  character: Character | null;
-  relation: string | null;
-  relationTo: string | null; // 对方对这个角色的称呼
-  angle: number;
-}
-
 export default function RelationNetworkScreen() {
   const router = useSafeRouter();
   const params = useSafeSearchParams<{
@@ -48,10 +40,11 @@ export default function RelationNetworkScreen() {
 
   const { theme } = useThemeContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const [protagonistId] = useState(() => `protagonist-${Date.now()}`);
 
   // 主角信息
   const protagonist = {
-    id: 'protagonist-' + Date.now(),
+    id: protagonistId,
     name: params.mainCharacterName || '主角',
     gender: params.mainCharacterGender || '男',
   };
@@ -268,7 +261,7 @@ export default function RelationNetworkScreen() {
           {/* 关系网络图 */}
           <View style={styles.networkContainer}>
             {/* 中心主角 */}
-            <View style={[styles.centerNode, getNodePosition(0, true)]}>
+            <View style={[styles.centerNode, getNodePosition(0, 0)]}>
               <Text style={styles.protagonistName}>{protagonist.name}</Text>
               <Text style={styles.protagonistLabel}>主角</Text>
             </View>
@@ -390,10 +383,10 @@ export default function RelationNetworkScreen() {
                   <Text style={styles.emptyText}>没有可选择的角色</Text>
                   <Text style={styles.emptyHint}>请先在角色生成页面添加家庭成员</Text>
                   <TouchableOpacity 
-                    style={styles.goBackButton}
+                    style={styles.backButton}
                     onPress={() => setShowCharacterModal(false)}
                   >
-                    <Text style={styles.goBackButtonText}>返回上一页</Text>
+                    <Text style={styles.backButtonText}>返回上一页</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -407,7 +400,7 @@ export default function RelationNetworkScreen() {
                     >
                       <Text style={styles.characterName}>{item.name}</Text>
                       <Text style={styles.characterGender}>
-                        {item.basicInfo?.gender === '男' ? '♂' : '♀'}
+                        {item.gender === '男' ? '男' : '女'}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -448,7 +441,7 @@ export default function RelationNetworkScreen() {
                       </Text>
                     )}
                     <Text style={styles.relationOptionReverse}>
-                      ↔ {option.reverseLabel}
+                      {'<->'} {option.reverseLabel}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -478,6 +471,18 @@ const createStyles = (theme: any) => StyleSheet.create({
   backBtn: {
     fontSize: 18,
     color: theme.primary,
+  },
+  backButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: theme.backgroundTertiary,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: theme.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   title: {
     fontSize: 18,
@@ -616,6 +621,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.textSecondary,
     fontSize: 14,
     paddingVertical: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 400,
+  },
+  emptyHint: {
+    textAlign: 'center',
+    color: theme.textSecondary,
+    fontSize: 14,
+    marginTop: 8,
   },
   relationItem: {
     backgroundColor: theme.backgroundTertiary,

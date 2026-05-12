@@ -269,7 +269,7 @@ export default function HomeScreen() {
       }
       // 锁定配角
       for (const sideChar of selectedSideCharacters) {
-        await linkCharacterToNovel(sideChar.id, novel.id, 'side');
+        await linkCharacterToNovel(sideChar.id, novel.id, 'npc');
       }
 
       // 关闭世界设定弹窗

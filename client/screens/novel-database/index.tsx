@@ -29,26 +29,8 @@ export default function NovelDatabaseScreen() {
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'characters' | 'settings' | 'plot'>('characters');
 
-  // 如果有传入的 novelId，加载对应小说
-  useEffect(() => {
-    if (params.novelId) {
-      loadNovel(params.novelId);
-    } else {
-      // 没有传入 novelId，加载所有小说列表
-      loadAllNovels();
-    }
-  }, [params.novelId]);
-
-  // 加载所有小说
-  const loadAllNovels = async () => {
-    const novels = await getAllNovels();
-    setAllNovels(novels);
-    setCurrentNovel(null);
-    setCharacters([]);
-  };
-
   // 加载指定小说
-  const loadNovel = async (novelId: string) => {
+  const loadNovel = useCallback(async (novelId: string) => {
     const novel = await getNovelById(novelId);
     if (novel) {
       setCurrentNovel(novel);
@@ -59,7 +41,25 @@ export default function NovelDatabaseScreen() {
       if (novel.sideCharacters) novelChars.push(...novel.sideCharacters);
       setCharacters(novelChars);
     }
-  };
+  }, []);
+
+  // 加载所有小说
+  const loadAllNovels = useCallback(async () => {
+    const novels = await getAllNovels();
+    setAllNovels(novels);
+    setCurrentNovel(null);
+    setCharacters([]);
+  }, []);
+
+  // 如果有传入的 novelId，加载对应小说
+  useEffect(() => {
+    if (params.novelId) {
+      loadNovel(params.novelId);
+    } else {
+      // 没有传入 novelId，加载所有小说列表
+      loadAllNovels();
+    }
+  }, [params.novelId, loadNovel, loadAllNovels]);
 
   // 选择小说
   const handleSelectNovel = (novel: Novel) => {
@@ -355,10 +355,10 @@ export default function NovelDatabaseScreen() {
                       </Text>
                     </View>
                     
-                    {selectedChar.personalityDescription && (
+                    {selectedChar.personality && (
                       <View style={styles.detailSection}>
                         <Text style={styles.detailLabel}>性格特点</Text>
-                        <Text style={styles.detailText}>{selectedChar.personalityDescription}</Text>
+                        <Text style={styles.detailText}>{selectedChar.personality}</Text>
                       </View>
                     )}
                     
@@ -369,10 +369,10 @@ export default function NovelDatabaseScreen() {
                       </View>
                     )}
                     
-                    {selectedChar.appearanceDescription && (
+                    {selectedChar.appearance && (
                       <View style={styles.detailSection}>
                         <Text style={styles.detailLabel}>外貌特征</Text>
-                        <Text style={styles.detailText}>{selectedChar.appearanceDescription}</Text>
+                        <Text style={styles.detailText}>{selectedChar.appearance}</Text>
                       </View>
                     )}
                     

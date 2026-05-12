@@ -42,6 +42,7 @@ export default function RootLayout() {
               <Stack.Screen name="character-detail" options={{ title: "角色详情" }} />
               <Stack.Screen name="relation-network" options={{ title: "关系网络" }} />
               <Stack.Screen name="novel-database" options={{ title: "小说数据库" }} />
+              <Stack.Screen name="novel-text-editor" options={{ title: "小说编辑器" }} />
             </Stack>
             <Toast />
           </GestureHandlerRootView>
