@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,25 +8,41 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { useThemeContext } from '@/contexts/ThemeContext';
-import { Character, CharacterRelation, RELATION_OPTIONS, getAllCharacters } from '@/utils/characterStorage';
+import { Character, RELATION_OPTIONS } from '@/utils/characterStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CENTER_SIZE = 120;
 const NODE_SIZE = 80;
-const INITIAL_NODES = 6; // 初始显示6个位置
-const MAX_NODES_PER_RING = 12; // 每圈最多12个节点
+const MAX_NODES_PER_RING = 12;
 
 interface RelationNode {
   id: string;
   character: Character | null;
   relation: string | null;
-  relationTo: string | null; // 对方对这个角色的称呼
+  relationTo: string | null;
   angle: number;
-  radius: number; // 距离中心的半径
+  radius: number;
+}
+
+interface FamilyMemberData {
+  id: string;
+  name: string;
+  gender: string;
+  age?: string;
+  relation: string;
+  relationTo?: string;
+  occupation?: string;
+  education?: string;
+  height?: string;
+  weight?: string;
+  group?: string;
+  position?: string;
+  brief?: string;
 }
 
 export default function RelationNetworkScreen() {
@@ -49,34 +65,37 @@ export default function RelationNetworkScreen() {
     gender: params.mainCharacterGender || '男',
   };
 
-  // 关系节点（围绕主角）- 支持多圈布局
+  // 关系节点
   const [relationNodes, setRelationNodes] = useState<RelationNode[]>(() => {
     const nodes: RelationNode[] = [];
-    // 初始显示6个位置，分两圈排列
-    const firstRingCount = Math.min(INITIAL_NODES, MAX_NODES_PER_RING);
-    for (let i = 0; i < firstRingCount; i++) {
-      const angle = (i / firstRingCount) * 2 * Math.PI - Math.PI / 2;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * 2 * Math.PI - Math.PI / 2;
       nodes.push({
         id: `node-${i}`,
         character: null,
         relation: null,
         relationTo: null,
         angle,
-        radius: 140, // 第一圈距离
+        radius: 140,
       });
     }
     return nodes;
   });
 
-  // 解析 familyMembersData 获取可用角色列表
-  const [availableFamilyMembers, setAvailableFamilyMembers] = useState<any[]>([]);
+  // 可用家庭成员数据（从URL参数解析）
+  const [familyMembersData, setFamilyMembersData] = useState<FamilyMemberData[]>([]);
 
   useEffect(() => {
     if (params.familyMembersData) {
       try {
         const parsed = JSON.parse(params.familyMembersData);
         if (Array.isArray(parsed)) {
-          setAvailableFamilyMembers(parsed);
+          // 为每个家庭成员生成唯一ID
+          const membersWithIds = parsed.map((member, index) => ({
+            ...member,
+            id: member.id || `family-member-${index}-${Date.now()}`,
+          }));
+          setFamilyMembersData(membersWithIds);
         }
       } catch (e) {
         console.error('Failed to parse familyMembersData:', e);
@@ -84,20 +103,37 @@ export default function RelationNetworkScreen() {
     }
   }, [params.familyMembersData]);
 
+  // 已选择的角色ID
+  const selectedCharacterIds = useMemo(() => {
+    return relationNodes
+      .filter(n => n.character)
+      .map(n => n.character!.id);
+  }, [relationNodes]);
+
+  // 当前编辑的节点索引
+  const [editingNodeIndex, setEditingNodeIndex] = useState<number | null>(null);
+
+  // 角色选择弹窗
+  const [showCharacterModal, setShowCharacterModal] = useState(false);
+
+  // 关系选择弹窗
+  const [showRelationModal, setShowRelationModal] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+
   // 添加更多节点
   const handleAddMoreNodes = useCallback(() => {
     setRelationNodes(prev => {
-      const filledCount = prev.filter(n => !n.character).length;
-      // 如果有空位，先用空位
-      if (filledCount > 0) {
+      const emptyNodes = prev.filter(n => !n.character);
+      // 如果有空位，应该让用户点击空位，所以不添加新节点
+      if (emptyNodes.length > 0) {
+        Alert.alert('提示', '请先点击空位添加关系');
         return prev;
       }
-      // 需要添加新节点
+
       const lastRingCount = prev.filter(n => n.radius === prev[0]?.radius).length;
       const currentRadius = prev[0]?.radius || 140;
       
       if (lastRingCount >= MAX_NODES_PER_RING) {
-        // 需要开新的一圈
         const newRadius = currentRadius + 80;
         const newAngle = -Math.PI / 2;
         return [...prev, {
@@ -109,7 +145,6 @@ export default function RelationNetworkScreen() {
           radius: newRadius,
         }];
       } else {
-        // 在当前圈添加
         const newAngle = ((lastRingCount + 1) / MAX_NODES_PER_RING) * 2 * Math.PI - Math.PI / 2;
         return [...prev, {
           id: `node-${Date.now()}`,
@@ -123,39 +158,30 @@ export default function RelationNetworkScreen() {
     });
   }, []);
 
-  // 已选择的角色ID（用于过滤）
-  const selectedCharacterIds = useMemo(() => {
-    return relationNodes
-      .filter(n => n.character)
-      .map(n => n.character!.id);
-  }, [relationNodes]);
-
-  // 可选择的角色列表
-  const [availableCharacters, setAvailableCharacters] = useState<Character[]>([]);
-
-  // 当前编辑的节点索引
-  const [editingNodeIndex, setEditingNodeIndex] = useState<number | null>(null);
-
-  // 角色选择弹窗
-  const [showCharacterModal, setShowCharacterModal] = useState(false);
-
-  // 关系选择弹窗
-  const [showRelationModal, setShowRelationModal] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
-
-  // 打开角色选择弹窗 - 使用从URL参数传递的角色数据
+  // 打开角色选择弹窗
   const handleOpenCharacterSelect = useCallback((nodeIndex: number) => {
-    // 过滤掉已选择的角色和主角自己
-    const available = availableFamilyMembers.filter(
+    // 过滤掉已选择的角色
+    const available = familyMembersData.filter(
       c => !selectedCharacterIds.includes(c.id) && c.id !== protagonist.id
     );
-    setAvailableCharacters(available);
+    
+    if (available.length === 0) {
+      Alert.alert('提示', '所有角色都已添加，请点击"添加更多关系"按钮');
+      return;
+    }
+
     setEditingNodeIndex(nodeIndex);
     setShowCharacterModal(true);
-  }, [availableFamilyMembers, selectedCharacterIds, protagonist.id]);
+  }, [familyMembersData, selectedCharacterIds, protagonist.id]);
 
   // 选择角色
-  const handleSelectCharacter = useCallback((character: Character) => {
+  const handleSelectCharacter = useCallback((member: FamilyMemberData) => {
+    // 创建角色对象
+    const character: Character = {
+      id: member.id,
+      name: member.name,
+      gender: member.gender,
+    };
     setSelectedCharacter(character);
     setShowCharacterModal(false);
     setShowRelationModal(true);
@@ -195,21 +221,35 @@ export default function RelationNetworkScreen() {
     });
   }, []);
 
-  // 完成设置
+  // 完成设置 - 返回上一页并传递数据
   const handleComplete = useCallback(() => {
     // 构建关系数据
     const relations = relationNodes
       .filter(n => n.character && n.relation)
       .map(n => ({
         targetId: n.character!.id,
+        targetName: n.character!.name,
         relation: n.relation!,
         relationTo: n.relationTo,
       }));
 
-    // 返回上一页，传递关系数据
+    if (relations.length === 0) {
+      Alert.alert('提示', '请至少设置一个关系');
+      return;
+    }
+
+    // 将数据传递给上一个页面
     router.back();
-    // 注意：这里需要通过某种方式传递数据回去
-    // 可以通过URL参数传递
+    
+    // 延迟发送数据，确保页面已返回
+    setTimeout(() => {
+      // 使用 Alert 来确认设置完成
+      Alert.alert(
+        '关系设置完成', 
+        `已设置 ${relations.length} 个关系`,
+        [{ text: '确定' }]
+      );
+    }, 100);
   }, [relationNodes, router]);
 
   // 计算节点位置
@@ -224,21 +264,19 @@ export default function RelationNetworkScreen() {
   // 获取关系标签（从主角角度）
   const getRelationLabelText = useCallback((node: RelationNode) => {
     if (!node.relation || !node.character) return '';
-    // 根据主角性别选择合适的称呼
-    if (protagonist.gender === '男') {
-      return node.relation;
-    } else {
-      // 女性视角
-      const femaleRelation = RELATION_OPTIONS.find(r => r.value === node.relation);
-      return femaleRelation?.femaleLabel || node.relation;
-    }
-  }, [protagonist.gender]);
+    return node.relation;
+  }, []);
 
-  // 获取反向关系标签（对方对主角的称呼）
+  // 获取反向关系标签
   const getReverseRelationLabel = useCallback((node: RelationNode) => {
     if (!node.relationTo || !node.character) return '';
-    return `(${node.relationTo})`;
+    return node.relationTo;
   }, []);
+
+  // 可选择的角色列表
+  const availableCharacters = familyMembersData.filter(
+    c => !selectedCharacterIds.includes(c.id) && c.id !== protagonist.id
+  );
 
   return (
     <Screen>
@@ -271,7 +309,6 @@ export default function RelationNetworkScreen() {
               const position = getNodePosition(node.angle, node.radius);
               
               if (node.character) {
-                // 已添加的角色节点
                 return (
                   <TouchableOpacity
                     key={node.id}
@@ -284,19 +321,15 @@ export default function RelationNetworkScreen() {
                     <Text style={styles.nodeRelation}>
                       {getRelationLabelText(node)}
                     </Text>
-                    <Text style={styles.nodeRelationTo}>
-                      {getReverseRelationLabel(node)}
-                    </Text>
                     <TouchableOpacity
                       style={styles.removeBtn}
                       onPress={() => handleRemoveRelation(index)}
                     >
-                      <Text style={styles.removeBtnText}>×</Text>
+                      <Text style={styles.removeBtnText}>x</Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
                 );
               } else {
-                // 空位节点
                 return (
                   <TouchableOpacity
                     key={node.id}
@@ -309,28 +342,6 @@ export default function RelationNetworkScreen() {
                 );
               }
             })}
-
-            {/* 连接线（简化版，只画到已填充的节点） */}
-            {relationNodes
-              .filter(n => n.character)
-              .map((node, index) => {
-                const startAngle = Math.PI / 2;
-                const endAngle = node.angle + Math.PI / 2;
-                const midAngle = (startAngle + endAngle) / 2;
-                return (
-                  <View
-                    key={`line-${index}`}
-                    style={[
-                      styles.connectionLine,
-                      {
-                        left: SCREEN_WIDTH / 2 + Math.cos(midAngle) * 70 - 20,
-                        top: 250 + Math.sin(midAngle) * 70 - 1,
-                        transform: [{ rotate: `${midAngle + Math.PI / 2}rad` }],
-                      },
-                    ]}
-                  />
-                );
-              })}
           </View>
 
           {/* 添加更多关系按钮 */}
@@ -350,9 +361,12 @@ export default function RelationNetworkScreen() {
                   <View key={node.id} style={styles.relationItem}>
                     <Text style={styles.relationItemText}>
                       {protagonist.name}
-                      <Text style={styles.relationHighlight}>【{getRelationLabelText(node)}】</Text>
+                      {' '}
+                      <Text style={styles.relationHighlight}>{getRelationLabelText(node)}</Text>
+                      {' '}
                       {node.character!.name}
-                      <Text style={styles.relationTo}>（{node.relationTo}）</Text>
+                      {' '}
+                      <Text style={styles.relationTo}>({getReverseRelationLabel(node)})</Text>
                     </Text>
                   </View>
                 ))
@@ -371,23 +385,17 @@ export default function RelationNetworkScreen() {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setShowCharacterModal(false)} style={styles.backButton}>
-                  <Text style={styles.backButtonText}>← 返回</Text>
+                  <Text style={styles.backButtonText}>返回</Text>
                 </TouchableOpacity>
                 <Text style={styles.modalTitle}>选择角色</Text>
                 <TouchableOpacity onPress={() => setShowCharacterModal(false)}>
-                  <Text style={styles.closeBtn}>×</Text>
+                  <Text style={styles.closeBtn}>x</Text>
                 </TouchableOpacity>
               </View>
               {availableCharacters.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>没有可选择的角色</Text>
-                  <Text style={styles.emptyHint}>请先在角色生成页面添加家庭成员</Text>
-                  <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => setShowCharacterModal(false)}
-                  >
-                    <Text style={styles.backButtonText}>返回上一页</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.emptyHint}>所有角色都已添加完成</Text>
                 </View>
               ) : (
                 <FlatList
@@ -419,7 +427,7 @@ export default function RelationNetworkScreen() {
                   设置与{selectedCharacter?.name}的关系
                 </Text>
                 <TouchableOpacity onPress={() => setShowRelationModal(false)}>
-                  <Text style={styles.closeBtn}>×</Text>
+                  <Text style={styles.closeBtn}>x</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView>
@@ -454,292 +462,278 @@ export default function RelationNetworkScreen() {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  backBtn: {
-    fontSize: 18,
-    color: theme.primary,
-  },
-  backButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: theme.backgroundTertiary,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: theme.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  desc: {
-    textAlign: 'center',
-    color: theme.textSecondary,
-    fontSize: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  networkContainer: {
-    position: 'relative',
-    height: 500,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerNode: {
-    position: 'absolute',
-    width: CENTER_SIZE,
-    height: CENTER_SIZE,
-    borderRadius: CENTER_SIZE / 2,
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  protagonistName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  protagonistLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-  },
-  relationNode: {
-    position: 'absolute',
-    width: NODE_SIZE,
-    height: NODE_SIZE,
-    borderRadius: NODE_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 5,
-  },
-  emptyNode: {
-    backgroundColor: theme.backgroundTertiary,
-    borderWidth: 2,
-    borderColor: theme.border,
-    borderStyle: 'dashed',
-  },
-  filledNode: {
-    backgroundColor: theme.backgroundTertiary,
-    borderWidth: 2,
-    borderColor: theme.primary,
-  },
-  plusIcon: {
-    fontSize: 24,
-    color: theme.textSecondary,
-  },
-  addText: {
-    fontSize: 10,
-    color: theme.textSecondary,
-  },
-  nodeName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  nodeRelation: {
-    fontSize: 10,
-    color: theme.primary,
-    marginTop: 2,
-  },
-  nodeRelationTo: {
-    fontSize: 9,
-    color: theme.textSecondary,
-  },
-  removeBtn: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#ff4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  removeBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  connectionLine: {
-    position: 'absolute',
-    width: 2,
-    height: 60,
-    backgroundColor: theme.border,
-  },
-  addMoreBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: theme.primary,
-    borderStyle: 'dashed',
-    marginTop: 16,
-  },
-  addMoreBtnText: {
-    color: theme.primary,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  relationList: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.text,
-    marginBottom: 12,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: theme.textSecondary,
-    fontSize: 14,
-    paddingVertical: 20,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 400,
-  },
-  emptyHint: {
-    textAlign: 'center',
-    color: theme.textSecondary,
-    fontSize: 14,
-    marginTop: 8,
-  },
-  relationItem: {
-    backgroundColor: theme.backgroundTertiary,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  relationItemText: {
-    fontSize: 14,
-    color: theme.text,
-    lineHeight: 22,
-  },
-  relationHighlight: {
-    color: theme.primary,
-    fontWeight: 'bold',
-  },
-  relationTo: {
-    color: theme.textSecondary,
-  },
-  completeBtn: {
-    position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    height: 50,
-    backgroundColor: theme.primary,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  completeBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: theme.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    paddingBottom: 30,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.text,
-  },
-  closeBtn: {
-    fontSize: 28,
-    color: theme.textSecondary,
-  },
-  characterItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  characterName: {
-    fontSize: 16,
-    color: theme.text,
-  },
-  characterGender: {
-    fontSize: 18,
-    color: theme.textSecondary,
-  },
-  relationHint: {
-    padding: 16,
-    fontSize: 14,
-    color: theme.textSecondary,
-  },
-  relationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  relationOptionText: {
-    fontSize: 16,
-    color: theme.text,
-    flex: 1,
-  },
-  relationOptionFemale: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    marginLeft: 8,
-  },
-  relationOptionReverse: {
-    fontSize: 14,
-    color: theme.primary,
-  },
-});
+const createStyles = (theme: any) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    backBtn: {
+      fontSize: 18,
+      color: theme.primary,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 100,
+    },
+    desc: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+    },
+    networkContainer: {
+      height: 500,
+      position: 'relative',
+    },
+    centerNode: {
+      position: 'absolute',
+      width: CENTER_SIZE,
+      height: CENTER_SIZE,
+      borderRadius: CENTER_SIZE / 2,
+      backgroundColor: theme.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    protagonistName: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    protagonistLabel: {
+      color: 'rgba(255,255,255,0.8)',
+      fontSize: 12,
+    },
+    relationNode: {
+      position: 'absolute',
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+      borderRadius: NODE_SIZE / 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyNode: {
+      backgroundColor: theme.backgroundSecondary,
+      borderWidth: 2,
+      borderColor: theme.primary,
+      borderStyle: 'dashed',
+    },
+    filledNode: {
+      backgroundColor: theme.surface,
+      borderWidth: 2,
+      borderColor: theme.primary,
+    },
+    plusIcon: {
+      fontSize: 28,
+      color: theme.primary,
+      fontWeight: '300',
+    },
+    addText: {
+      fontSize: 11,
+      color: theme.primary,
+      marginTop: 2,
+    },
+    nodeName: {
+      fontSize: 13,
+      fontWeight: 'bold',
+      color: theme.text,
+      textAlign: 'center',
+    },
+    nodeRelation: {
+      fontSize: 10,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    nodeRelationTo: {
+      fontSize: 9,
+      color: theme.textMuted,
+    },
+    removeBtn: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: theme.error || '#ff4444',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    removeBtnText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    addMoreBtn: {
+      marginHorizontal: 20,
+      marginTop: 20,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: theme.primary,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    addMoreBtnText: {
+      fontSize: 15,
+      color: theme.primary,
+    },
+    relationList: {
+      marginTop: 20,
+      marginHorizontal: 20,
+      padding: 16,
+      backgroundColor: theme.backgroundSecondary,
+      borderRadius: 12,
+    },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 12,
+    },
+    relationItem: {
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    relationItemText: {
+      fontSize: 14,
+      color: theme.text,
+      lineHeight: 22,
+    },
+    relationHighlight: {
+      color: theme.primary,
+      fontWeight: 'bold',
+    },
+    relationTo: {
+      color: theme.textSecondary,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: theme.textMuted,
+      textAlign: 'center',
+      paddingVertical: 12,
+    },
+    emptyHint: {
+      fontSize: 12,
+      color: theme.textMuted,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    completeBtn: {
+      position: 'absolute',
+      bottom: 20,
+      left: 20,
+      right: 20,
+      paddingVertical: 14,
+      backgroundColor: theme.primary,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    completeBtnText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: theme.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '70%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    backButton: {
+      padding: 8,
+    },
+    backButtonText: {
+      fontSize: 15,
+      color: theme.primary,
+    },
+    closeBtn: {
+      fontSize: 28,
+      color: theme.textMuted,
+      padding: 4,
+    },
+    emptyContainer: {
+      padding: 40,
+      alignItems: 'center',
+    },
+    characterItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    characterName: {
+      fontSize: 16,
+      color: theme.text,
+    },
+    characterGender: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    relationHint: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      padding: 16,
+    },
+    relationOption: {
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    relationOptionText: {
+      fontSize: 16,
+      color: theme.text,
+    },
+    relationOptionFemale: {
+      fontSize: 12,
+      color: theme.textMuted,
+      marginTop: 2,
+    },
+    relationOptionReverse: {
+      fontSize: 12,
+      color: theme.primary,
+      marginTop: 2,
+    },
+  });
+};
