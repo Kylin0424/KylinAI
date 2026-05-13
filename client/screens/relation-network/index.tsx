@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,19 @@ import {
   FlatList,
   Dimensions,
   Alert,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { useThemeContext } from '@/contexts/ThemeContext';
-import { Character, RELATION_OPTIONS } from '@/utils/characterStorage';
+import { Character, RELATION_OPTIONS, RelationOption } from '@/utils/characterStorage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const NODE_SIZE = 60;
-const CANVAS_HEIGHT = 400;
+const NODE_SIZE = 70;
+const CANVAS_HEIGHT = 450;
+const ARROW_SIZE = 12;
 
 interface CharacterNode {
   id: string;
@@ -26,14 +30,15 @@ interface CharacterNode {
   x: number;
   y: number;
   color: string;
+  dragging?: boolean;
 }
 
 interface Relation {
   id: string;
-  fromId: string;
-  toId: string;
-  relationLabel: string;
-  reverseLabel: string;
+  fromId: string;  // 后点击的角色（箭头起点）
+  toId: string;    // 先点击的角色（箭头终点）
+  relationLabel: string;   // from是to的什么（fromLabel）
+  reverseLabel: string;    // to是from的什么（toLabel）
 }
 
 interface FamilyMemberData {
@@ -52,28 +57,40 @@ interface FamilyMemberData {
   brief?: string;
 }
 
+// 鲜艳的颜色池（适合深色背景）
+const COLORS = [
+  '#60A5FA', // 蓝色
+  '#F472B6', // 粉色
+  '#34D399', // 绿色
+  '#FBBF24', // 黄色
+  '#A78BFA', // 紫色
+  '#FB923C', // 橙色
+  '#2DD4BF', // 青色
+  '#F87171', // 红色
+  '#4ADE80', // 亮绿
+  '#C084FC', // 淡紫
+];
+
 // 生成随机位置
 const generateRandomPosition = (existingNodes: CharacterNode[], canvasWidth: number, canvasHeight: number, avoidCenter: boolean = false) => {
-  const padding = 40;
+  const padding = 50;
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
-  const minDistance = 80;
+  const minDistance = 100;
   
   let attempts = 0;
   while (attempts < 50) {
     const x = padding + Math.random() * (canvasWidth - padding * 2);
     const y = padding + Math.random() * (canvasHeight - padding * 2);
     
-    // 避免中心区域（如果需要）
     if (avoidCenter) {
       const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-      if (distFromCenter < 80) {
+      if (distFromCenter < 100) {
         attempts++;
         continue;
       }
     }
     
-    // 检查与现有节点的距离
     let tooClose = false;
     for (const node of existingNodes) {
       const dist = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
@@ -89,26 +106,24 @@ const generateRandomPosition = (existingNodes: CharacterNode[], canvasWidth: num
     attempts++;
   }
   
-  // 如果找不到合适位置，返回随机位置
   return {
     x: padding + Math.random() * (canvasWidth - padding * 2),
     y: padding + Math.random() * (canvasHeight - padding * 2),
   };
 };
 
-// 颜色池
-const COLORS = [
-  '#6366F1', // 靛蓝
-  '#8B5CF6', // 紫色
-  '#EC4899', // 粉色
-  '#F59E0B', // 琥珀
-  '#10B981', // 翠绿
-  '#3B82F6', // 蓝色
-  '#EF4444', // 红色
-  '#14B8A6', // 青色
-  '#F97316', // 橙色
-  '#84CC16', // 青柠
-];
+// 根据性别过滤关系选项
+const getFilteredRelationOptions = (fromGender: string, toGender: string): RelationOption[] => {
+  return RELATION_OPTIONS.filter(option => {
+    // 如果有性别限制，根据目标性别过滤
+    if (option.genderLimit) {
+      // genderLimit 表示该关系要求的目标性别
+      if (toGender === '男' && option.genderLimit !== 'male') return false;
+      if (toGender === '女' && option.genderLimit !== 'female') return false;
+    }
+    return true;
+  });
+};
 
 export default function RelationNetworkScreen() {
   const router = useSafeRouter();
@@ -131,23 +146,22 @@ export default function RelationNetworkScreen() {
       gender: params.mainCharacterGender || '男',
       x: SCREEN_WIDTH / 2,
       y: CANVAS_HEIGHT / 2,
-      color: theme.primary,
+      color: '#22D3EE', // 青色主角
     };
-  }, [params.mainCharacterName, params.mainCharacterGender, params.protagonistId, theme.primary]);
+  }, [params.mainCharacterName, params.mainCharacterGender, params.protagonistId]);
 
   // 家庭成员数据
   const [familyMembersData, setFamilyMembersData] = useState<FamilyMemberData[]>([]);
 
-  // 角色节点列表
+  // 角色节点列表（可拖动）
   const [characterNodes, setCharacterNodes] = useState<CharacterNode[]>([]);
 
   // 关系列表
   const [relations, setRelations] = useState<Relation[]>([]);
 
-  // 已选择的角色ID
-  const selectedCharacterIds = useMemo(() => {
-    return characterNodes.map(n => n.id);
-  }, [characterNodes]);
+  // 拖动状态
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   // 解析家庭成员数据
   useEffect(() => {
@@ -161,7 +175,6 @@ export default function RelationNetworkScreen() {
           }));
           setFamilyMembersData(membersWithIds);
 
-          // 生成节点位置
           const canvasWidth = SCREEN_WIDTH - 32;
           const nodes: CharacterNode[] = [];
           membersWithIds.forEach((member, index) => {
@@ -183,7 +196,48 @@ export default function RelationNetworkScreen() {
     }
   }, [params.familyMembersData]);
 
-  // 当前选中的节点（用于设置关系）
+  // 创建节点的拖动处理器
+  const createPanResponder = useCallback((node: CharacterNode, isProtagonist: boolean = false) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        setDraggingNodeId(node.id);
+        dragOffsetRef.current = { x: 0, y: 0 };
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (draggingNodeId !== node.id) return;
+        
+        const canvasWidth = SCREEN_WIDTH - 32;
+        const padding = NODE_SIZE / 2;
+        
+        let newX = node.x + gestureState.dx - dragOffsetRef.current.x;
+        let newY = node.y + gestureState.dy - dragOffsetRef.current.y;
+        
+        // 限制在画布范围内
+        newX = Math.max(padding, Math.min(canvasWidth - padding, newX));
+        newY = Math.max(padding, Math.min(CANVAS_HEIGHT - padding, newY));
+        
+        dragOffsetRef.current = { x: gestureState.dx, y: gestureState.dy };
+        
+        if (isProtagonist) {
+          protagonistNode.x = newX;
+          protagonistNode.y = newY;
+          setCharacterNodes([...characterNodes]);
+        } else {
+          setCharacterNodes(prevNodes => 
+            prevNodes.map(n => n.id === node.id ? { ...n, x: newX, y: newY } : n)
+          );
+        }
+      },
+      onPanResponderRelease: () => {
+        setDraggingNodeId(null);
+        dragOffsetRef.current = { x: 0, y: 0 };
+      },
+    });
+  }, [draggingNodeId, protagonistNode, characterNodes]);
+
+  // 当前选中的节点
   const [selectedNode, setSelectedNode] = useState<CharacterNode | null>(null);
   const [targetNode, setTargetNode] = useState<CharacterNode | null>(null);
 
@@ -193,19 +247,25 @@ export default function RelationNetworkScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailNode, setDetailNode] = useState<CharacterNode | null>(null);
 
-  // 选择一个节点来设置关系
+  // 根据目标性别过滤关系选项
+  const filteredRelationOptions = useMemo(() => {
+    if (!selectedNode || !targetNode) return [];
+    return getFilteredRelationOptions(selectedNode.gender, targetNode.gender);
+  }, [selectedNode, targetNode]);
+
+  // 点击节点
   const handleSelectNode = useCallback((node: CharacterNode) => {
+    if (draggingNodeId) return; // 正在拖动时不响应点击
+    
     if (node.id === protagonistNode.id) {
-      // 点击的是主角，显示详情
       setDetailNode(node);
       setShowDetailModal(true);
     } else {
-      // 点击的是其他角色，显示选项
       setSelectedNode(node);
       setDetailNode(node);
       setShowDetailModal(true);
     }
-  }, [protagonistNode]);
+  }, [draggingNodeId, protagonistNode]);
 
   // 设置与主角的关系
   const handleSetRelationWithProtagonist = useCallback(() => {
@@ -230,44 +290,26 @@ export default function RelationNetworkScreen() {
     setShowRelationModal(true);
   }, [selectedNode]);
 
-  // 确认关系
+  // 确认关系 - 箭头从 selectedNode 指向 targetNode
   const handleConfirmRelation = useCallback((relationLabel: string, reverseLabel: string) => {
     if (!selectedNode || !targetNode) return;
 
-    // 检查是否已存在关系
-    const existingIndex = relations.findIndex(
-      r => (r.fromId === selectedNode.id && r.toId === targetNode.id) ||
-           (r.fromId === targetNode.id && r.toId === selectedNode.id)
-    );
-
-    if (existingIndex >= 0) {
-      // 更新现有关系
-      setRelations(prev => {
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          relationLabel,
-          reverseLabel,
-        };
-        return updated;
-      });
-    } else {
-      // 添加新关系
-      const newRelation: Relation = {
-        id: `relation-${Date.now()}`,
-        fromId: selectedNode.id,
-        toId: targetNode.id,
-        relationLabel,
-        reverseLabel,
-      };
-      setRelations(prev => [...prev, newRelation]);
-    }
+    // 创建新关系：fromId是后点击的（selectedNode），toId是先点击的（targetNode）
+    // 意思是：selectedNode 是 targetNode 的 relationLabel
+    const newRelation: Relation = {
+      id: `relation-${Date.now()}-${Math.random()}`,
+      fromId: selectedNode.id,  // 箭头起点
+      toId: targetNode.id,      // 箭头终点
+      relationLabel,   // from是to的什么
+      reverseLabel,   // to是from的什么
+    };
+    setRelations(prev => [...prev, newRelation]);
 
     setShowRelationModal(false);
     setSelectedNode(null);
     setTargetNode(null);
-    Alert.alert('提示', '关系设置成功');
-  }, [selectedNode, targetNode, relations]);
+    Alert.alert('提示', `已设置：${selectedNode.name} 是 ${newRelation.relationLabel} 的 ${targetNode.name}`);
+  }, [selectedNode, targetNode]);
 
   // 删除关系
   const handleDeleteRelation = useCallback((relation: Relation) => {
@@ -289,7 +331,6 @@ export default function RelationNetworkScreen() {
 
   // 完成设置
   const handleComplete = useCallback(() => {
-    // 构建返回数据
     const resultData = {
       protagonistId: protagonistNode.id,
       protagonistName: protagonistNode.name,
@@ -313,12 +354,10 @@ export default function RelationNetworkScreen() {
     };
 
     console.log('Relation network completed:', resultData);
-
-    // 返回上一页
     router.back();
   }, [protagonistNode, relations, characterNodes, router]);
 
-  // 绘制连线
+  // 渲染带箭头的连线
   const renderLines = () => {
     return relations.map(relation => {
       const fromNode = relation.fromId === protagonistNode.id ? protagonistNode :
@@ -331,23 +370,35 @@ export default function RelationNetworkScreen() {
       const dx = toNode.x - fromNode.x;
       const dy = toNode.y - fromNode.y;
       const length = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const angle = Math.atan2(dy, dx);
 
-      // 计算中点
-      const midX = (fromNode.x + toNode.x) / 2;
-      const midY = (fromNode.y + toNode.y) / 2;
+      // 计算标签位置（在线的中间偏后）
+      const labelOffset = 0.6; // 在线的前60%位置
+      const labelX = fromNode.x + dx * labelOffset;
+      const labelY = fromNode.y + dy * labelOffset;
 
       return (
-        <View key={relation.id} style={StyleSheet.absoluteFill}>
+        <View key={relation.id} style={StyleSheet.absoluteFill} pointerEvents="none">
           {/* 连线 */}
           <View
             style={[
               styles.line,
               {
-                width: length,
+                width: length - ARROW_SIZE,
                 left: fromNode.x,
                 top: fromNode.y,
-                transform: [{ rotate: `${angle}deg` }],
+                transform: [{ rotate: `${angle * 180 / Math.PI}deg` }],
+              },
+            ]}
+          />
+          {/* 箭头 */}
+          <View
+            style={[
+              styles.arrow,
+              {
+                left: fromNode.x + (length - ARROW_SIZE) * Math.cos(angle) - ARROW_SIZE / 2,
+                top: fromNode.y + (length - ARROW_SIZE) * Math.sin(angle) - ARROW_SIZE / 2,
+                transform: [{ rotate: `${angle * 180 / Math.PI + 90}deg` }],
               },
             ]}
           />
@@ -355,12 +406,9 @@ export default function RelationNetworkScreen() {
           <TouchableOpacity
             style={[
               styles.lineLabel,
-              { left: midX - 30, top: midY - 10 },
+              { left: labelX - 35, top: labelY - 12 },
             ]}
-            onPress={() => {
-              const rel = relations.find(r => r.id === relation.id);
-              if (rel) handleDeleteRelation(rel);
-            }}
+            onPress={() => handleDeleteRelation(relation)}
           >
             <Text style={styles.lineLabelText}>{relation.relationLabel}</Text>
           </TouchableOpacity>
@@ -386,6 +434,9 @@ export default function RelationNetworkScreen() {
     return targets;
   }, [selectedNode, protagonistNode, characterNodes]);
 
+  // 创建主角的拖动处理器
+  const protagonistPanResponder = useMemo(() => createPanResponder(protagonistNode, true), [protagonistNode, createPanResponder]);
+
   return (
     <Screen>
       <View style={styles.container}>
@@ -401,16 +452,17 @@ export default function RelationNetworkScreen() {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
           {/* 说明文字 */}
           <Text style={styles.desc}>
-            点击头像查看详情，点击后可设置与其他角色的关系
+            拖动头像自由放置，点击设置关系，线上的文字表示起点角色是终点角色的什么
           </Text>
 
-          {/* 关系网络画布 */}
+          {/* 关系网络画布 - 深色背景 */}
           <View style={styles.canvas}>
             {/* 连线层 */}
             {renderLines()}
 
-            {/* 主角节点 */}
-            <TouchableOpacity
+            {/* 主角节点 - 可拖动 */}
+            <View
+              {...protagonistPanResponder.panHandlers}
               style={[
                 styles.node,
                 styles.protagonistNode,
@@ -420,36 +472,48 @@ export default function RelationNetworkScreen() {
                   backgroundColor: protagonistNode.color,
                 },
               ]}
-              onPress={() => handleSelectNode(protagonistNode)}
             >
-              <Text style={styles.nodeName} numberOfLines={1}>
-                {protagonistNode.name}
-              </Text>
-              <Text style={styles.nodeRole}>主角</Text>
-            </TouchableOpacity>
-
-            {/* 角色节点 */}
-            {characterNodes.map(node => (
-              <TouchableOpacity
-                key={node.id}
-                style={[
-                  styles.node,
-                  {
-                    left: node.x - NODE_SIZE / 2,
-                    top: node.y - NODE_SIZE / 2,
-                    backgroundColor: node.color,
-                  },
-                ]}
-                onPress={() => handleSelectNode(node)}
+              <TouchableOpacity 
+                style={styles.nodeTouchable}
+                onPress={() => handleSelectNode(protagonistNode)}
               >
                 <Text style={styles.nodeName} numberOfLines={1}>
-                  {node.name}
+                  {protagonistNode.name}
                 </Text>
-                <Text style={styles.nodeGender}>
-                  {node.gender === '男' ? '♂' : '♀'}
-                </Text>
+                <Text style={styles.nodeRole}>主角</Text>
               </TouchableOpacity>
-            ))}
+            </View>
+
+            {/* 角色节点 - 可拖动 */}
+            {characterNodes.map(node => {
+              const panResponder = createPanResponder(node);
+              return (
+                <View
+                  key={node.id}
+                  {...panResponder.panHandlers}
+                  style={[
+                    styles.node,
+                    {
+                      left: node.x - NODE_SIZE / 2,
+                      top: node.y - NODE_SIZE / 2,
+                      backgroundColor: node.color,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity 
+                    style={styles.nodeTouchable}
+                    onPress={() => handleSelectNode(node)}
+                  >
+                    <Text style={styles.nodeName} numberOfLines={1}>
+                      {node.name}
+                    </Text>
+                    <Text style={styles.nodeGender}>
+                      {node.gender === '男' ? '♂' : '♀'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
 
           {/* 已设置的关系列表 */}
@@ -470,10 +534,13 @@ export default function RelationNetworkScreen() {
                     <View style={styles.relationInfo}>
                       <Text style={styles.relationItemText}>
                         <Text style={styles.highlight}>{fromNode.name}</Text>
-                        {' 是 '}
-                        <Text style={styles.highlight}>{toNode.name}</Text>
-                        {' 的 '}
+                        {' → '}
                         <Text style={styles.relationLabel}>{relation.relationLabel}</Text>
+                        {' → '}
+                        <Text style={styles.highlight}>{toNode.name}</Text>
+                      </Text>
+                      <Text style={styles.relationDesc}>
+                        （{toNode.name} 的 {relation.relationLabel} / {fromNode.name} 的 {relation.reverseLabel}）
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -526,7 +593,8 @@ export default function RelationNetworkScreen() {
 
                     return (
                       <Text key={rel.id} style={styles.relationText}>
-                        {isFrom ? rel.relationLabel : rel.reverseLabel} - {otherNode.name}
+                        {isFrom ? '→ ' : '← '}
+                        {isFrom ? rel.relationLabel : rel.reverseLabel} {otherNode.name}
                       </Text>
                     );
                   })
@@ -594,7 +662,7 @@ export default function RelationNetworkScreen() {
           </View>
         </Modal>
 
-        {/* 选择关系类型弹窗 */}
+        {/* 选择关系类型弹窗 - 根据目标性别过滤 */}
         <Modal visible={showRelationModal} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
@@ -610,24 +678,29 @@ export default function RelationNetworkScreen() {
               <Text style={styles.selectHint}>
                 {selectedNode?.name} 是 {targetNode?.name} 的：
               </Text>
+              <Text style={styles.genderHint}>
+                （{targetNode?.name} 的性别：{targetNode?.gender}）
+              </Text>
               <ScrollView style={styles.relationScrollView}>
-                {RELATION_OPTIONS.map(option => (
+                {filteredRelationOptions.map(option => (
                   <TouchableOpacity
                     key={option.value}
                     style={styles.relationOption}
                     onPress={() => handleConfirmRelation(option.label, option.reverseLabel || option.label)}
                   >
-                    <Text style={styles.relationOptionText}>{option.label}</Text>
-                    {option.femaleLabel && (
-                      <Text style={styles.relationOptionHint}>
-                        （女：{option.femaleLabel}）
+                    <View style={styles.relationOptionContent}>
+                      <Text style={styles.relationOptionText}>{option.label}</Text>
+                      <Text style={styles.relationOptionReverse}>
+                        ↔ {option.reverseLabel}
                       </Text>
-                    )}
-                    <Text style={styles.relationOptionReverse}>
-                      {'<->'} {option.reverseLabel}
-                    </Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
+                {filteredRelationOptions.length === 0 && (
+                  <Text style={styles.noOptionText}>
+                    暂无可用关系类型
+                  </Text>
+                )}
               </ScrollView>
             </View>
           </View>
@@ -641,7 +714,7 @@ const createStyles = (theme: any) => {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: '#0F172A', // 深蓝黑色背景
     },
     header: {
       flexDirection: 'row',
@@ -650,36 +723,38 @@ const createStyles = (theme: any) => {
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: theme.border,
+      borderBottomColor: '#334155',
     },
     backBtn: {
       fontSize: 18,
-      color: theme.primary,
+      color: '#38BDF8', // 亮蓝色
     },
     title: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: theme.text,
+      color: '#F8FAFC', // 白色
     },
     scrollView: {
       flex: 1,
     },
     scrollContent: {
-      paddingBottom: 100,
+      paddingBottom: 120,
     },
     desc: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: '#94A3B8', // 灰色
       textAlign: 'center',
       paddingVertical: 16,
     },
     canvas: {
       height: CANVAS_HEIGHT,
       marginHorizontal: 16,
-      backgroundColor: theme.surface,
+      backgroundColor: '#1E293B', // 深灰蓝色画布
       borderRadius: 16,
       position: 'relative',
       overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: '#334155',
     },
     node: {
       position: 'absolute',
@@ -688,26 +763,31 @@ const createStyles = (theme: any) => {
       borderRadius: NODE_SIZE / 2,
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.5,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    nodeTouchable: {
+      width: '100%',
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     protagonistNode: {
       borderWidth: 3,
       borderColor: '#FFFFFF',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 5,
     },
     nodeName: {
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: 'bold',
       color: '#FFFFFF',
       textAlign: 'center',
     },
     nodeRole: {
-      fontSize: 9,
-      color: 'rgba(255,255,255,0.8)',
+      fontSize: 10,
+      color: 'rgba(255,255,255,0.9)',
     },
     nodeGender: {
       fontSize: 10,
@@ -715,23 +795,36 @@ const createStyles = (theme: any) => {
     },
     line: {
       position: 'absolute',
-      height: 1,
-      backgroundColor: '#CBD5E1',
-      borderStyle: 'dashed',
+      height: 3,
+      backgroundColor: '#38BDF8', // 亮蓝色连线
       transformOrigin: 'left center',
+    },
+    arrow: {
+      position: 'absolute',
+      width: 0,
+      height: 0,
+      backgroundColor: 'transparent',
+      borderStyle: 'solid',
+      borderLeftWidth: ARROW_SIZE / 2,
+      borderRightWidth: ARROW_SIZE / 2,
+      borderTopWidth: ARROW_SIZE,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderTopColor: '#38BDF8',
     },
     lineLabel: {
       position: 'absolute',
-      backgroundColor: theme.surface,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      backgroundColor: '#0F172A',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: '#38BDF8',
     },
     lineLabelText: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: '#38BDF8',
+      fontWeight: 'bold',
     },
     relationList: {
       marginHorizontal: 16,
@@ -740,12 +833,12 @@ const createStyles = (theme: any) => {
     sectionTitle: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: theme.text,
+      color: '#F8FAFC',
       marginBottom: 12,
     },
     emptyText: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: '#64748B',
       textAlign: 'center',
       paddingVertical: 20,
     },
@@ -753,37 +846,47 @@ const createStyles = (theme: any) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: theme.surface,
+      backgroundColor: '#1E293B',
       padding: 12,
       borderRadius: 12,
       marginBottom: 8,
+      borderWidth: 1,
+      borderColor: '#334155',
     },
     relationInfo: {
       flex: 1,
     },
     relationItemText: {
       fontSize: 14,
-      color: theme.text,
+      color: '#F8FAFC',
     },
     highlight: {
       fontWeight: 'bold',
-      color: theme.primary,
+      color: '#38BDF8',
     },
     relationLabel: {
-      color: theme.primary,
+      color: '#F472B6', // 粉色
+      fontWeight: 'bold',
+    },
+    relationDesc: {
+      fontSize: 12,
+      color: '#64748B',
+      marginTop: 4,
     },
     relationTo: {
-      color: theme.textSecondary,
+      color: '#94A3B8',
       fontSize: 12,
     },
     deleteBtn: {
       paddingHorizontal: 12,
       paddingVertical: 6,
-      backgroundColor: theme.error + '20',
+      backgroundColor: '#EF4444' + '30',
       borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#EF4444',
     },
     deleteBtnText: {
-      color: theme.error,
+      color: '#EF4444',
       fontSize: 12,
     },
     completeBtn: {
@@ -791,10 +894,15 @@ const createStyles = (theme: any) => {
       bottom: 30,
       left: 16,
       right: 16,
-      backgroundColor: theme.primary,
+      backgroundColor: '#6366F1', // 紫色按钮
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
+      shadowColor: '#6366F1',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
     },
     completeBtnText: {
       color: '#FFFFFF',
@@ -803,22 +911,26 @@ const createStyles = (theme: any) => {
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.7)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     modalContent: {
       width: SCREEN_WIDTH - 32,
       maxHeight: SCREEN_HEIGHT * 0.7,
-      backgroundColor: theme.surface,
+      backgroundColor: '#1E293B',
       borderRadius: 16,
       padding: 16,
+      borderWidth: 1,
+      borderColor: '#334155',
     },
     detailModal: {
       width: SCREEN_WIDTH - 64,
-      backgroundColor: theme.surface,
+      backgroundColor: '#1E293B',
       borderRadius: 16,
       padding: 16,
+      borderWidth: 1,
+      borderColor: '#334155',
     },
     modalHeader: {
       flexDirection: 'row',
@@ -829,113 +941,125 @@ const createStyles = (theme: any) => {
     modalTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: theme.text,
+      color: '#F8FAFC',
     },
     closeBtn: {
       fontSize: 24,
-      color: theme.textSecondary,
+      color: '#64748B',
       padding: 4,
     },
     backButton: {
       fontSize: 16,
-      color: theme.primary,
+      color: '#38BDF8',
     },
     detailContent: {
       paddingVertical: 8,
     },
     detailLabel: {
       fontSize: 14,
-      color: theme.text,
+      color: '#F8FAFC',
       marginBottom: 8,
     },
     noRelationText: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: '#64748B',
       fontStyle: 'italic',
-      marginBottom: 16,
     },
     relationText: {
       fontSize: 14,
-      color: theme.text,
-      marginBottom: 4,
+      color: '#38BDF8',
+      marginBottom: 6,
     },
     actionButtons: {
       marginTop: 16,
-      gap: 8,
+      gap: 12,
     },
     actionBtn: {
-      backgroundColor: theme.primary + '20',
-      padding: 12,
-      borderRadius: 8,
+      backgroundColor: '#6366F1',
+      paddingVertical: 14,
+      borderRadius: 12,
       alignItems: 'center',
     },
     actionBtnText: {
-      color: theme.primary,
+      color: '#FFFFFF',
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: 'bold',
     },
     selectHint: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: '#94A3B8',
+      marginBottom: 8,
+    },
+    genderHint: {
+      fontSize: 12,
+      color: '#64748B',
       marginBottom: 12,
     },
     targetItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 12,
-      backgroundColor: theme.background,
-      borderRadius: 12,
-      marginBottom: 8,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#334155',
     },
     targetAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
     },
     targetAvatarText: {
-      color: '#FFFFFF',
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: 'bold',
+      color: '#FFFFFF',
     },
     targetName: {
       flex: 1,
       fontSize: 16,
-      color: theme.text,
-      fontWeight: '500',
+      color: '#F8FAFC',
     },
     targetGender: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: '#64748B',
     },
     relationScrollView: {
-      maxHeight: SCREEN_HEIGHT * 0.5,
+      maxHeight: 400,
     },
     relationOption: {
-      padding: 12,
-      backgroundColor: theme.background,
-      borderRadius: 8,
+      backgroundColor: '#334155',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 12,
       marginBottom: 8,
+      borderWidth: 1,
+      borderColor: '#475569',
+    },
+    relationOptionContent: {
       flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      flexWrap: 'wrap',
     },
     relationOptionText: {
       fontSize: 16,
-      color: theme.text,
-      fontWeight: '500',
+      color: '#F8FAFC',
+      fontWeight: 'bold',
     },
     relationOptionHint: {
       fontSize: 12,
-      color: theme.textSecondary,
-      marginLeft: 4,
+      color: '#64748B',
+      marginTop: 2,
     },
     relationOptionReverse: {
-      fontSize: 12,
-      color: theme.primary,
-      marginLeft: 'auto',
+      fontSize: 14,
+      color: '#94A3B8',
+    },
+    noOptionText: {
+      fontSize: 14,
+      color: '#64748B',
+      textAlign: 'center',
+      paddingVertical: 20,
     },
   });
 };
