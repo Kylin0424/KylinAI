@@ -261,8 +261,6 @@ export default function RelationNetworkScreen() {
   // 当前选择的关系类型（用于切换）
   const [currentRelationOption, setCurrentRelationOption] = useState<{ label: string; reverseLabel: string } | null>(null);
   // 是否切换了方向（用于显示）
-  const [isDirectionSwitched, setIsDirectionSwitched] = useState(false);
-
   // 根据目标性别过滤关系选项
   const filteredRelationOptions = useMemo(() => {
     if (!selectedNode || !targetNode) return [];
@@ -314,17 +312,20 @@ export default function RelationNetworkScreen() {
     setShowRelationModal(true);
   }, [selectedNode]);
 
-  // 切换关系方向（点击切换到反向称呼）
-  const handleSwitchDirection = useCallback(() => {
-    if (!currentRelationOption) return;
-    // 切换显示状态
-    setIsDirectionSwitched(prev => !prev);
-  }, [currentRelationOption]);
-
-  // 确认选择当前关系
-  const handleSelectRelation = useCallback((option: { label: string; reverseLabel: string }) => {
-    setCurrentRelationOption(option);
-    setIsDirectionSwitched(false);
+  // 选择关系
+  // isReverse=true 表示设置 selectedNode 对 targetNode 的反向称呼（从右侧点击）
+  const handleSelectRelation = useCallback((option: { label: string; reverseLabel: string }, isReverse: boolean = false) => {
+    // 如果 isReverse=true，表示用户点击了右侧的反向关系
+    // 需要交换 label 和 reverseLabel，因为 selectedNode 对 targetNode 的称呼就是 reverseLabel
+    if (isReverse) {
+      setCurrentRelationOption({
+        ...option,
+        label: option.reverseLabel,
+        reverseLabel: option.label
+      });
+    } else {
+      setCurrentRelationOption(option);
+    }
   }, []);
 
   // 确认关系 - 箭头从先点击的指向后点击的
@@ -800,7 +801,7 @@ export default function RelationNetworkScreen() {
               
               {/* 显示设置关系 */}
               <Text style={styles.selectHint}>
-                {selectedNode?.name} → {currentRelationOption ? (isDirectionSwitched ? currentRelationOption.reverseLabel : currentRelationOption.label) : '?'} → {targetNode?.name}
+                {selectedNode?.name} → ? → {targetNode?.name}
               </Text>
               
               {/* 提示用户正在为哪个关系人设置称呼 */}
@@ -808,58 +809,25 @@ export default function RelationNetworkScreen() {
                 请选择{targetNode?.gender === '男' ? '他' : '她'}对{selectedNode?.name}的称呼
               </Text>
 
-              {/* 已选择的关系显示区域 */}
-              {currentRelationOption && (
-                <View style={styles.selectedRelationContainer}>
-                  {/* 左侧切换按钮 */}
-                  <TouchableOpacity
-                    style={styles.switchButton}
-                    onPress={handleSwitchDirection}
-                  >
-                    <Text style={styles.switchButtonText}>⇄</Text>
-                  </TouchableOpacity>
-
-                  {/* 中间当前选择 */}
-                  <View style={styles.currentRelationBox}>
-                    <Text style={styles.currentRelationLabel}>
-                      {isDirectionSwitched ? currentRelationOption.reverseLabel : currentRelationOption.label}
-                    </Text>
-                  </View>
-
-                  {/* 右侧对应反向 */}
-                  <View style={styles.reverseRelationBox}>
-                    <Text style={styles.reverseRelationLabel}>
-                      {isDirectionSwitched ? currentRelationOption.label : currentRelationOption.reverseLabel}
-                    </Text>
-                  </View>
-
-                  {/* 确认按钮 */}
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={handleConfirmRelation}
-                  >
-                    <Text style={styles.confirmButtonText}>确认</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              
               <ScrollView style={styles.relationScrollView}>
                 {filteredRelationOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.relationOption,
-                      currentRelationOption?.value === option.value && styles.relationOptionSelected
-                    ]}
-                    onPress={() => handleSelectRelation(option)}
-                  >
-                    <View style={styles.relationOptionContent}>
-                      <Text style={styles.relationOptionText}>{option.label}</Text>
-                      <Text style={styles.relationOptionReverse}>
-                        ↔ {option.reverseLabel}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                  <View key={option.value} style={styles.relationRow}>
+                    {/* 左侧：正常关系 - 点击设置 targetNode 对 selectedNode 的称呼 */}
+                    <TouchableOpacity
+                      style={styles.relationSideButton}
+                      onPress={() => handleSelectRelation(option, false)}
+                    >
+                      <Text style={styles.relationSideText}>{option.label}</Text>
+                    </TouchableOpacity>
+                    
+                    {/* 右侧：反向关系 - 点击设置 selectedNode 对 targetNode 的称呼 */}
+                    <TouchableOpacity
+                      style={styles.relationSideButton}
+                      onPress={() => handleSelectRelation(option, true)}
+                    >
+                      <Text style={styles.relationSideText}>{option.reverseLabel}</Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
                 {filteredRelationOptions.length === 0 && (
                   <Text style={styles.noOptionText}>
@@ -867,6 +835,18 @@ export default function RelationNetworkScreen() {
                   </Text>
                 )}
               </ScrollView>
+              
+              {/* 确认按钮 */}
+              {currentRelationOption && (
+                <TouchableOpacity
+                  style={styles.confirmRelationButton}
+                  onPress={handleConfirmRelation}
+                >
+                  <Text style={styles.confirmRelationButtonText}>
+                    确认设置 {selectedNode?.name} → {currentRelationOption.label} → {targetNode?.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </Modal>

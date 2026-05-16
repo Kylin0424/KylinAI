@@ -357,6 +357,43 @@ export const networkStyles = (theme: Theme) => {
       color: '#FFFFFF',
       fontWeight: 'bold',
     },
+    // 关系行（左右两列）
+    relationRow: {
+      flexDirection: 'row',
+      marginBottom: 8,
+    },
+    // 左右两列关系按钮
+    relationSideButton: {
+      flex: 1,
+      backgroundColor: '#1E293B',
+      borderRadius: 12,
+      paddingVertical: 16,
+      paddingHorizontal: 12,
+      marginHorizontal: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    relationSideText: {
+      fontSize: 18,
+      color: '#F8FAFC',
+      fontWeight: '600',
+    },
+    // 确认按钮（底部）
+    confirmRelationButton: {
+      backgroundColor: '#10B981',
+      borderRadius: 12,
+      paddingVertical: 16,
+      marginHorizontal: 16,
+      marginVertical: 12,
+      alignItems: 'center',
+    },
+    confirmRelationButtonText: {
+      fontSize: 16,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
     // 已选中的关系选项
     relationOptionSelected: {
       backgroundColor: 'rgba(56, 189, 248, 0.2)',
