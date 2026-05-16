@@ -258,18 +258,16 @@ export default function RelationNetworkScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailNode, setDetailNode] = useState<CharacterNode | null>(null);
 
-  // 关系方向是否反转
-  const [isRelationReversed, setIsRelationReversed] = useState(false);
-
   // 根据目标性别过滤关系选项
   const filteredRelationOptions = useMemo(() => {
     if (!selectedNode || !targetNode) return [];
-    // 如果反转了 from 和 to，则关系是 target -> selected
-    if (isRelationReversed) {
-      return getFilteredRelationOptions(targetNode.gender, selectedNode.gender);
-    }
+    // 主体（selectedNode）固定，关系人（targetNode）的性别决定可用的称呼
+    // 关系人是 targetNode，所以显示的是：targetNode 对 selectedNode 的称呼
+    // 例如：胡洪歧（男）先点击，陈同丽（女）后点击
+    // 陈同丽对胡洪歧的称呼是"丈夫"
+    // 所以用关系人(targetNode)的性别来筛选可用的称呼选项
     return getFilteredRelationOptions(selectedNode.gender, targetNode.gender);
-  }, [selectedNode, targetNode, isRelationReversed]);
+  }, [selectedNode, targetNode]);
 
   // 点击节点
   const handleSelectNode = useCallback((node: CharacterNode) => {
@@ -289,7 +287,6 @@ export default function RelationNetworkScreen() {
   const handleSetRelationWithProtagonist = useCallback(() => {
     if (!selectedNode) return;
     setTargetNode(protagonistNode);
-    setIsRelationReversed(false); // 默认为 selected -> protagonist
     setShowDetailModal(false);
     setShowRelationModal(true);
   }, [selectedNode, protagonistNode]);
@@ -305,38 +302,27 @@ export default function RelationNetworkScreen() {
   const handleSelectTarget = useCallback((target: CharacterNode) => {
     if (!selectedNode || target.id === selectedNode.id) return;
     setTargetNode(target);
-    setIsRelationReversed(false); // 默认为 selected -> target
     setShowSelectTargetModal(false);
     setShowRelationModal(true);
   }, [selectedNode]);
 
-  // 切换关系方向
-  const toggleRelationDirection = useCallback(() => {
-    setIsRelationReversed(prev => !prev);
-  }, []);
-
   // 确认关系 - 箭头从先点击的指向后点击的
   // 逻辑：selectedNode（先点击的）是想设置关系的人，点击后选择 targetNode（后点击的）作为关系对象
-  // 如果 isRelationReversed 为 false：selectedNode -> targetNode，relationLabel 是 selectedNode 对 targetNode 的称呼
-  // 如果 isRelationReversed 为 true：targetNode -> selectedNode，relationLabel 是 targetNode 对 selectedNode 的称呼
+  // selectedNode（先点击）是主体，targetNode（后点击）是对主体的称呼者
+  // 例如：胡洪歧（男）先点击，陈同丽（女）后点击
+  // 用户选择"丈夫"，表示：陈同丽对胡洪歧的称呼是"丈夫"
+  // 箭头：陈同丽（from）→ 胡洪歧（to），显示"丈夫"
   const handleConfirmRelation = useCallback((relationLabel: string, reverseLabel: string) => {
     if (!selectedNode || !targetNode) return;
 
     let fromId: string, toId: string, fromLabel: string, toLabel: string;
     
-    if (isRelationReversed) {
-      // 反转：target -> selected
-      fromId = targetNode.id;
-      toId = selectedNode.id;
-      fromLabel = relationLabel; // target 对 selected 的称呼
-      toLabel = reverseLabel;     // selected 对 target 的称呼
-    } else {
-      // 正常：selected -> target
-      fromId = selectedNode.id;
-      toId = targetNode.id;
-      fromLabel = relationLabel; // selected 对 target 的称呼
-      toLabel = reverseLabel;     // target 对 selected 的称呼
-    }
+    // 固定：from是先点击的，to是后点击的
+    // relationLabel 是后点击的对先点击的称呼
+    fromId = selectedNode.id;
+    toId = targetNode.id;
+    fromLabel = reverseLabel; // 先点击的对后点击的称呼（如：妻子）
+    toLabel = relationLabel;  // 后点击的对先点击的称呼（如：丈夫）
 
     // 检查是否已存在相同的关系
     const existingRelation = relations.find(
@@ -360,14 +346,13 @@ export default function RelationNetworkScreen() {
     setShowRelationModal(false);
     setSelectedNode(null);
     setTargetNode(null);
-    setIsRelationReversed(false);
     
     const fromName = fromId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === fromId)?.name || '';
     const toName = toId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === toId)?.name || '';
     Alert.alert('提示', `已设置：${fromName} → ${fromLabel} → ${toName}`);
-  }, [selectedNode, targetNode, isRelationReversed, relations, protagonistNode, characterNodes]);
+  }, [selectedNode, targetNode, relations, protagonistNode, characterNodes]);
 
   // 删除关系
   const handleDeleteRelation = useCallback((relation: Relation) => {
@@ -781,26 +766,14 @@ export default function RelationNetworkScreen() {
                 </TouchableOpacity>
               </View>
               
-              {/* 显示设置关系的主体和对象 */}
+              {/* 显示设置关系 */}
               <Text style={styles.selectHint}>
-                {isRelationReversed 
-                  ? `${targetNode?.name} → ? → ${selectedNode?.name}`
-                  : `${selectedNode?.name} → ? → ${targetNode?.name}`
-                }
+                {selectedNode?.name} → ? → {targetNode?.name}
               </Text>
               
-              {/* 切换方向按钮 */}
-              <TouchableOpacity style={styles.toggleDirectionBtn} onPress={toggleRelationDirection}>
-                <Text style={styles.toggleDirectionBtnText}>
-                  {isRelationReversed ? '🔄 切换为：主角 → 关系 → 对方' : '🔄 切换为：对方 → 关系 → 主角'}
-                </Text>
-              </TouchableOpacity>
-              
+              {/* 提示用户正在为哪个关系人设置称呼 */}
               <Text style={styles.genderHint}>
-                {isRelationReversed
-                  ? `当前：${targetNode?.name}(${targetNode?.gender}) 的 ${selectedNode?.name}(${selectedNode?.gender}) 的称呼`
-                  : `当前：${selectedNode?.name}(${selectedNode?.gender}) 对 ${targetNode?.name}(${targetNode?.gender}) 的称呼`
-                }
+                请选择{targetNode?.gender === '男' ? '他' : '她'}对{selectedNode?.name}的称呼
               </Text>
               
               <ScrollView style={styles.relationScrollView}>
