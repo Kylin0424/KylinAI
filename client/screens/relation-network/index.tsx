@@ -258,6 +258,11 @@ export default function RelationNetworkScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailNode, setDetailNode] = useState<CharacterNode | null>(null);
 
+  // 当前选择的关系类型（用于切换）
+  const [currentRelationOption, setCurrentRelationOption] = useState<{ label: string; reverseLabel: string } | null>(null);
+  // 是否切换了方向（用于显示）
+  const [isDirectionSwitched, setIsDirectionSwitched] = useState(false);
+
   // 根据目标性别过滤关系选项
   const filteredRelationOptions = useMemo(() => {
     if (!selectedNode || !targetNode) return [];
@@ -303,8 +308,24 @@ export default function RelationNetworkScreen() {
     if (!selectedNode || target.id === selectedNode.id) return;
     setTargetNode(target);
     setShowSelectTargetModal(false);
+    // 重置选择状态
+    setCurrentRelationOption(null);
+    setIsDirectionSwitched(false);
     setShowRelationModal(true);
   }, [selectedNode]);
+
+  // 切换关系方向（点击切换到反向称呼）
+  const handleSwitchDirection = useCallback(() => {
+    if (!currentRelationOption) return;
+    // 切换显示状态
+    setIsDirectionSwitched(prev => !prev);
+  }, [currentRelationOption]);
+
+  // 确认选择当前关系
+  const handleSelectRelation = useCallback((option: { label: string; reverseLabel: string }) => {
+    setCurrentRelationOption(option);
+    setIsDirectionSwitched(false);
+  }, []);
 
   // 确认关系 - 箭头从先点击的指向后点击的
   // 逻辑：selectedNode（先点击的）是想设置关系的人，点击后选择 targetNode（后点击的）作为关系对象
@@ -312,17 +333,26 @@ export default function RelationNetworkScreen() {
   // 例如：胡洪歧（男）先点击，陈同丽（女）后点击
   // 用户选择"丈夫"，表示：陈同丽对胡洪歧的称呼是"丈夫"
   // 箭头：陈同丽（from）→ 胡洪歧（to），显示"丈夫"
-  const handleConfirmRelation = useCallback((relationLabel: string, reverseLabel: string) => {
-    if (!selectedNode || !targetNode) return;
+  const handleConfirmRelation = useCallback(() => {
+    if (!selectedNode || !targetNode || !currentRelationOption) return;
 
     let fromId: string, toId: string, fromLabel: string, toLabel: string;
     
     // 固定：from是先点击的，to是后点击的
-    // relationLabel 是后点击的对先点击的称呼
-    fromId = selectedNode.id;
-    toId = targetNode.id;
-    fromLabel = reverseLabel; // 先点击的对后点击的称呼（如：妻子）
-    toLabel = relationLabel;  // 后点击的对先点击的称呼（如：丈夫）
+    // 如果切换了方向，则反向显示
+    if (isDirectionSwitched) {
+      // 反向：from是后点击的，to是先点击的
+      fromId = targetNode.id;
+      toId = selectedNode.id;
+      fromLabel = currentRelationOption.label; // 后点击的对先点击的称呼
+      toLabel = currentRelationOption.reverseLabel; // 先点击的对后点击的称呼
+    } else {
+      // 正向：from是先点击的，to是后点击的
+      fromId = selectedNode.id;
+      toId = targetNode.id;
+      fromLabel = currentRelationOption.reverseLabel; // 先点击的对后点击的称呼
+      toLabel = currentRelationOption.label; // 后点击的对先点击的称呼
+    }
 
     // 检查是否已存在相同的关系
     const existingRelation = relations.find(
@@ -346,13 +376,15 @@ export default function RelationNetworkScreen() {
     setShowRelationModal(false);
     setSelectedNode(null);
     setTargetNode(null);
+    setCurrentRelationOption(null);
+    setIsDirectionSwitched(false);
     
     const fromName = fromId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === fromId)?.name || '';
     const toName = toId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === toId)?.name || '';
     Alert.alert('提示', `已设置：${fromName} → ${fromLabel} → ${toName}`);
-  }, [selectedNode, targetNode, relations, protagonistNode, characterNodes]);
+  }, [selectedNode, targetNode, currentRelationOption, isDirectionSwitched, relations, protagonistNode, characterNodes]);
 
   // 删除关系
   const handleDeleteRelation = useCallback((relation: Relation) => {
@@ -768,20 +800,58 @@ export default function RelationNetworkScreen() {
               
               {/* 显示设置关系 */}
               <Text style={styles.selectHint}>
-                {selectedNode?.name} → ? → {targetNode?.name}
+                {selectedNode?.name} → {currentRelationOption ? (isDirectionSwitched ? currentRelationOption.reverseLabel : currentRelationOption.label) : '?'} → {targetNode?.name}
               </Text>
               
               {/* 提示用户正在为哪个关系人设置称呼 */}
               <Text style={styles.genderHint}>
                 请选择{targetNode?.gender === '男' ? '他' : '她'}对{selectedNode?.name}的称呼
               </Text>
+
+              {/* 已选择的关系显示区域 */}
+              {currentRelationOption && (
+                <View style={styles.selectedRelationContainer}>
+                  {/* 左侧切换按钮 */}
+                  <TouchableOpacity
+                    style={styles.switchButton}
+                    onPress={handleSwitchDirection}
+                  >
+                    <Text style={styles.switchButtonText}>⇄</Text>
+                  </TouchableOpacity>
+
+                  {/* 中间当前选择 */}
+                  <View style={styles.currentRelationBox}>
+                    <Text style={styles.currentRelationLabel}>
+                      {isDirectionSwitched ? currentRelationOption.reverseLabel : currentRelationOption.label}
+                    </Text>
+                  </View>
+
+                  {/* 右侧对应反向 */}
+                  <View style={styles.reverseRelationBox}>
+                    <Text style={styles.reverseRelationLabel}>
+                      {isDirectionSwitched ? currentRelationOption.label : currentRelationOption.reverseLabel}
+                    </Text>
+                  </View>
+
+                  {/* 确认按钮 */}
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={handleConfirmRelation}
+                  >
+                    <Text style={styles.confirmButtonText}>确认</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               
               <ScrollView style={styles.relationScrollView}>
                 {filteredRelationOptions.map(option => (
                   <TouchableOpacity
                     key={option.value}
-                    style={styles.relationOption}
-                    onPress={() => handleConfirmRelation(option.label, option.reverseLabel || option.label)}
+                    style={[
+                      styles.relationOption,
+                      currentRelationOption?.value === option.value && styles.relationOptionSelected
+                    ]}
+                    onPress={() => handleSelectRelation(option)}
                   >
                     <View style={styles.relationOptionContent}>
                       <Text style={styles.relationOptionText}>{option.label}</Text>
@@ -1166,6 +1236,75 @@ const createStyles = (theme: any) => {
       color: '#94A3B8',
       fontSize: 14,
       marginLeft: 8,
+    },
+    // 已选择关系容器的样式
+    selectedRelationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#334155',
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    // 切换按钮样式
+    switchButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#38BDF8',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    switchButtonText: {
+      fontSize: 20,
+      color: '#0F172A',
+      fontWeight: 'bold',
+    },
+    // 当前选择关系框
+    currentRelationBox: {
+      flex: 1,
+      backgroundColor: '#0F172A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    currentRelationLabel: {
+      fontSize: 18,
+      color: '#38BDF8',
+      fontWeight: 'bold',
+    },
+    // 反向关系框
+    reverseRelationBox: {
+      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginLeft: 8,
+    },
+    reverseRelationLabel: {
+      fontSize: 14,
+      color: '#94A3B8',
+    },
+    // 确认按钮
+    confirmButton: {
+      backgroundColor: '#10B981',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginLeft: 12,
+    },
+    confirmButtonText: {
+      fontSize: 14,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+    // 已选中的关系选项
+    relationOptionSelected: {
+      backgroundColor: 'rgba(56, 189, 248, 0.2)',
+      borderColor: '#38BDF8',
+      borderWidth: 2,
     },
   });
 };

@@ -293,5 +293,75 @@ export const networkStyles = (theme: Theme) => {
       fontSize: 14,
       color: theme.primary,
     },
+    // 已选择关系容器的样式
+    selectedRelationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#334155',
+      borderRadius: 12,
+      padding: 12,
+      marginHorizontal: 16,
+      marginBottom: 12,
+    },
+    // 切换按钮样式
+    switchButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#38BDF8',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    switchButtonText: {
+      fontSize: 20,
+      color: '#0F172A',
+      fontWeight: 'bold',
+    },
+    // 当前选择关系框
+    currentRelationBox: {
+      flex: 1,
+      backgroundColor: '#0F172A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    currentRelationLabel: {
+      fontSize: 18,
+      color: '#38BDF8',
+      fontWeight: 'bold',
+    },
+    // 反向关系框
+    reverseRelationBox: {
+      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginLeft: 8,
+    },
+    reverseRelationLabel: {
+      fontSize: 14,
+      color: '#94A3B8',
+    },
+    // 确认按钮
+    confirmButton: {
+      backgroundColor: '#10B981',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginLeft: 12,
+    },
+    confirmButtonText: {
+      fontSize: 14,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+    // 已选中的关系选项
+    relationOptionSelected: {
+      backgroundColor: 'rgba(56, 189, 248, 0.2)',
+      borderColor: '#38BDF8',
+      borderWidth: 2,
+    },
   });
 };
