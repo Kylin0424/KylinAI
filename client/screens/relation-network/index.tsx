@@ -308,7 +308,6 @@ export default function RelationNetworkScreen() {
     setShowSelectTargetModal(false);
     // 重置选择状态
     setCurrentRelationOption(null);
-    setIsDirectionSwitched(false);
     setShowRelationModal(true);
   }, [selectedNode]);
 
@@ -340,20 +339,11 @@ export default function RelationNetworkScreen() {
     let fromId: string, toId: string, fromLabel: string, toLabel: string;
     
     // 固定：from是先点击的，to是后点击的
-    // 如果切换了方向，则反向显示
-    if (isDirectionSwitched) {
-      // 反向：from是后点击的，to是先点击的
-      fromId = targetNode.id;
-      toId = selectedNode.id;
-      fromLabel = currentRelationOption.label; // 后点击的对先点击的称呼
-      toLabel = currentRelationOption.reverseLabel; // 先点击的对后点击的称呼
-    } else {
-      // 正向：from是先点击的，to是后点击的
-      fromId = selectedNode.id;
-      toId = targetNode.id;
-      fromLabel = currentRelationOption.reverseLabel; // 先点击的对后点击的称呼
-      toLabel = currentRelationOption.label; // 后点击的对先点击的称呼
-    }
+    // 用户直接点击选择正向或反向称呼
+    fromId = selectedNode.id;
+    toId = targetNode.id;
+    fromLabel = currentRelationOption.label; // 先点击的对后点击的称呼
+    toLabel = currentRelationOption.reverseLabel; // 后点击的对先点击的称呼
 
     // 检查是否已存在相同的关系
     const existingRelation = relations.find(
@@ -378,14 +368,13 @@ export default function RelationNetworkScreen() {
     setSelectedNode(null);
     setTargetNode(null);
     setCurrentRelationOption(null);
-    setIsDirectionSwitched(false);
     
     const fromName = fromId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === fromId)?.name || '';
     const toName = toId === protagonistNode.id ? protagonistNode.name :
       characterNodes.find(n => n.id === toId)?.name || '';
     Alert.alert('提示', `已设置：${fromName} → ${fromLabel} → ${toName}`);
-  }, [selectedNode, targetNode, currentRelationOption, isDirectionSwitched, relations, protagonistNode, characterNodes]);
+  }, [selectedNode, targetNode, currentRelationOption, relations, protagonistNode, characterNodes]);
 
   // 删除关系
   const handleDeleteRelation = useCallback((relation: Relation) => {

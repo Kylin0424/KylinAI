@@ -1022,9 +1022,9 @@ export default function CharacterScreen() {
             <ActivityIndicator color={theme.buttonPrimaryText} />
           ) : (
             <>
-              <Feather name="user-plus" size={20} color={theme.buttonPrimaryText} />
+              <Feather name={selectedRelations.length > 0 && stagedFamilyMembers.length === 0 ? "users" : "user-plus"} size={20} color={theme.buttonPrimaryText} />
               <ThemedText variant="smallMedium" color={theme.buttonPrimaryText} style={styles.buttonText}>
-                生成角色
+                {selectedRelations.length > 0 && stagedFamilyMembers.length === 0 ? '设置关系网络' : '生成角色'}
               </ThemedText>
             </>
           )}
