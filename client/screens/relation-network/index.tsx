@@ -128,6 +128,7 @@ export default function RelationNetworkScreen() {
     mainCharacterGender?: string;
     familyMembersData?: string;
     protagonistId?: string;
+    characterInfo?: string; // 主角信息
   }>();
 
   const { theme } = useThemeContext();
@@ -394,36 +395,48 @@ export default function RelationNetworkScreen() {
     );
   }, []);
 
-  // 完成设置
+  // 完成设置，跳转到角色生成结果页面
   const handleComplete = useCallback(() => {
-    const resultData = {
-      protagonistId: protagonistNode.id,
-      protagonistName: protagonistNode.name,
-      protagonistGender: protagonistNode.gender,
-      relations: relations.map(r => {
-        const fromNode = r.fromId === protagonistNode.id ? protagonistNode :
-          characterNodes.find(n => n.id === r.fromId) || { id: r.fromId, name: '', gender: '' };
-        const toNode = r.toId === protagonistNode.id ? protagonistNode :
-          characterNodes.find(n => n.id === r.toId) || { id: r.toId, name: '', gender: '' };
-        return {
-          fromId: r.fromId,
-          fromName: fromNode.name,
-          fromGender: fromNode.gender,
-          toId: r.toId,
-          toName: toNode.name,
-          toGender: toNode.gender,
-          relationLabel: r.relationLabel,
-          reverseLabel: r.reverseLabel,
-        };
-      }),
-      familyMembers: familyMembersData,
+    // 解析主角信息
+    let characterInfo: any = {};
+    if (params.characterInfo) {
+      try {
+        characterInfo = JSON.parse(params.characterInfo);
+      } catch (e) {
+        console.error('Failed to parse characterInfo:', e);
+      }
+    }
+
+    // 构建关系数据
+    const relationsData = relations.map(r => {
+      const fromNode = r.fromId === protagonistNode.id ? protagonistNode :
+        characterNodes.find(n => n.id === r.fromId) || { id: r.fromId, name: '', gender: '' };
+      const toNode = r.toId === protagonistNode.id ? protagonistNode :
+        characterNodes.find(n => n.id === r.toId) || { id: r.toId, name: '', gender: '' };
+      return {
+        fromId: r.fromId,
+        fromName: fromNode.name,
+        fromGender: fromNode.gender,
+        toId: r.toId,
+        toName: toNode.name,
+        toGender: toNode.gender,
+        relationLabel: r.relationLabel,
+        reverseLabel: r.reverseLabel,
+      };
+    });
+
+    // 将关系数据添加到 characterInfo 中
+    const finalInfo = {
+      ...characterInfo,
+      relationsData: JSON.stringify(relationsData),
+      familyMembersData: characterInfo.familyMembersData || JSON.stringify(familyMembersData),
     };
 
-    console.log('Relation network completed:', resultData);
+    console.log('Relation network completed, navigating to character result:', finalInfo);
     
-    // 返回上一页，传递数据
-    router.back();
-  }, [protagonistNode, relations, characterNodes, familyMembersData, router]);
+    // 跳转到角色生成结果页面
+    router.push('/character-result', finalInfo);
+  }, [params.characterInfo, protagonistNode, relations, characterNodes, familyMembersData, router]);
 
   // 渲染带箭头的连线
   const renderLines = useMemo(() => {

@@ -185,6 +185,7 @@ export default function CharacterResultScreen() {
     familyBackground: string;
     socialExperience: string;
     familyMembersData: string; // 用户手动设置的家庭成员数据
+    relationsData?: string; // 关系网络设置的关系数据
   }>();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -235,7 +236,8 @@ export default function CharacterResultScreen() {
        * Body 参数：sliders: object, name: string, gender: string, age: string, height: string,
        *          weight: string, group: string, position: string, occupation: string, education: string,
        *          memberCount: string, familyRelation: string, familyMembersBrief: string,
-       *          familyBackground: string, socialExperience: string, familyMembersData: string
+       *          familyBackground: string, socialExperience: string, familyMembersData: string,
+       *          relationsData: string (关系网络设置的关系数据)
        */
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/character/generate`, {
         method: 'POST',
@@ -259,6 +261,7 @@ export default function CharacterResultScreen() {
           familyBackground: params.familyBackground,
           socialExperience: params.socialExperience,
           familyMembersData: params.familyMembersData, // 传递用户设置的家庭成员数据
+          relationsData: params.relationsData || '[]', // 传递关系网络设置的关系数据
         }),
       });
 

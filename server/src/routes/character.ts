@@ -61,7 +61,8 @@ router.post('/generate', async (req: Request, res: Response) => {
     socialExperience,
     group, // 新增：所属团体
     position, // 新增：职位
-    familyMembersData // 新增：用户手动设置的家庭成员数据
+    familyMembersData, // 新增：用户手动设置的家庭成员数据
+    relationsData, // 新增：关系网络设置的关系数据
   } = req.body;
 
   if (!sliders || typeof sliders !== 'object') {
