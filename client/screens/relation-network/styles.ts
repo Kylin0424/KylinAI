@@ -365,7 +365,6 @@ export const networkStyles = (theme: Theme) => {
     // 左右两列关系按钮
     relationSideButton: {
       flex: 1,
-      backgroundColor: '#1E293B',
       borderRadius: 12,
       paddingVertical: 16,
       paddingHorizontal: 12,
@@ -374,6 +373,14 @@ export const networkStyles = (theme: Theme) => {
       justifyContent: 'center',
       borderWidth: 2,
       borderColor: 'transparent',
+    },
+    // 左侧（正常关系）- 蓝色系
+    relationLeftButton: {
+      backgroundColor: '#1E40AF', // 深蓝色背景
+    },
+    // 右侧（反向关系）- 紫色系
+    relationRightButton: {
+      backgroundColor: '#7C3AED', // 紫色背景
     },
     relationSideText: {
       fontSize: 18,

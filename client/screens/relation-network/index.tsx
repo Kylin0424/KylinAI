@@ -812,25 +812,42 @@ export default function RelationNetworkScreen() {
               </Text>
 
               <ScrollView style={styles.relationScrollView}>
-                {filteredRelationOptions.map(option => (
-                  <View key={option.value} style={styles.relationRow}>
-                    {/* 左侧：正常关系 - 点击设置 targetNode 对 selectedNode 的称呼 */}
-                    <TouchableOpacity
-                      style={styles.relationSideButton}
-                      onPress={() => handleSelectRelation(option, false)}
-                    >
-                      <Text style={styles.relationSideText}>{option.label}</Text>
-                    </TouchableOpacity>
-                    
-                    {/* 右侧：反向关系 - 点击设置 selectedNode 对 targetNode 的称呼 */}
-                    <TouchableOpacity
-                      style={styles.relationSideButton}
-                      onPress={() => handleSelectRelation(option, true)}
-                    >
-                      <Text style={styles.relationSideText}>{option.reverseLabel}</Text>
-                    </TouchableOpacity>
+                <View style={styles.relationTwoColumn}>
+                  {/* 左列：正常关系 */}
+                  <View style={styles.relationColumn}>
+                    {filteredRelationOptions.map(option => (
+                      <TouchableOpacity
+                        key={`left-${option.label}`}
+                        style={[
+                          styles.relationColumnItem,
+                          currentRelationOption?.label === option.label && styles.relationColumnItemSelected
+                        ]}
+                        onPress={() => handleSelectRelation(option, false)}
+                      >
+                        <Text style={styles.relationColumnLabel}>{option.label}</Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
-                ))}
+                  
+                  {/* 分隔线 */}
+                  <View style={styles.relationColumnDivider} />
+                  
+                  {/* 右列：反向关系 */}
+                  <View style={styles.relationColumn}>
+                    {filteredRelationOptions.map(option => (
+                      <TouchableOpacity
+                        key={`right-${option.label}`}
+                        style={[
+                          styles.relationColumnItem,
+                          currentRelationOption?.label === option.reverseLabel && styles.relationColumnItemSelected
+                        ]}
+                        onPress={() => handleSelectRelation(option, true)}
+                      >
+                        <Text style={styles.relationColumnLabel}>{option.reverseLabel}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
                 {filteredRelationOptions.length === 0 && (
                   <Text style={styles.noOptionText}>
                     暂无可用关系类型
@@ -841,10 +858,10 @@ export default function RelationNetworkScreen() {
               {/* 确认按钮 */}
               {currentRelationOption && (
                 <TouchableOpacity
-                  style={styles.confirmRelationButton}
+                  style={styles.confirmButton}
                   onPress={handleConfirmRelation}
                 >
-                  <Text style={styles.confirmRelationButtonText}>
+                  <Text style={styles.confirmButtonText}>
                     确认设置 {selectedNode?.name} → {currentRelationOption.label} → {targetNode?.name}
                   </Text>
                 </TouchableOpacity>
@@ -1287,6 +1304,45 @@ const createStyles = (theme: any) => {
       backgroundColor: 'rgba(56, 189, 248, 0.2)',
       borderColor: '#38BDF8',
       borderWidth: 2,
+    },
+    // 左右两列布局
+    relationTwoColumn: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    relationColumn: {
+      width: '48%',
+    },
+    relationColumnItem: {
+      backgroundColor: '#334155',
+      paddingVertical: 16,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      marginBottom: 12,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      alignItems: 'center',
+    },
+    relationColumnItemSelected: {
+      borderColor: '#38BDF8',
+      backgroundColor: 'rgba(56, 189, 248, 0.2)',
+    },
+    relationColumnLabel: {
+      color: '#F8FAFC',
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    relationColumnReverse: {
+      color: '#94A3B8',
+      fontSize: 12,
+      marginTop: 4,
+      textAlign: 'center',
+    },
+    relationColumnDivider: {
+      width: 1,
+      backgroundColor: '#475569',
+      marginHorizontal: 8,
     },
   });
 };

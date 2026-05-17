@@ -409,10 +409,21 @@ ${basicInfo}
         }
       }
 
-    res.json({
-      protagonist: characterData,
-      familyMembers: familyMembers,
-    });
+      // 解析关系数据（从关系网络设置传来的）
+      let parsedRelations: any[] = [];
+      if (relationsData && typeof relationsData === 'string') {
+        try {
+          parsedRelations = JSON.parse(relationsData);
+        } catch (e) {
+          console.error('Failed to parse relationsData:', e);
+        }
+      }
+
+      res.json({
+        protagonist: characterData,
+        familyMembers: familyMembers,
+        relationsData: parsedRelations, // 返回关系网络设置的关系数据
+      });
   } catch (error) {
     console.error('Character generation error:', error);
     res.status(500).json({ error: '生成角色失败' });
