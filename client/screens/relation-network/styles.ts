@@ -189,6 +189,18 @@ export const networkStyles = (theme: Theme) => {
       padding: 12,
       marginBottom: 8,
     },
+    deleteBtn: {
+      backgroundColor: '#EF4444',
+      borderRadius: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      marginTop: 8,
+    },
+    deleteBtnText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
+    },
     relationItemText: {
       fontSize: 14,
       color: theme.textPrimary,

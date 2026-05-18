@@ -179,6 +179,11 @@ export default function RelationNetworkScreen() {
 
           const canvasWidth = SCREEN_WIDTH - 32;
           const nodes: CharacterNode[] = [];
+          const initialRelations: Relation[] = [];
+          
+          // 获取主角 ID
+          const protagonistId = params.protagonistId || `protagonist-${Date.now()}`;
+          
           membersWithIds.forEach((member, index) => {
             const pos = generateRandomPosition(nodes, canvasWidth, CANVAS_HEIGHT, true);
             nodePositionsRef.current[member.id || `family-member-${index}`] = pos;
@@ -190,14 +195,30 @@ export default function RelationNetworkScreen() {
               y: pos.y,
               color: COLORS[index % COLORS.length],
             });
+            
+            // 如果成员有与主角的关系，自动添加
+            if (member.relation && member.relationType) {
+              initialRelations.push({
+                id: `init-rel-${index}-${Date.now()}`,
+                fromId: protagonistId,
+                toId: member.id,
+                relationLabel: member.relation,
+                reverseLabel: member.relationType,
+              });
+            }
           });
           setCharacterNodes(nodes);
+          
+          // 自动添加主角与其他角色的初始关系
+          if (initialRelations.length > 0) {
+            setRelations(initialRelations);
+          }
         }
       } catch (e) {
         console.error('Failed to parse familyMembersData:', e);
       }
     }
-  }, [params.familyMembersData]);
+  }, [params.familyMembersData, params.mainCharacterName, params.protagonistId]);
 
   // 创建节点的拖动处理器
   const createPanResponder = useCallback((nodeId: string, isProtagonist: boolean = false) => {
@@ -415,10 +436,8 @@ export default function RelationNetworkScreen() {
         characterNodes.find(n => n.id === r.toId) || { id: r.toId, name: '', gender: '' };
       return {
         fromId: r.fromId,
-        fromName: fromNode.name,
         fromGender: fromNode.gender,
         toId: r.toId,
-        toName: toNode.name,
         toGender: toNode.gender,
         relationLabel: r.relationLabel,
         reverseLabel: r.reverseLabel,
@@ -726,20 +745,33 @@ export default function RelationNetworkScreen() {
                 )}
 
                 {/* 操作按钮 */}
-                {detailNode && detailNode.id !== protagonistNode.id && (
+                {detailNode && (
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={handleSetRelationWithProtagonist}
-                    >
-                      <Text style={styles.actionBtnText}>与主角设置关系</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={handleSetRelationWithOther}
-                    >
-                      <Text style={styles.actionBtnText}>与其他角色设置关系</Text>
-                    </TouchableOpacity>
+                    {detailNode.id === protagonistNode.id ? (
+                      // 主角：只能与其他角色设置关系
+                      <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={handleSetRelationWithOther}
+                      >
+                        <Text style={styles.actionBtnText}>与其他角色设置关系</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      // 其他角色：可以与主角或其他角色设置关系
+                      <>
+                        <TouchableOpacity
+                          style={styles.actionBtn}
+                          onPress={handleSetRelationWithProtagonist}
+                        >
+                          <Text style={styles.actionBtnText}>与主角设置关系</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.actionBtn}
+                          onPress={handleSetRelationWithOther}
+                        >
+                          <Text style={styles.actionBtnText}>与其他角色设置关系</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
                   </View>
                 )}
               </View>
