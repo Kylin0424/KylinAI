@@ -98,18 +98,23 @@ export const RELATION_OPTIONS: RelationOption[] = [
   { value: '爷爷', label: '爷爷', femaleLabel: '姥爷', reverseLabel: '孙子', reverseFemaleLabel: '孙女' },
   { value: '奶奶', label: '奶奶', femaleLabel: '姥姥', reverseLabel: '孙子', reverseFemaleLabel: '孙女' },
   
-  // 子女关系（支持多个儿子/女儿）
-  // 父亲对儿子/女儿
-  { value: '大儿子', label: '大儿子', femaleLabel: '大女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'male' },
-  { value: '二儿子', label: '二儿子', femaleLabel: '二女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'male' },
-  { value: '三儿子', label: '三儿子', femaleLabel: '三女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'male' },
-  { value: '小儿子', label: '小儿子', femaleLabel: '小女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'male' },
-  { value: '儿子', label: '儿子', femaleLabel: '女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'male' },
-  { value: '大女儿', label: '大女儿', femaleLabel: '大女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'female' },
-  { value: '二女儿', label: '二女儿', femaleLabel: '二女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'female' },
-  { value: '三女儿', label: '三女儿', femaleLabel: '三女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'female' },
-  { value: '小女儿', label: '小女儿', femaleLabel: '小女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'female' },
-  { value: '女儿', label: '女儿', femaleLabel: '女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲', genderLimit: 'female' },
+  // 子女关系（支持多个儿子/女儿）- 父母都可以称子女为儿子/女儿
+  { value: '大儿子', label: '大儿子', femaleLabel: '大女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '二儿子', label: '二儿子', femaleLabel: '二女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '三儿子', label: '三儿子', femaleLabel: '三女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '小儿子', label: '小儿子', femaleLabel: '小女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '儿子', label: '儿子', femaleLabel: '女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  // 女儿系列（单独列出方便识别）- 父母都可以使用
+  { value: '大女儿', label: '大女儿', femaleLabel: '大女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '二女儿', label: '二女儿', femaleLabel: '二女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '三女儿', label: '三女儿', femaleLabel: '三女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '小女儿', label: '小女儿', femaleLabel: '小女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  { value: '女儿', label: '女儿', femaleLabel: '女儿', reverseLabel: '父亲', reverseFemaleLabel: '母亲' },
+  
+  // 亲家关系
+  { value: '亲家', label: '亲家', reverseLabel: '亲家' },
+  { value: '亲家公', label: '亲家公', reverseLabel: '亲家母' },
+  { value: '亲家母', label: '亲家母', reverseLabel: '亲家公' },
   
   // 翁婿/婆媳关系
   { value: '公公', label: '公公', reverseLabel: '儿媳' },

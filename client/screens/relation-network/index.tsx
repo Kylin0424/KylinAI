@@ -111,7 +111,7 @@ const generateRandomPosition = (existingNodes: CharacterNode[], canvasWidth: num
 };
 
 // 根据性别过滤关系选项
-const getFilteredRelationOptions = (fromGender: string, toGender: string): RelationOption[] => {
+const getFilteredRelationOptions = (toGender: string): RelationOption[] => {
   return RELATION_OPTIONS.filter(option => {
     if (option.genderLimit) {
       if (toGender === '男' && option.genderLimit !== 'male') return false;
@@ -270,7 +270,7 @@ export default function RelationNetworkScreen() {
     // 例如：胡洪歧（男）先点击，陈同丽（女）后点击
     // 陈同丽对胡洪歧的称呼是"丈夫"
     // 所以用关系人(targetNode)的性别来筛选可用的称呼选项
-    return getFilteredRelationOptions(selectedNode.gender, targetNode.gender);
+    return getFilteredRelationOptions(selectedNode.gender);
   }, [selectedNode, targetNode]);
 
   // 点击节点
