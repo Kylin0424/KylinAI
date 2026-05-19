@@ -17,9 +17,9 @@ import { useThemeContext } from '@/contexts/ThemeContext';
 import { Character, RELATION_OPTIONS, RelationOption } from '@/utils/characterStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const NODE_SIZE = 70;
-const CANVAS_HEIGHT = 450;
-const ARROW_SIZE = 16;
+const NODE_SIZE = 55; // 缩小节点尺寸
+const CANVAS_HEIGHT = 400;
+const ARROW_SIZE = 14;
 const LINE_OFFSET = 15; // 双向关系线的偏移量
 
 interface CharacterNode {
@@ -537,7 +537,7 @@ export default function RelationNetworkScreen() {
                 {
                   left: arrowEndX - ARROW_SIZE / 2 + offsetX,
                   top: arrowEndY - ARROW_SIZE / 2 + offsetY,
-                  transform: [{ rotate: `${angle * 180 / Math.PI + 90}deg` }],
+                  transform: [{ rotate: `${angle * 180 / Math.PI - 90}deg` }],
                 },
               ]}
             />
@@ -931,7 +931,7 @@ const createStyles = (theme: any) => {
     },
     backBtn: {
       fontSize: 18,
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontWeight: '600',
     },
     title: {
@@ -1004,7 +1004,7 @@ const createStyles = (theme: any) => {
     line: {
       position: 'absolute',
       height: 4,
-      backgroundColor: '#38BDF8',
+      backgroundColor: '#FFFFFF',
       transformOrigin: 'left center',
     },
     arrow: {
@@ -1018,7 +1018,7 @@ const createStyles = (theme: any) => {
       borderTopWidth: ARROW_SIZE,
       borderLeftColor: 'transparent',
       borderRightColor: 'transparent',
-      borderTopColor: '#38BDF8',
+      borderTopColor: '#FFFFFF',
     },
     lineLabel: {
       position: 'absolute',
@@ -1027,11 +1027,11 @@ const createStyles = (theme: any) => {
       paddingVertical: 6,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#38BDF8',
+      borderColor: '#FFFFFF',
     },
     lineLabelText: {
       fontSize: 12,
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontWeight: 'bold',
     },
     relationList: {
@@ -1069,7 +1069,7 @@ const createStyles = (theme: any) => {
       color: '#F8FAFC',
     },
     highlight: {
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontWeight: 'bold',
     },
     relationLabel: {
@@ -1097,7 +1097,7 @@ const createStyles = (theme: any) => {
       bottom: 30,
       left: 16,
       right: 16,
-      backgroundColor: '#38BDF8',
+      backgroundColor: '#FFFFFF',
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
@@ -1152,7 +1152,7 @@ const createStyles = (theme: any) => {
     },
     relationText: {
       fontSize: 14,
-      color: '#38BDF8',
+      color: '#FFFFFF',
       marginBottom: 6,
     },
     actionButtons: {
@@ -1180,7 +1180,7 @@ const createStyles = (theme: any) => {
     },
     backButton: {
       fontSize: 16,
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontWeight: '600',
     },
     selectHint: {
@@ -1197,10 +1197,10 @@ const createStyles = (theme: any) => {
       borderRadius: 10,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: '#38BDF8',
+      borderColor: '#FFFFFF',
     },
     toggleDirectionBtnText: {
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontSize: 14,
       textAlign: 'center',
     },
@@ -1288,7 +1288,7 @@ const createStyles = (theme: any) => {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: '#38BDF8',
+      backgroundColor: '#FFFFFF',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 12,
@@ -1309,7 +1309,7 @@ const createStyles = (theme: any) => {
     },
     currentRelationLabel: {
       fontSize: 18,
-      color: '#38BDF8',
+      color: '#FFFFFF',
       fontWeight: 'bold',
     },
     // 反向关系框
@@ -1340,7 +1340,7 @@ const createStyles = (theme: any) => {
     // 已选中的关系选项
     relationOptionSelected: {
       backgroundColor: 'rgba(56, 189, 248, 0.2)',
-      borderColor: '#38BDF8',
+      borderColor: '#FFFFFF',
       borderWidth: 2,
     },
     // 左右两列布局
@@ -1362,7 +1362,7 @@ const createStyles = (theme: any) => {
       alignItems: 'center',
     },
     relationColumnItemSelected: {
-      borderColor: '#38BDF8',
+      borderColor: '#FFFFFF',
       backgroundColor: 'rgba(56, 189, 248, 0.2)',
     },
     relationColumnLabel: {
