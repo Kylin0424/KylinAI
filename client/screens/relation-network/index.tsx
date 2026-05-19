@@ -298,15 +298,11 @@ export default function RelationNetworkScreen() {
   const handleSelectNode = useCallback((node: CharacterNode) => {
     if (draggingNodeId) return; // 正在拖动时不响应点击
     
-    if (node.id === protagonistNode.id) {
-      setDetailNode(node);
-      setShowDetailModal(true);
-    } else {
-      setSelectedNode(node);
-      setDetailNode(node);
-      setShowDetailModal(true);
-    }
-  }, [draggingNodeId, protagonistNode]);
+    // 先设置 selectedNode，再打开详情弹窗
+    setSelectedNode(node);
+    setDetailNode(node);
+    setShowDetailModal(true);
+  }, [draggingNodeId]);
 
   // 设置与主角的关系
   const handleSetRelationWithProtagonist = useCallback(() => {
@@ -763,6 +759,16 @@ export default function RelationNetworkScreen() {
                           onPress={handleSetRelationWithProtagonist}
                         >
                           <Text style={styles.actionBtnText}>与主角设置关系</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.deleteBtn}
+                          onPress={() => {
+                            const relationIds = getNodeRelations(detailNode?.id || '').map(r => r.id);
+                            setRelations(prev => prev.filter(r => !relationIds.includes(r.id)));
+                            setShowDetailModal(false);
+                          }}
+                        >
+                          <Text style={styles.deleteBtnText}>删除关系</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionBtn}
