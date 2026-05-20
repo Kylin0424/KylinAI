@@ -26,6 +26,7 @@ import {
   Novel,
   getNovelById,
   updateNovelContent,
+  updateNovelWorldSettings,
   createNovel,
   addChapter,
   updateChapter,
@@ -102,6 +103,16 @@ export default function NovelWritingScreen() {
   const [isSaving, setIsSaving] = useState(false); // 手动保存状态
   // 世界设定状态（确保从小说数据加载后持久化）
   const [worldSettings, setWorldSettings] = useState<{
+    worldName?: string;
+    eraBackground?: string;
+    seasonSetting?: string;
+    protagonistDoing?: string;
+    region?: string;
+    cityLocation?: string;
+  }>({});
+  // 世界设定编辑相关状态
+  const [showWorldSettingsModal, setShowWorldSettingsModal] = useState(false);
+  const [editingWorldSettings, setEditingWorldSettings] = useState<{
     worldName?: string;
     eraBackground?: string;
     seasonSetting?: string;
@@ -705,6 +716,26 @@ export default function NovelWritingScreen() {
     setSelectedModelId(modelId);
     setShowModelSelector(false);
     await fetchAiUsage(modelId);
+  };
+
+  // 打开世界设定编辑
+  const handleEditWorldSettings = () => {
+    setEditingWorldSettings({ ...worldSettings });
+    setShowWorldSettingsModal(true);
+  };
+
+  // 保存世界设定
+  const handleSaveWorldSettings = async () => {
+    if (!novel) return;
+    try {
+      await updateNovelWorldSettings(novel.id, editingWorldSettings);
+      setWorldSettings({ ...editingWorldSettings });
+      setShowWorldSettingsModal(false);
+      Alert.alert('成功', '世界设定已保存');
+    } catch (error) {
+      console.error('保存世界设定失败:', error);
+      Alert.alert('错误', '保存世界设定失败');
+    }
   };
 
   // 初始加载AI模型列表和调用次数
@@ -1801,9 +1832,14 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
               </ThemedText>
             </View>
             <View style={styles.firstChapterHint}>
-              <ThemedText variant="caption" color={theme.textMuted}>
-                世界：{worldSettings.worldName || '未设置'} · 年代：{worldSettings.eraBackground || '现代社会'} · 季节：{worldSettings.seasonSetting || '春季'}
-              </ThemedText>
+              <View style={styles.worldSettingsRow}>
+                <ThemedText variant="caption" color={theme.textMuted}>
+                  世界：{worldSettings.worldName || '未设置'} · 年代：{worldSettings.eraBackground || '现代社会'} · 季节：{worldSettings.seasonSetting || '春季'}
+                </ThemedText>
+                <TouchableOpacity onPress={handleEditWorldSettings} style={styles.editWorldSettingsBtn}>
+                  <ThemedText variant="caption" color="#C8102E">编辑</ThemedText>
+                </TouchableOpacity>
+              </View>
               {worldSettings.protagonistDoing && (
                 <ThemedText variant="caption" color={theme.textMuted}>
                   主角正在：{worldSettings.protagonistDoing}
@@ -2948,6 +2984,93 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
                   </ThemedText>
                 </View>
                 <Feather name="chevron-right" size={20} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 世界设定编辑弹窗 */}
+      <Modal
+        visible={showWorldSettingsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowWorldSettingsModal(false)}
+      >
+        <View style={styles.addSideCharacterModalOverlay}>
+          <View style={styles.addSideCharacterModalContent}>
+            <View style={styles.addSideCharacterModalHeader}>
+              <ThemedText variant="h3" color={theme.textPrimary}>
+                世界设定
+              </ThemedText>
+              <TouchableOpacity onPress={() => setShowWorldSettingsModal(false)}>
+                <Feather name="x" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.addSideCharacterModalBody}>
+              <View style={styles.addSideCharacterOption}>
+                <ThemedText variant="caption" color={theme.textMuted} style={{ marginBottom: 8 }}>
+                  世界名称
+                </ThemedText>
+                <TextInput
+                  style={styles.continueInput}
+                  value={editingWorldSettings.worldName || ''}
+                  onChangeText={(text) => setEditingWorldSettings({ ...editingWorldSettings, worldName: text })}
+                  placeholder="如：现代都市、古风仙侠等"
+                  placeholderTextColor={theme.textMuted}
+                />
+              </View>
+
+              <View style={styles.addSideCharacterOption}>
+                <ThemedText variant="caption" color={theme.textMuted} style={{ marginBottom: 8 }}>
+                  年代背景
+                </ThemedText>
+                <TextInput
+                  style={styles.continueInput}
+                  value={editingWorldSettings.eraBackground || ''}
+                  onChangeText={(text) => setEditingWorldSettings({ ...editingWorldSettings, eraBackground: text })}
+                  placeholder="如：现代社会、80年代等"
+                  placeholderTextColor={theme.textMuted}
+                />
+              </View>
+
+              <View style={styles.addSideCharacterOption}>
+                <ThemedText variant="caption" color={theme.textMuted} style={{ marginBottom: 8 }}>
+                  季节设定
+                </ThemedText>
+                <TextInput
+                  style={styles.continueInput}
+                  value={editingWorldSettings.seasonSetting || ''}
+                  onChangeText={(text) => setEditingWorldSettings({ ...editingWorldSettings, seasonSetting: text })}
+                  placeholder="如：春季、夏季等"
+                  placeholderTextColor={theme.textMuted}
+                />
+              </View>
+
+              <View style={styles.addSideCharacterOption}>
+                <ThemedText variant="caption" color={theme.textMuted} style={{ marginBottom: 8 }}>
+                  主角当前活动
+                </ThemedText>
+                <TextInput
+                  style={styles.continueInput}
+                  value={editingWorldSettings.protagonistDoing || ''}
+                  onChangeText={(text) => setEditingWorldSettings({ ...editingWorldSettings, protagonistDoing: text })}
+                  placeholder="描述主角当前正在做什么"
+                  placeholderTextColor={theme.textMuted}
+                  multiline
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.addSideCharacterModalBody}>
+              <TouchableOpacity
+                style={[styles.addSideCharacterOption, { backgroundColor: '#C8102E', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}
+                onPress={handleSaveWorldSettings}
+              >
+                <ThemedText variant="smallMedium" color="#FFFFFF">
+                  保存
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>

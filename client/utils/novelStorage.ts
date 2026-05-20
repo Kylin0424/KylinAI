@@ -198,6 +198,37 @@ export const updateNovelContent = async (novelId: string, content: string): Prom
   }
 };
 
+// 更新小说世界设定
+export const updateNovelWorldSettings = async (
+  novelId: string,
+  worldSettings: {
+    worldName?: string;
+    eraBackground?: string;
+    seasonSetting?: string;
+    protagonistDoing?: string;
+    region?: string;
+    cityLocation?: string;
+  }
+): Promise<void> => {
+  try {
+    const novels = await getAllNovels();
+    const index = novels.findIndex(n => n.id === novelId);
+    if (index !== -1) {
+      if (worldSettings.worldName !== undefined) novels[index].worldName = worldSettings.worldName;
+      if (worldSettings.eraBackground !== undefined) novels[index].eraBackground = worldSettings.eraBackground;
+      if (worldSettings.seasonSetting !== undefined) novels[index].seasonSetting = worldSettings.seasonSetting;
+      if (worldSettings.protagonistDoing !== undefined) novels[index].protagonistDoing = worldSettings.protagonistDoing;
+      if (worldSettings.region !== undefined) novels[index].region = worldSettings.region;
+      if (worldSettings.cityLocation !== undefined) novels[index].cityLocation = worldSettings.cityLocation;
+      novels[index].updatedAt = Date.now();
+      await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+    }
+  } catch (error) {
+    console.error('Error updating world settings:', error);
+    throw error;
+  }
+};
+
 // 添加章节
 export const addChapter = async (
   novelId: string, 

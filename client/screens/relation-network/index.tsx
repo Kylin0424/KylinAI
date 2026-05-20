@@ -20,7 +20,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const NODE_SIZE = 55; // 缩小节点尺寸
 const CANVAS_HEIGHT = 400;
 const ARROW_SIZE = 14;
-const LINE_OFFSET = 15; // 双向关系线的偏移量
+const LINE_OFFSET = 40; // 双向关系线的偏移量
 
 interface CharacterNode {
   id: string;
@@ -503,8 +503,10 @@ export default function RelationNetworkScreen() {
           const perpendicularAngle = angle + Math.PI / 2;
           // 第一条向上偏移，第二条向下偏移
           const offsetDirection = relationIndexInGroup % 2 === 0 ? 1 : -1;
-          offsetX = Math.cos(perpendicularAngle) * LINE_OFFSET * offsetDirection;
-          offsetY = Math.sin(perpendicularAngle) * LINE_OFFSET * offsetDirection;
+          // 增大偏移量，让两条线明显分开
+          const lineOffset = 40;
+          offsetX = Math.cos(perpendicularAngle) * lineOffset * offsetDirection;
+          offsetY = Math.sin(perpendicularAngle) * lineOffset * offsetDirection;
         }
 
         // 计算标签位置（在线的中间）
@@ -513,13 +515,14 @@ export default function RelationNetworkScreen() {
         const labelY = fromPos.y + dy * labelOffset + offsetY;
 
         // 计算箭头的终点（靠近目标节点）
-        const arrowDistance = NODE_SIZE / 2 + 5; // 停在节点边缘外
-        const arrowEndX = toPos.x - Math.cos(angle) * arrowDistance;
-        const arrowEndY = toPos.y - Math.sin(angle) * arrowDistance;
+        const arrowDistance = NODE_SIZE / 2 + 5;
+        // 将偏移应用到箭头终点（这样箭头指向的目标也会偏移）
+        const arrowEndX = toPos.x - Math.cos(angle) * arrowDistance + offsetX;
+        const arrowEndY = toPos.y - Math.sin(angle) * arrowDistance + offsetY;
         
-        // 计算箭头的起点（从源节点边缘开始）
-        const arrowStartX = fromPos.x + Math.cos(angle) * (NODE_SIZE / 2 + 5);
-        const arrowStartY = fromPos.y + Math.sin(angle) * (NODE_SIZE / 2 + 5);
+        // 计算箭头的起点（从源节点边缘开始，也应用偏移）
+        const arrowStartX = fromPos.x + Math.cos(angle) * (NODE_SIZE / 2 + 5) + offsetX;
+        const arrowStartY = fromPos.y + Math.sin(angle) * (NODE_SIZE / 2 + 5) + offsetY;
         
         const actualLength = Math.sqrt(
           Math.pow(arrowEndX - arrowStartX, 2) + 

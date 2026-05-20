@@ -621,6 +621,18 @@ export const createStyles = (theme: Theme) => {
       marginTop: Spacing.sm,
       alignItems: 'center',
     },
+    worldSettingsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    editWorldSettingsBtn: {
+      marginLeft: Spacing.sm,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      backgroundColor: 'rgba(200, 16, 46, 0.1)',
+      borderRadius: BorderRadius.sm,
+    },
     // AI模型选择与调用次数显示
     aiUsageContainer: {
       backgroundColor: theme.backgroundDefault,
