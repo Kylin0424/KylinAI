@@ -483,16 +483,26 @@ export default function RelationNetworkScreen() {
         const angle = Math.atan2(dy, dx);
 
         // 检测是否为双向关系（检查是否有反向关系）
-        const hasReverseRelation = relations.some(
-          r => r.fromId === relation.toId && r.toId === relation.fromId
-        );
+        // 找出所有涉及同一对角色的关系索引，用于决定偏移方向
+        const relatedRelationIndices = relations
+          .map((r, idx) => {
+            // 检查是否与当前关系共享任意一个端点
+            const sharesFrom = r.fromId === relation.fromId || r.fromId === relation.toId;
+            const sharesTo = r.toId === relation.fromId || r.toId === relation.toId;
+            return sharesFrom && sharesTo ? idx : -1;
+          })
+          .filter(idx => idx !== -1);
+        
+        // 如果有多个关系涉及同一对角色，计算当前关系在这个组中的位置
+        const relationIndexInGroup = relatedRelationIndices.indexOf(index);
+        const isBidirectional = relatedRelationIndices.length > 1;
         
         // 如果是双向关系，添加垂直偏移
         let offsetX = 0, offsetY = 0;
-        if (hasReverseRelation) {
+        if (isBidirectional) {
           const perpendicularAngle = angle + Math.PI / 2;
-          // 根据关系索引决定偏移方向（上下交替）
-          const offsetDirection = index % 2 === 0 ? 1 : -1;
+          // 第一条向上偏移，第二条向下偏移
+          const offsetDirection = relationIndexInGroup % 2 === 0 ? 1 : -1;
           offsetX = Math.cos(perpendicularAngle) * LINE_OFFSET * offsetDirection;
           offsetY = Math.sin(perpendicularAngle) * LINE_OFFSET * offsetDirection;
         }
@@ -844,9 +854,9 @@ export default function RelationNetworkScreen() {
                 {selectedNode?.name} → ? → {targetNode?.name}
               </Text>
               
-              {/* 提示用户正在为哪个关系人设置称呼 */}
+              {/* 提示用户正在设置的关系 */}
               <Text style={styles.genderHint}>
-                请选择{targetNode?.gender === '男' ? '他' : '她'}对{selectedNode?.name}的称呼
+                请选择「{selectedNode?.name}」对「{targetNode?.name}」的称呼
               </Text>
 
               <ScrollView style={styles.relationScrollView}>

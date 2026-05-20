@@ -297,8 +297,51 @@ export default function NovelDatabaseScreen() {
           
           {activeTab === 'settings' && (
             <View style={styles.contentSection}>
-              {currentNovel.worldSettings ? (
-                <Text style={styles.contentText}>{currentNovel.worldSettings}</Text>
+              {currentNovel.worldName || currentNovel.eraBackground || currentNovel.region ? (
+                <View>
+                  {currentNovel.worldName && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>世界名称</Text>
+                      <Text style={styles.settingValue}>{currentNovel.worldName}</Text>
+                    </View>
+                  )}
+                  {currentNovel.eraBackground && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>年代背景</Text>
+                      <Text style={styles.settingValue}>{currentNovel.eraBackground}</Text>
+                    </View>
+                  )}
+                  {currentNovel.seasonSetting && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>季节设定</Text>
+                      <Text style={styles.settingValue}>{currentNovel.seasonSetting}</Text>
+                    </View>
+                  )}
+                  {currentNovel.region && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>地区</Text>
+                      <Text style={styles.settingValue}>{currentNovel.region}</Text>
+                    </View>
+                  )}
+                  {currentNovel.cityLocation && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>城市位置</Text>
+                      <Text style={styles.settingValue}>{currentNovel.cityLocation}</Text>
+                    </View>
+                  )}
+                  {currentNovel.protagonistDoing && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>主角活动</Text>
+                      <Text style={styles.settingValue}>{currentNovel.protagonistDoing}</Text>
+                    </View>
+                  )}
+                  {currentNovel.worldSettings && (
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>详细设定</Text>
+                      <Text style={styles.settingValue}>{currentNovel.worldSettings}</Text>
+                    </View>
+                  )}
+                </View>
               ) : (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyIcon}>🌍</Text>
@@ -657,6 +700,22 @@ const styles = StyleSheet.create({
   },
   contentText: {
     fontSize: 14,
+    color: '#333',
+    lineHeight: 22,
+  },
+  settingRow: {
+    marginBottom: Spacing.md,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  settingLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: Spacing.xs,
+  },
+  settingValue: {
+    fontSize: 15,
     color: '#333',
     lineHeight: 22,
   },
