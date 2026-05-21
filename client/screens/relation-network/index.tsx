@@ -394,11 +394,11 @@ export default function RelationNetworkScreen() {
     Alert.alert('提示', `已设置：${fromName} → ${fromLabel} → ${toName}`);
   }, [selectedNode, targetNode, currentRelationOption, relations, protagonistNode, characterNodes]);
 
-  // 删除关系
-  const handleDeleteRelation = useCallback((relation: Relation) => {
+  // 删除关系（普通函数，避免闭包问题）
+  const handleDeleteRelation = (relation: Relation) => {
     Alert.alert(
       '删除关系',
-      '确定要删除这条关系吗？',
+      `确定要删除「${relation.fromId === protagonistNode.id ? protagonistNode.name : characterNodes.find(n => n.id === relation.fromId)?.name}」与「${relation.toId === protagonistNode.id ? protagonistNode.name : characterNodes.find(n => n.id === relation.toId)?.name}」的关系吗？`,
       [
         { text: '取消', style: 'cancel' },
         {
@@ -410,7 +410,7 @@ export default function RelationNetworkScreen() {
         },
       ]
     );
-  }, []);
+  };
 
   // 完成设置，跳转到角色生成结果页面
   const handleComplete = useCallback(() => {
@@ -453,10 +453,10 @@ export default function RelationNetworkScreen() {
     router.push('/character-result', finalInfo);
   }, [params.characterInfo, protagonistNode, relations, characterNodes, familyMembersData, router]);
 
-  // 渲染带箭头的连线
+  // 渲染带箭头的连线（单条线，自动显示相对关系）
   const renderLines = useMemo(() => {
     return () => {
-      return relations.map((relation, index) => {
+      return relations.map((relation) => {
         // 获取实际位置（优先使用 ref 中的位置）
         let fromPos = { x: 0, y: 0 }, toPos = { x: 0, y: 0 };
         
@@ -482,47 +482,19 @@ export default function RelationNetworkScreen() {
         const length = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx);
 
-        // 检测是否为双向关系（检查是否有反向关系）
-        // 找出所有涉及同一对角色的关系索引，用于决定偏移方向
-        const relatedRelationIndices = relations
-          .map((r, idx) => {
-            // 检查是否与当前关系共享任意一个端点
-            const sharesFrom = r.fromId === relation.fromId || r.fromId === relation.toId;
-            const sharesTo = r.toId === relation.fromId || r.toId === relation.toId;
-            return sharesFrom && sharesTo ? idx : -1;
-          })
-          .filter(idx => idx !== -1);
-        
-        // 如果有多个关系涉及同一对角色，计算当前关系在这个组中的位置
-        const relationIndexInGroup = relatedRelationIndices.indexOf(index);
-        const isBidirectional = relatedRelationIndices.length > 1;
-        
-        // 如果是双向关系，添加垂直偏移
-        let offsetX = 0, offsetY = 0;
-        if (isBidirectional) {
-          const perpendicularAngle = angle + Math.PI / 2;
-          // 第一条向上偏移，第二条向下偏移
-          const offsetDirection = relationIndexInGroup % 2 === 0 ? 1 : -1;
-          // 增大偏移量，让两条线明显分开
-          const lineOffset = 40;
-          offsetX = Math.cos(perpendicularAngle) * lineOffset * offsetDirection;
-          offsetY = Math.sin(perpendicularAngle) * lineOffset * offsetDirection;
-        }
-
-        // 计算标签位置（在线的中间）
+        // 计算标签位置（在线的中间），显示相对关系
         const labelOffset = 0.5;
-        const labelX = fromPos.x + dx * labelOffset + offsetX;
-        const labelY = fromPos.y + dy * labelOffset + offsetY;
+        const labelX = fromPos.x + dx * labelOffset;
+        const labelY = fromPos.y + dy * labelOffset;
 
         // 计算箭头的终点（靠近目标节点）
         const arrowDistance = NODE_SIZE / 2 + 5;
-        // 将偏移应用到箭头终点（这样箭头指向的目标也会偏移）
-        const arrowEndX = toPos.x - Math.cos(angle) * arrowDistance + offsetX;
-        const arrowEndY = toPos.y - Math.sin(angle) * arrowDistance + offsetY;
+        const arrowEndX = toPos.x - Math.cos(angle) * arrowDistance;
+        const arrowEndY = toPos.y - Math.sin(angle) * arrowDistance;
         
-        // 计算箭头的起点（从源节点边缘开始，也应用偏移）
-        const arrowStartX = fromPos.x + Math.cos(angle) * (NODE_SIZE / 2 + 5) + offsetX;
-        const arrowStartY = fromPos.y + Math.sin(angle) * (NODE_SIZE / 2 + 5) + offsetY;
+        // 计算箭头的起点（从源节点边缘开始）
+        const arrowStartX = fromPos.x + Math.cos(angle) * (NODE_SIZE / 2 + 5);
+        const arrowStartY = fromPos.y + Math.sin(angle) * (NODE_SIZE / 2 + 5);
         
         const actualLength = Math.sqrt(
           Math.pow(arrowEndX - arrowStartX, 2) + 
@@ -537,8 +509,8 @@ export default function RelationNetworkScreen() {
                 styles.line,
                 {
                   width: actualLength,
-                  left: arrowStartX + offsetX / 2,
-                  top: arrowStartY + offsetY / 2,
+                  left: arrowStartX,
+                  top: arrowStartY,
                   transform: [{ rotate: `${angle * 180 / Math.PI}deg` }],
                 },
               ]}
@@ -548,20 +520,20 @@ export default function RelationNetworkScreen() {
               style={[
                 styles.arrow,
                 {
-                  left: arrowEndX - ARROW_SIZE / 2 + offsetX,
-                  top: arrowEndY - ARROW_SIZE / 2 + offsetY,
+                  left: arrowEndX - ARROW_SIZE / 2,
+                  top: arrowEndY - ARROW_SIZE / 2,
                   transform: [{ rotate: `${angle * 180 / Math.PI - 90}deg` }],
                 },
               ]}
             />
-            {/* 关系标签 */}
+            {/* 关系标签 - 显示相对关系（如"父亲"显示为"父子"） */}
             <View
               style={[
                 styles.lineLabel,
-                { left: labelX - 35, top: labelY - 12 },
+                { left: labelX - 25, top: labelY - 12 },
               ]}
             >
-              <Text style={styles.lineLabelText}>{relation.relationLabel}</Text>
+              <Text style={styles.lineLabelText}>{relation.relationLabel}{relation.reverseLabel}</Text>
             </View>
           </View>
         );

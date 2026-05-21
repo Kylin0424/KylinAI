@@ -22,6 +22,8 @@ import {
   getAllRelations,
   deleteCharacter,
   forceDeleteCharacters,
+  linkCharacterToNovel,
+  unlinkCharacterFromNovel,
 } from '@/utils/characterStorage';
 import { Novel, getAllNovels } from '@/utils/novelStorage';
 import { FAMILY_RELATIONS } from '@/constants/familyRelations';
@@ -235,6 +237,32 @@ export default function CharacterListScreen() {
     console.log('[CharacterList] Delete cancelled');
     setDeleteModalVisible(false);
     setCharacterToDelete(null);
+  };
+
+  // 解除角色与小说的关联（解锁）
+  const handleUnlockCharacter = async (character: Character) => {
+    console.log('[CharacterList] handleUnlockCharacter called:', character.name);
+    
+    Alert.alert(
+      '解除锁定',
+      `确定要将「${character.name}」从小说「${getLinkedNovelName(character.novelId) || ''}」中移除吗？`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确定',
+          onPress: async () => {
+            try {
+              await unlinkCharacterFromNovel(character.id);
+              console.log('[CharacterList] Character unlocked successfully');
+              loadData();
+            } catch (error) {
+              console.error('[CharacterList] Error unlocking character:', error);
+              Alert.alert('错误', '解除锁定失败，请重试');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // 多选模式相关函数
@@ -942,17 +970,29 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
                       )}
                     </View>
                     {!isSelectMode && !isMultiSelectMode && (
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => {
-                          console.log('[CharacterList] Delete button pressed for:', char.name);
-                          handleDeleteCharacter(char);
-                        }}
-                        disabled={isLocked}
-                        activeOpacity={0.7}
-                      >
-                        <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
-                      </TouchableOpacity>
+                      <View style={styles.cardActions}>
+                        {isLocked ? (
+                          <TouchableOpacity
+                            style={styles.unlockButton}
+                            onPress={() => handleUnlockCharacter(char)}
+                            activeOpacity={0.7}
+                          >
+                            <Feather name="unlock" size={16} color="#C8102E" />
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => {
+                              console.log('[CharacterList] Delete button pressed for:', char.name);
+                              handleDeleteCharacter(char);
+                            }}
+                            disabled={isLocked}
+                            activeOpacity={0.7}
+                          >
+                            <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     )}
                   </View>
 

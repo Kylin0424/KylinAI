@@ -149,6 +149,13 @@ export const createStyles = (theme: Theme) => {
     deleteButton: {
       padding: Spacing.sm,
     },
+    cardActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    unlockButton: {
+      padding: Spacing.sm,
+    },
     relationsContainer: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: '#E5E5E5',
