@@ -576,3 +576,87 @@ export const addSideCharacterToNovel = async (
     console.error('Error adding side character to novel:', error);
   }
 };
+
+// 同步角色库到小说数据库（同名覆盖）
+export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
+  try {
+    const novels = await getAllNovels();
+    const novelIndex = novels.findIndex(n => n.id === novelId);
+    if (novelIndex === -1) return;
+
+    const novel = novels[novelIndex];
+    const allCharacters = await getAllCharacters();
+    
+    // 获取小说当前的角色列表（通过ID）
+    const currentCharacterIds = [
+      novel.maleCharacterId,
+      novel.femaleCharacterId,
+      ...novel.sideCharacterIds
+    ].filter(Boolean);
+
+    // 遍历角色库，检查是否需要同步
+    for (const char of allCharacters) {
+      if (!currentCharacterIds.includes(char.id)) continue;
+      
+      // 在角色库中找到对应的角色
+      const libraryChar = allCharacters.find(c => c.id === char.id);
+      if (!libraryChar) continue;
+
+      // 检查小说数据库中是否已有同名角色
+      let updated = false;
+
+      // 检查男主
+      if (novel.maleCharacterData && 
+          (novel.maleCharacterData.name === libraryChar.name || novel.maleCharacterData.id === libraryChar.id)) {
+        novels[novelIndex].maleCharacterData = {
+          ...novel.maleCharacterData,
+          name: libraryChar.name,
+          gender: libraryChar.gender,
+          age: libraryChar.age,
+          appearance: libraryChar.appearance,
+          personality: libraryChar.personality,
+          background: libraryChar.background,
+        };
+        updated = true;
+      }
+      
+      // 检查女主
+      if (!updated && novel.femaleCharacterData && 
+          (novel.femaleCharacterData.name === libraryChar.name || novel.femaleCharacterData.id === libraryChar.id)) {
+        novels[novelIndex].femaleCharacterData = {
+          ...novel.femaleCharacterData,
+          name: libraryChar.name,
+          gender: libraryChar.gender,
+          age: libraryChar.age,
+          appearance: libraryChar.appearance,
+          personality: libraryChar.personality,
+          background: libraryChar.background,
+        };
+        updated = true;
+      }
+      
+      // 检查配角
+      if (!updated && novels[novelIndex].sideCharacters) {
+        const sideIndex = novels[novelIndex].sideCharacters!.findIndex(
+          c => c.name === libraryChar.name || c.id === libraryChar.id
+        );
+        if (sideIndex !== -1) {
+          novels[novelIndex].sideCharacters![sideIndex] = {
+            ...novels[novelIndex].sideCharacters![sideIndex],
+            name: libraryChar.name,
+            gender: libraryChar.gender,
+            age: libraryChar.age,
+            appearance: libraryChar.appearance,
+            personality: libraryChar.personality,
+            background: libraryChar.background,
+          };
+        }
+      }
+    }
+
+    novels[novelIndex].updatedAt = Date.now();
+    await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+  } catch (error) {
+    console.error('Error syncing characters to novel:', error);
+  }
+};

@@ -32,6 +32,7 @@ import {
   updateChapter,
   updateNovelCharacter,
   addSideCharacterToNovel,
+  syncCharactersToNovel,
 } from '@/utils/novelStorage';
 import {
   Character,
@@ -328,6 +329,15 @@ export default function NovelWritingScreen() {
       setNovel(novelData);
 
     if (novelData) {
+      // 自动同步角色库到小说数据库（同名覆盖，确保AI读取最新的角色信息）
+      await syncCharactersToNovel(novelData.id);
+      
+      // 重新加载同步后的数据
+      const syncedNovelData = await getNovelById(params.novelId);
+      if (syncedNovelData) {
+        setNovel(syncedNovelData);
+      }
+      
       // 从小说对象加载世界设定信息（确保数据持久化）
       setWorldSettings({
         worldName: novelData.worldName || params.worldName || '',

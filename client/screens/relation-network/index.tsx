@@ -658,11 +658,7 @@ export default function RelationNetworkScreen() {
                   <View key={relation.id} style={styles.relationItem}>
                     <View style={styles.relationInfo}>
                       <Text style={styles.relationItemText}>
-                        <Text style={styles.highlight}>{fromNode.name}</Text>
-                        {' → '}
-                        <Text style={styles.relationLabel}>{relation.relationLabel}</Text>
-                        {' → '}
-                        <Text style={styles.highlight}>{toNode.name}</Text>
+                        {fromNode.name} → {relation.relationLabel} → {toNode.name}
                       </Text>
                       <Text style={styles.relationDesc}>
                         （{toNode.name} 的 {relation.reverseLabel}）
@@ -671,6 +667,7 @@ export default function RelationNetworkScreen() {
                     <TouchableOpacity
                       style={styles.deleteBtn}
                       onPress={() => handleDeleteRelation(relation)}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.deleteBtnText}>删除</Text>
                     </TouchableOpacity>
