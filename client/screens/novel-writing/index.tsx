@@ -1659,6 +1659,30 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
     }
   };
 
+  // 使用建议解决冲突并继续生成
+  const handleGenerateWithSuggestion = async () => {
+    if (!novel || !conflictInfo?.conflicts) return;
+    
+    setShowConflictModal(false);
+    
+    // 从冲突信息中提取解决建议
+    const conflictDescriptions = conflictInfo.conflicts
+      .map(c => `${c.characterName}: ${c.description}`)
+      .join('\n');
+    
+    const resolutionText = `
+【注意处理以下角色冲突】
+${conflictDescriptions}
+
+请根据以上冲突调整剧情，在续写时确保角色设定的一致性。
+`.trim();
+    
+    setContinueDirection(prev => prev ? `${prev}\n\n${resolutionText}` : resolutionText);
+    
+    // 调用正常生成流程，跳过冲突检测
+    handleGenerate(true);
+  };
+
   // 添加配角
   const addSideCharacter = (character: Character) => {
     if (!sideCharacters.find(c => c.id === character.id)) {
@@ -2465,15 +2489,28 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
               )}
             </ScrollView>
 
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
               <TouchableOpacity
-                style={[styles.continueGenerateButton, { flex: 1, backgroundColor: theme.textMuted }]}
+                style={[styles.continueGenerateButton, { backgroundColor: theme.textMuted }]}
                 onPress={() => setShowConflictModal(false)}
               >
                 <ThemedText variant="small" color="#FFFFFF">取消续写</ThemedText>
               </TouchableOpacity>
+              {conflictInfo?.suggestion?.canCreateTempCharacter && conflictInfo.suggestion.tempCharacterSuggestion && (
+                <TouchableOpacity
+                  style={[styles.continueGenerateButton, { backgroundColor: theme.primary }]}
+                  onPress={() => handleGenerateWithSuggestion()}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <ThemedText variant="small" color="#FFFFFF">采用建议</ThemedText>
+                  )}
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
-                style={[styles.continueGenerateButton, { flex: 1 }]}
+                style={[styles.continueGenerateButton, { flex: 1, minWidth: 120 }]}
                 onPress={() => handleGenerate(true)}
                 disabled={isGenerating}
               >

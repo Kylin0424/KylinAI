@@ -156,6 +156,10 @@ export const createStyles = (theme: Theme) => {
     unlockButton: {
       padding: Spacing.sm,
     },
+    addToNovelButton: {
+      padding: Spacing.sm,
+      marginRight: Spacing.xs,
+    },
     relationsContainer: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: '#E5E5E5',

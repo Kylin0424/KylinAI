@@ -265,6 +265,59 @@ export default function CharacterListScreen() {
     );
   };
 
+  // 添加角色到小说
+  const handleAddToNovel = async (character: Character) => {
+    console.log('[CharacterList] handleAddToNovel called:', character.name);
+    
+    if (novels.length === 0) {
+      Alert.alert('提示', '请先创建一本小说');
+      return;
+    }
+
+    // 如果有多个小说，显示选择列表
+    if (novels.length > 1) {
+      Alert.alert(
+        '添加到小说',
+        `选择要将「${character.name}」添加到哪本小说：`,
+        novels.map(novel => ({
+          text: novel.title,
+          onPress: async () => {
+            try {
+              await linkCharacterToNovel(character.id, novel.id, 'npc');
+              console.log('[CharacterList] Character added to novel successfully');
+              loadData();
+            } catch (error) {
+              console.error('[CharacterList] Error adding character to novel:', error);
+              Alert.alert('错误', '添加失败，请重试');
+            }
+          }
+        }))
+      );
+    } else {
+      // 只有一个小说，直接添加
+      Alert.alert(
+        '添加到小说',
+        `确定要将「${character.name}」添加到「${novels[0].title}」吗？`,
+        [
+          { text: '取消', style: 'cancel' },
+          {
+            text: '确定',
+            onPress: async () => {
+              try {
+                await linkCharacterToNovel(character.id, novels[0].id, 'npc');
+                console.log('[CharacterList] Character added to novel successfully');
+                loadData();
+              } catch (error) {
+                console.error('[CharacterList] Error adding character to novel:', error);
+                Alert.alert('错误', '添加失败，请重试');
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
   // 多选模式相关函数
   const handleLongPress = (character: Character) => {
     console.log('[CharacterList] Long pressed on:', character.name);
@@ -980,17 +1033,31 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
                             <Feather name="unlock" size={16} color="#C8102E" />
                           </TouchableOpacity>
                         ) : (
-                          <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={() => {
-                              console.log('[CharacterList] Delete button pressed for:', char.name);
-                              handleDeleteCharacter(char);
-                            }}
-                            disabled={isLocked}
-                            activeOpacity={0.7}
-                          >
-                            <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
-                          </TouchableOpacity>
+                          <>
+                            {novels.length > 0 && (
+                              <TouchableOpacity
+                                style={styles.addToNovelButton}
+                                onPress={() => {
+                                  console.log('[CharacterList] Add to novel pressed for:', char.name);
+                                  handleAddToNovel(char);
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Feather name="plus" size={16} color="#4CAF50" />
+                              </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                              style={styles.deleteButton}
+                              onPress={() => {
+                                console.log('[CharacterList] Delete button pressed for:', char.name);
+                                handleDeleteCharacter(char);
+                              }}
+                              disabled={isLocked}
+                              activeOpacity={0.7}
+                            >
+                              <Feather name="trash-2" size={16} color={isLocked ? theme.textMuted : "#C8102E"} />
+                            </TouchableOpacity>
+                          </>
                         )}
                       </View>
                     )}
