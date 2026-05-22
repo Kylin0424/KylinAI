@@ -824,16 +824,32 @@ ${worldSettings.protagonistDoing || '暂无'}
         if (event.data === '[DONE]') {
           // 生成完成，保存第一章（isPrologue: false）
           if (fullContent) {
-            const chapter = await addChapter(novel.id, '第一章', false);
-            await updateChapter(novel.id, chapter.id, { content: fullContent });
-            // 更新小说数据
-            const updatedNovel = await getNovelById(novel.id);
-            setNovel(updatedNovel);
-            // 自动选中第一章
-            setCurrentChapterId(chapter.id);
-            setCurrentChapterName('第一章');
-            setContent(fullContent);
-            hasGeneratedFirstChapter.current = true;
+            try {
+              console.log('【创作页面】正在保存第一章...');
+              const chapter = await addChapter(novel.id, '第一章', false);
+              console.log('【创作页面】章节创建成功:', chapter.id);
+              await updateChapter(novel.id, chapter.id, { content: fullContent });
+              console.log('【创作页面】章节内容已保存');
+              
+              // 更新小说数据
+              const updatedNovel = await getNovelById(novel.id);
+              if (updatedNovel) {
+                console.log('【创作页面】小说数据已更新，章节数:', updatedNovel.chapters?.length);
+                setNovel(updatedNovel);
+              }
+              
+              // 自动选中第一章
+              setCurrentChapterId(chapter.id);
+              setCurrentChapterName('第一章');
+              setContent(fullContent);
+              hasGeneratedFirstChapter.current = true;
+              console.log('【创作页面】第一章生成完成，内容长度:', fullContent.length);
+            } catch (saveError) {
+              console.error('【创作页面】保存第一章失败:', saveError);
+              Alert.alert('提示', '第一章生成完成，但保存时出现问题');
+            }
+          } else {
+            console.warn('【创作页面】生成内容为空');
           }
           sse.close();
           setIsGeneratingFirstChapter(false);

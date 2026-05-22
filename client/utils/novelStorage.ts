@@ -582,7 +582,10 @@ export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
   try {
     const novels = await getAllNovels();
     const novelIndex = novels.findIndex(n => n.id === novelId);
-    if (novelIndex === -1) return;
+    if (novelIndex === -1) {
+      console.log('小说不存在，无法同步');
+      return;
+    }
 
     const novel = novels[novelIndex];
     const allCharacters = await getAllCharacters();
@@ -594,22 +597,27 @@ export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
       ...novel.sideCharacterIds
     ].filter(Boolean);
 
-    // 遍历角色库，检查是否需要同步
-    for (const char of allCharacters) {
-      if (!currentCharacterIds.includes(char.id)) continue;
-      
-      // 在角色库中找到对应的角色
-      const libraryChar = allCharacters.find(c => c.id === char.id);
-      if (!libraryChar) continue;
+    console.log('【同步角色】小说ID:', novelId);
+    console.log('【同步角色】当前角色IDs:', currentCharacterIds);
+    console.log('【同步角色】角色库总数:', allCharacters.length);
 
-      // 检查小说数据库中是否已有同名角色
-      let updated = false;
+    let updatedCount = 0;
 
-      // 检查男主
-      if (novel.maleCharacterData && 
-          (novel.maleCharacterData.name === libraryChar.name || novel.maleCharacterData.id === libraryChar.id)) {
+    // 遍历小说中的角色ID，从角色库中获取最新数据
+    for (const charId of currentCharacterIds) {
+      // 从角色库中找到这个角色
+      const libraryChar = allCharacters.find(c => c.id === charId);
+      if (!libraryChar) {
+        console.log('【同步角色】角色库中未找到ID:', charId);
+        continue;
+      }
+
+      console.log('【同步角色】正在同步角色:', libraryChar.name, '性别:', libraryChar.gender);
+
+      // 检查是否需要更新男主
+      if (novel.maleCharacterId === charId && novels[novelIndex].maleCharacterData) {
         novels[novelIndex].maleCharacterData = {
-          ...novel.maleCharacterData,
+          ...novels[novelIndex].maleCharacterData,
           name: libraryChar.name,
           gender: libraryChar.gender,
           age: libraryChar.age,
@@ -617,14 +625,14 @@ export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
           personality: libraryChar.personality,
           background: libraryChar.background,
         };
-        updated = true;
+        updatedCount++;
+        console.log('【同步角色】已更新男主:', libraryChar.name, '新性别:', libraryChar.gender);
       }
       
-      // 检查女主
-      if (!updated && novel.femaleCharacterData && 
-          (novel.femaleCharacterData.name === libraryChar.name || novel.femaleCharacterData.id === libraryChar.id)) {
+      // 检查是否需要更新女主
+      if (novel.femaleCharacterId === charId && novels[novelIndex].femaleCharacterData) {
         novels[novelIndex].femaleCharacterData = {
-          ...novel.femaleCharacterData,
+          ...novels[novelIndex].femaleCharacterData,
           name: libraryChar.name,
           gender: libraryChar.gender,
           age: libraryChar.age,
@@ -632,14 +640,13 @@ export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
           personality: libraryChar.personality,
           background: libraryChar.background,
         };
-        updated = true;
+        updatedCount++;
+        console.log('【同步角色】已更新女主:', libraryChar.name, '新性别:', libraryChar.gender);
       }
       
-      // 检查配角
-      if (!updated && novels[novelIndex].sideCharacters) {
-        const sideIndex = novels[novelIndex].sideCharacters!.findIndex(
-          c => c.name === libraryChar.name || c.id === libraryChar.id
-        );
+      // 检查是否需要更新配角
+      if (novels[novelIndex].sideCharacters) {
+        const sideIndex = novels[novelIndex].sideCharacters!.findIndex(c => c.id === charId);
         if (sideIndex !== -1) {
           novels[novelIndex].sideCharacters![sideIndex] = {
             ...novels[novelIndex].sideCharacters![sideIndex],
@@ -650,13 +657,20 @@ export const syncCharactersToNovel = async (novelId: string): Promise<void> => {
             personality: libraryChar.personality,
             background: libraryChar.background,
           };
+          updatedCount++;
+          console.log('【同步角色】已更新配角:', libraryChar.name);
         }
       }
     }
 
-    novels[novelIndex].updatedAt = Date.now();
-    await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+    if (updatedCount > 0) {
+      novels[novelIndex].updatedAt = Date.now();
+      await AsyncStorage.setItem(NOVELS_KEY, JSON.stringify(novels));
+      console.log('【同步角色】同步完成，更新了', updatedCount, '个角色');
+    } else {
+      console.log('【同步角色】没有需要同步的角色');
+    }
   } catch (error) {
-    console.error('Error syncing characters to novel:', error);
+    console.error('【同步角色】同步失败:', error);
   }
 };
