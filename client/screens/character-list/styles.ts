@@ -158,10 +158,12 @@ export const createStyles = (theme: Theme) => {
     },
     addToNovelButton: {
       backgroundColor: '#E8F5E9',
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.xs,
-      borderRadius: 4,
-      marginRight: Spacing.xs,
+      paddingHorizontal: Spacing.md + 2,
+      paddingVertical: Spacing.sm,
+      borderRadius: 6,
+      marginRight: Spacing.sm,
+      borderWidth: 1,
+      borderColor: '#4CAF50',
     },
     relationsContainer: {
       borderTopWidth: StyleSheet.hairlineWidth,

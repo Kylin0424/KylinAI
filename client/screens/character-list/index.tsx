@@ -1034,19 +1034,21 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
                           </TouchableOpacity>
                         ) : (
                           <>
-                            {novels.length > 0 && (
-                              <TouchableOpacity
-                                style={styles.addToNovelButton}
-                                onPress={() => {
-                                  console.log('[CharacterList] Add to novel pressed for:', char.name);
-                                  handleAddToNovel(char);
-                                }}
-                                activeOpacity={0.7}
-                              >
-                                <Feather name="plus" size={14} color="#4CAF50" />
-                                <ThemedText variant="caption" color="#4CAF50" style={{ marginLeft: 4, fontSize: 12 }}>添加</ThemedText>
-                              </TouchableOpacity>
-                            )}
+                            <TouchableOpacity
+                              style={styles.addToNovelButton}
+                              onPress={() => {
+                                console.log('[CharacterList] Add to novel pressed for:', char.name);
+                                if (novels.length === 0) {
+                                  Alert.alert('提示', '请先在首页创建小说，然后再添加角色到小说中。');
+                                  return;
+                                }
+                                handleAddToNovel(char);
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <Feather name="plus-circle" size={16} color="#4CAF50" />
+                              <ThemedText variant="caption" color="#4CAF50" style={{ marginLeft: 4, fontSize: 14, fontWeight: '600' }}>添加</ThemedText>
+                            </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.deleteButton}
                               onPress={() => {
