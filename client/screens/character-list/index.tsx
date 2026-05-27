@@ -1043,7 +1043,8 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
                                 }}
                                 activeOpacity={0.7}
                               >
-                                <Feather name="plus" size={16} color="#4CAF50" />
+                                <Feather name="plus" size={14} color="#4CAF50" />
+                                <ThemedText variant="caption" color="#4CAF50" style={{ marginLeft: 4, fontSize: 12 }}>添加</ThemedText>
                               </TouchableOpacity>
                             )}
                             <TouchableOpacity

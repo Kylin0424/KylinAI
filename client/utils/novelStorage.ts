@@ -125,8 +125,8 @@ export const createNovel = async (
         });
       }
     }
-    // 从闲置角色库删除已绑定的角色
-    await deleteCharacters(sideCharacterIds);
+    // 保留配角在角色库中，不删除，以便后续同步更新
+    // await deleteCharacters(sideCharacterIds);
   }
 
   // 获取主角和女主数据
@@ -138,16 +138,16 @@ export const createNovel = async (
       const char = allCharacters.find(c => c.id === maleCharacterId);
       if (char) {
         maleCharacterData = char;
-        // 从闲置角色库删除主角
-        await deleteCharacters([maleCharacterId]);
+        // 保留主角在角色库中，不删除，以便后续同步更新
+        // await deleteCharacters([maleCharacterId]);
       }
     }
     if (femaleCharacterId) {
       const char = allCharacters.find(c => c.id === femaleCharacterId);
       if (char) {
         femaleCharacterData = char;
-        // 从闲置角色库删除女主
-        await deleteCharacters([femaleCharacterId]);
+        // 保留女主在角色库中，不删除，以便后续同步更新
+        // await deleteCharacters([femaleCharacterId]);
       }
     }
   }

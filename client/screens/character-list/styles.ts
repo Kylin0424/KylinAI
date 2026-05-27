@@ -157,7 +157,10 @@ export const createStyles = (theme: Theme) => {
       padding: Spacing.sm,
     },
     addToNovelButton: {
-      padding: Spacing.sm,
+      backgroundColor: '#E8F5E9',
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: 4,
       marginRight: Spacing.xs,
     },
     relationsContainer: {
