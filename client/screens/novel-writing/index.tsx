@@ -756,12 +756,18 @@ export default function NovelWritingScreen() {
 
   // 自动生成第一章开头
   useEffect(() => {
+    console.log('【自动生成检查】autoGeneratePrologue:', params.autoGeneratePrologue);
+    console.log('【自动生成检查】worldName:', params.worldName);
+    console.log('【自动生成检查】novel:', novel?.id);
+    console.log('【自动生成检查】hasGenerated:', hasGeneratedFirstChapter.current);
+    
     if (
       params.autoGeneratePrologue === 'true' &&
       params.worldName &&
       novel &&
       !hasGeneratedFirstChapter.current
     ) {
+      console.log('【自动生成】准备开始生成第一章...');
       hasGeneratedFirstChapter.current = true;
       generateFirstChapterOpening();
     }

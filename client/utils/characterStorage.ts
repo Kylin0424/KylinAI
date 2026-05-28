@@ -373,9 +373,30 @@ export const linkCharacterToNovel = async (
     const characters = await getAllCharacters();
     const index = characters.findIndex(c => c.id === characterId);
     if (index !== -1) {
-      characters[index].novelId = novelId;
-      characters[index].roleType = roleType;
+      const character = characters[index];
+      character.novelId = novelId;
+      character.roleType = roleType;
+      
+      // 同时将角色添加到小说的 sideCharacters 数组中
+      const { getNovelById, saveNovel } = await import('./novelStorage');
+      const novel = await getNovelById(novelId);
+      if (novel) {
+        const novels = await import('./novelStorage').then(m => m.getAllNovels());
+        const novelIndex = novels.findIndex(n => n.id === novelId);
+        if (novelIndex !== -1) {
+          const existingSideChars = novels[novelIndex].sideCharacters || [];
+          // 检查是否已存在
+          const alreadyExists = existingSideChars.some(sc => sc.id === character.id);
+          if (!alreadyExists) {
+            novels[novelIndex].sideCharacters = [...existingSideChars, character];
+            await import('./novelStorage').then(m => m.saveNovel(novels[novelIndex]));
+            console.log('[linkCharacterToNovel] Added character to novel sideCharacters:', character.name);
+          }
+        }
+      }
+      
       await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
+      console.log('[linkCharacterToNovel] Character linked to novel:', character.name, 'novelId:', novelId);
     }
   } catch (error) {
     console.error('Error linking character to novel:', error);

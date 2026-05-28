@@ -329,12 +329,7 @@ export default function NovelDatabaseScreen() {
                       <Text style={styles.settingValue}>{currentNovel.cityLocation}</Text>
                     </View>
                   )}
-                  {currentNovel.protagonistDoing && (
-                    <View style={styles.settingRow}>
-                      <Text style={styles.settingLabel}>主角活动</Text>
-                      <Text style={styles.settingValue}>{currentNovel.protagonistDoing}</Text>
-                    </View>
-                  )}
+
                   {currentNovel.worldSettings && (
                     <View style={styles.settingRow}>
                       <Text style={styles.settingLabel}>详细设定</Text>
