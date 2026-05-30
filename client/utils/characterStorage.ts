@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAllNovels, getNovelById } from './novelStorage';
+import { getAllNovels, getNovelById, saveNovel } from './novelStorage';
 
 export interface Character {
   id: string;
@@ -379,37 +379,39 @@ export const linkCharacterToNovel = async (
     
     if (index !== -1) {
       const character = characters[index];
-      console.log('[linkCharacterToNovel] Found character:', character.name);
+      console.log('[linkCharacterToNovel] Found character:', character.name, 'roleType:', roleType);
       
       character.novelId = novelId;
       character.roleType = roleType;
       
-      // 同时将角色添加到小说的 sideCharacters 数组中
-      const { getNovelById, saveNovel } = await import('./novelStorage');
-      console.log('[linkCharacterToNovel] Getting novel by id:', novelId);
+      // 根据角色类型添加到小说的正确字段
+      const novels = await getAllNovels();
+      const novelIndex = novels.findIndex(n => n.id === novelId);
       
-      const novel = await getNovelById(novelId);
-      console.log('[linkCharacterToNovel] Found novel:', novel?.name);
-      
-      if (novel) {
-        const novels = await import('./novelStorage').then(m => m.getAllNovels());
-        const novelIndex = novels.findIndex(n => n.id === novelId);
-        console.log('[linkCharacterToNovel] Novel index:', novelIndex);
+      if (novelIndex !== -1) {
+        const novel = novels[novelIndex];
         
-        if (novelIndex !== -1) {
+        if (roleType === 'male_lead') {
+          // 更新男主数据
+          novels[novelIndex].maleCharacterData = character;
+          console.log('[linkCharacterToNovel] Set as male lead:', character.name);
+        } else if (roleType === 'female_lead') {
+          // 更新女主数据
+          novels[novelIndex].femaleCharacterData = character;
+          console.log('[linkCharacterToNovel] Set as female lead:', character.name);
+        } else if (roleType === 'npc') {
+          // 配角添加到 sideCharacters
           const existingSideChars = novels[novelIndex].sideCharacters || [];
-          console.log('[linkCharacterToNovel] Existing side characters:', existingSideChars.length);
-          
-          // 检查是否已存在
           const alreadyExists = existingSideChars.some(sc => sc.id === character.id);
-          console.log('[linkCharacterToNovel] Already exists in sideCharacters:', alreadyExists);
           
           if (!alreadyExists) {
             novels[novelIndex].sideCharacters = [...existingSideChars, character];
-            await import('./novelStorage').then(m => m.saveNovel(novels[novelIndex]));
-            console.log('[linkCharacterToNovel] Added character to novel sideCharacters:', character.name);
+            console.log('[linkCharacterToNovel] Added to side characters:', character.name);
           }
         }
+        
+        await saveNovel(novels[novelIndex]);
+        console.log('[linkCharacterToNovel] Novel saved with character in correct field');
       }
       
       await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
@@ -427,10 +429,31 @@ export const linkCharacterToNovel = async (
 export const unlinkCharacterFromNovel = async (characterId: string): Promise<void> => {
   try {
     const characters = await getAllCharacters();
-    const index = characters.findIndex(c => c.id === characterId);
-    if (index !== -1) {
-      characters[index].novelId = undefined;
-      characters[index].roleType = undefined;
+    const character = characters.find(c => c.id === characterId);
+    
+    if (character && character.novelId) {
+      const novelId = character.novelId;
+      const roleType = character.roleType;
+      
+      // 从小说的对应字段中移除角色
+      const novels = await getAllNovels();
+      const novelIndex = novels.findIndex(n => n.id === novelId);
+      
+      if (novelIndex !== -1) {
+        if (roleType === 'male_lead') {
+          novels[novelIndex].maleCharacterData = undefined;
+        } else if (roleType === 'female_lead') {
+          novels[novelIndex].femaleCharacterData = undefined;
+        } else if (roleType === 'npc') {
+          const sideChars = novels[novelIndex].sideCharacters || [];
+          novels[novelIndex].sideCharacters = sideChars.filter(c => c.id !== characterId);
+        }
+        await saveNovel(novels[novelIndex]);
+      }
+      
+      // 清除角色的关联信息
+      character.novelId = undefined;
+      character.roleType = undefined;
       await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
     }
   } catch (error) {

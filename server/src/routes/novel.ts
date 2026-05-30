@@ -839,6 +839,17 @@ router.post('/prologue', async (req: Request, res: Response) => {
 });
     const client = new LLMClient(config, customHeaders);
 
+    // 先收集主角名称，以便在 systemPrompt 中使用
+    let protagonistNames: string[] = [];
+    if (maleCharacter) {
+      const mc = maleCharacter as any;
+      protagonistNames.push(mc.name || '未知');
+    }
+    if (femaleCharacter) {
+      const fc = femaleCharacter as any;
+      protagonistNames.push(fc.name || '未知');
+    }
+
     const systemPrompt = `你是一位专业的小说作家，擅长以第三人称旁观者视角进行叙述。
 你的叙述风格客观、细腻，善于描绘宏大的世界观和细腻的人物情感。
 你创作的第一章能够引人入胜，让读者对故事产生强烈的阅读兴趣。
@@ -871,11 +882,9 @@ router.post('/prologue', async (req: Request, res: Response) => {
 
     // 构建角色信息（强化版）
     let characterInfo = '';
-    let protagonistNames: string[] = [];
 
     if (maleCharacter) {
       const mc = maleCharacter as any;
-      protagonistNames.push(mc.name || '未知');
       characterInfo += `【男主角信息】
 - 姓名：${mc.name || '未知'}
 - 年龄：${mc.age || '未知'}岁
@@ -893,7 +902,6 @@ router.post('/prologue', async (req: Request, res: Response) => {
     }
     if (femaleCharacter) {
       const fc = femaleCharacter as any;
-      protagonistNames.push(fc.name || '未知');
       characterInfo += `【女主角信息】
 - 姓名：${fc.name || '未知'}
 - 年龄：${fc.age || '未知'}岁

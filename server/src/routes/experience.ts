@@ -62,7 +62,7 @@ ${experiences.map((exp, i) => `${i + 1}. ${exp}`).join('\n')}
       return res.status(500).json({ error: 'AI整合失败' });
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     const summary = data.choices?.[0]?.message?.content?.trim() || null;
 
     res.json({ summary });

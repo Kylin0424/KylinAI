@@ -269,17 +269,21 @@ export default function CharacterListScreen() {
   const handleAddToNovel = async (character: Character) => {
     console.log('[CharacterList] handleAddToNovel called:', character.name);
     
-    if (novels.length === 0) {
+    console.log('[handleAddToNovel] Getting all novels...');
+    let allNovels = await getAllNovels();
+    console.log('[handleAddToNovel] All novels count:', allNovels.length);
+    
+    if (allNovels.length === 0) {
       Alert.alert('提示', '请先创建一本小说');
       return;
     }
 
     // 如果有多个小说，显示选择列表
-    if (novels.length > 1) {
+    if (allNovels.length > 1) {
       Alert.alert(
         '添加到小说',
         `选择要将「${character.name}」添加到哪本小说：`,
-        novels.map(novel => ({
+        allNovels.map(novel => ({
           text: novel.title,
           onPress: async () => {
             console.log('[CharacterList] Adding character to novel, characterId:', character.id, 'novelId:', novel.id);
@@ -298,15 +302,15 @@ export default function CharacterListScreen() {
       // 只有一个小说，直接添加
       Alert.alert(
         '添加到小说',
-        `确定要将「${character.name}」添加到「${novels[0].title}」吗？`,
+        `确定要将「${character.name}」添加到「${allNovels[0].title}」吗？`,
         [
           { text: '取消', style: 'cancel' },
           {
             text: '确定',
             onPress: async () => {
-              console.log('[CharacterList] Adding character to novel directly, characterId:', character.id, 'novelId:', novels[0].id);
+              console.log('[CharacterList] Adding character to novel directly, characterId:', character.id, 'novelId:', allNovels[0].id);
               try {
-                await linkCharacterToNovel(character.id, novels[0].id, 'npc');
+                await linkCharacterToNovel(character.id, allNovels[0].id, 'npc');
                 console.log('[CharacterList] Character added to novel successfully');
                 loadData();
               } catch (error) {
