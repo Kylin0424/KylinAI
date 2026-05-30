@@ -282,13 +282,14 @@ export default function CharacterListScreen() {
         novels.map(novel => ({
           text: novel.title,
           onPress: async () => {
+            console.log('[CharacterList] Adding character to novel, characterId:', character.id, 'novelId:', novel.id);
             try {
               await linkCharacterToNovel(character.id, novel.id, 'npc');
               console.log('[CharacterList] Character added to novel successfully');
               loadData();
             } catch (error) {
               console.error('[CharacterList] Error adding character to novel:', error);
-              Alert.alert('错误', '添加失败，请重试');
+              Alert.alert('错误', `添加失败: ${error}`);
             }
           }
         }))
@@ -303,13 +304,14 @@ export default function CharacterListScreen() {
           {
             text: '确定',
             onPress: async () => {
+              console.log('[CharacterList] Adding character to novel directly, characterId:', character.id, 'novelId:', novels[0].id);
               try {
                 await linkCharacterToNovel(character.id, novels[0].id, 'npc');
                 console.log('[CharacterList] Character added to novel successfully');
                 loadData();
               } catch (error) {
                 console.error('[CharacterList] Error adding character to novel:', error);
-                Alert.alert('错误', '添加失败，请重试');
+                Alert.alert('错误', `添加失败: ${error}`);
               }
             }
           }

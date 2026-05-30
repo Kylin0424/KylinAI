@@ -369,24 +369,41 @@ export const linkCharacterToNovel = async (
   novelId: string,
   roleType: 'male_lead' | 'female_lead' | 'npc'
 ): Promise<void> => {
+  console.log('[linkCharacterToNovel] Starting, characterId:', characterId, 'novelId:', novelId, 'roleType:', roleType);
   try {
     const characters = await getAllCharacters();
+    console.log('[linkCharacterToNovel] Total characters:', characters.length);
+    
     const index = characters.findIndex(c => c.id === characterId);
+    console.log('[linkCharacterToNovel] Character index:', index);
+    
     if (index !== -1) {
       const character = characters[index];
+      console.log('[linkCharacterToNovel] Found character:', character.name);
+      
       character.novelId = novelId;
       character.roleType = roleType;
       
       // 同时将角色添加到小说的 sideCharacters 数组中
       const { getNovelById, saveNovel } = await import('./novelStorage');
+      console.log('[linkCharacterToNovel] Getting novel by id:', novelId);
+      
       const novel = await getNovelById(novelId);
+      console.log('[linkCharacterToNovel] Found novel:', novel?.name);
+      
       if (novel) {
         const novels = await import('./novelStorage').then(m => m.getAllNovels());
         const novelIndex = novels.findIndex(n => n.id === novelId);
+        console.log('[linkCharacterToNovel] Novel index:', novelIndex);
+        
         if (novelIndex !== -1) {
           const existingSideChars = novels[novelIndex].sideCharacters || [];
+          console.log('[linkCharacterToNovel] Existing side characters:', existingSideChars.length);
+          
           // 检查是否已存在
           const alreadyExists = existingSideChars.some(sc => sc.id === character.id);
+          console.log('[linkCharacterToNovel] Already exists in sideCharacters:', alreadyExists);
+          
           if (!alreadyExists) {
             novels[novelIndex].sideCharacters = [...existingSideChars, character];
             await import('./novelStorage').then(m => m.saveNovel(novels[novelIndex]));
@@ -397,9 +414,11 @@ export const linkCharacterToNovel = async (
       
       await AsyncStorage.setItem(CHARACTERS_KEY, JSON.stringify(characters));
       console.log('[linkCharacterToNovel] Character linked to novel:', character.name, 'novelId:', novelId);
+    } else {
+      console.log('[linkCharacterToNovel] Character not found with id:', characterId);
     }
   } catch (error) {
-    console.error('Error linking character to novel:', error);
+    console.error('[linkCharacterToNovel] Error:', error);
     throw error;
   }
 };
