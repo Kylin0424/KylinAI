@@ -474,11 +474,20 @@ export const getCharacterById = async (characterId: string): Promise<Character |
 };
 
 // 获取可用角色（按性别筛选）
-export const getAvailableCharactersByGender = async (gender?: '男' | '女' | 'all'): Promise<Character[]> => {
+export const getAvailableCharactersByGender = async (gender?: 'male' | 'female' | '男' | '女' | 'all'): Promise<Character[]> => {
   try {
     const characters = await getAvailableCharacters();
     if (!gender || gender === 'all') return characters;
-    return characters.filter(c => c.gender === gender);
+    // 支持英文和中文的 gender 值
+    const maleGenders = ['male', '男'];
+    const femaleGenders = ['female', '女'];
+    if (maleGenders.includes(gender as string)) {
+      return characters.filter(c => maleGenders.includes(c.gender));
+    }
+    if (femaleGenders.includes(gender as string)) {
+      return characters.filter(c => femaleGenders.includes(c.gender));
+    }
+    return characters;
   } catch (error) {
     console.error('Error getting available characters by gender:', error);
     return [];

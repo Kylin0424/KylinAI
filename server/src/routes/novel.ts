@@ -427,7 +427,7 @@ ${newPlotContext}
 
 /**
  * POST /api/v1/novel/continue
- * 续写小说（非流式）
+ * 续写小说（SSE流式响应）
  * Body: { 
  *   prompt: string, 
  *   title: string, 
@@ -435,6 +435,7 @@ ${newPlotContext}
  *   maleCharacter?: object, 
  *   femaleCharacter?: object,
  *   previousChapters?: Array<{ title: string; content: string }> // 之前章节的内容
+ *   worldSetting?: string  // 世界设定
  * }
  */
 router.post('/continue', async (req: Request, res: Response) => {
@@ -443,6 +444,11 @@ router.post('/continue', async (req: Request, res: Response) => {
   if (!prompt) {
     return res.status(400).json({ error: '缺少续写提示参数' });
   }
+
+  // 设置 SSE 响应头
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate');
+  res.setHeader('Connection', 'keep-alive');
 
   try {
     const customHeaders = HeaderUtils.extractForwardHeaders(req.headers as Record<string, string>);
@@ -634,15 +640,27 @@ ${prompt}`;
       { role: 'user' as const, content: fullPrompt }
     ];
 
-    const response = await client.invoke(messages, {
+    // 使用流式生成
+    const stream = client.stream(messages, {
       model: process.env.ARK_MODEL || 'ep-20260411122808-27xnp',
       temperature: 0.85,
     });
 
-    res.json({ content: response.content });
+    for await (const chunk of stream) {
+      if (chunk.content) {
+        const content = chunk.content.toString();
+        // 发送 SSE 事件
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    // 发送完成信号
+    res.write('data: [DONE]\n\n');
+    res.end();
   } catch (error) {
     console.error('Novel continuation error:', error);
-    res.status(500).json({ error: '续写失败，请重试' });
+    res.write(`data: ${JSON.stringify({ error: '续写失败，请重试' })}\n\n`);
+    res.end();
   }
 });
 

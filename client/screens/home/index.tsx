@@ -152,7 +152,8 @@ export default function HomeScreen() {
   // 打开角色选择弹窗
   const handleOpenCharacterModal = async (genderTab: 'male' | 'female') => {
     setActiveGenderTab(genderTab);
-    const gender = genderTab === 'male' ? '男' : '女';
+    // 直接使用 'male' | 'female' | 'all' 进行筛选，不要转换成中文
+    const gender = genderTab;
     const chars = await getAvailableCharactersByGender(gender);
     setAvailableCharacters(chars);
     setShowCharacterModal(true);
