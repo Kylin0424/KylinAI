@@ -862,13 +862,19 @@ ${worldSettings.protagonistDoing || '暂无'}
           return;
         }
 
-        // 跳过空数据或非JSON数据
+        // 处理SSE数据，去掉 'data: ' 前缀
         if (!event.data || event.data.trim() === '') {
           return;
         }
 
         try {
-          const parsed = JSON.parse(event.data);
+          // 去掉 SSE 的 'data: ' 前缀
+          let dataStr = event.data;
+          if (dataStr.startsWith('data: ')) {
+            dataStr = dataStr.substring(6);
+          }
+          
+          const parsed = JSON.parse(dataStr);
           if (parsed.content && typeof parsed.content === 'string') {
             fullContent += parsed.content;
             setFirstChapterContent(fullContent);

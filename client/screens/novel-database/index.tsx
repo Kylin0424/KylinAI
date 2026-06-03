@@ -389,7 +389,7 @@ export default function NovelDatabaseScreen() {
                       <Text style={styles.detailText}>
                         年龄: {selectedChar.age}岁{'\n'}
                         职业: {selectedChar.occupation}{'\n'}
-                        性别: {selectedChar.gender === 'male' ? '男' : '女'}
+                        性别: {['male', '男'].includes(selectedChar.gender) ? '男' : '女'}
                       </Text>
                     </View>
                     
