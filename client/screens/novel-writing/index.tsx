@@ -1620,54 +1620,91 @@ ${unmatchedNames.length > 0 ? `\n注意：用户提及了"${unmatchedNames.join(
 
 请继续创作小说内容（约500-800字），保持第三人称叙事风格，注意情节连贯性、角色性格一致性以及学历设定的严格遵守。如果提到了新角色，请合理设定其形象和学历。`;
 
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          title: novel.title,
-          themeType: novel.themeType,
-          maleCharacter: maleCharacter ? {
-            name: maleCharacter.name,
-            occupation: maleCharacter.occupation,
-            personality: maleCharacter.personality,
-            education: maleCharacter.education,
-          } : null,
-          femaleCharacter: femaleCharacter ? {
-            name: femaleCharacter.name,
-            occupation: femaleCharacter.occupation,
-            personality: femaleCharacter.personality,
-            education: femaleCharacter.education,
-          } : null,
-          // 传递之前章节的内容作为上下文
-          previousChapters: novel.chapters.map(ch => ({
-            title: ch.title,
-            content: ch.content || ''
-          })),
-        }),
+      // 使用 SSE 流式接收数据
+      const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
+      const body = JSON.stringify({
+        prompt,
+        title: novel.title,
+        themeType: novel.themeType,
+        maleCharacter: maleCharacter ? {
+          name: maleCharacter.name,
+          occupation: maleCharacter.occupation,
+          personality: maleCharacter.personality,
+          education: maleCharacter.education,
+        } : null,
+        femaleCharacter: femaleCharacter ? {
+          name: femaleCharacter.name,
+          occupation: femaleCharacter.occupation,
+          personality: femaleCharacter.personality,
+          education: femaleCharacter.education,
+        } : null,
+        previousChapters: novel.chapters.map(ch => ({
+          title: ch.title,
+          content: ch.content || ''
+        })),
       });
 
-      if (!response.ok) {
-        throw new Error('生成失败');
-      }
+      const sse = new RNSSE(url, {
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        body: body,
+      });
 
-      const data = await response.json();
-      setContent(prev => prev + '\n\n' + data.content);
-      setContinueDirection(''); // 清空续写走向
+      let generatedContent = '';
 
-      // 记录角色短期经历
-      await recordCharacterExperience(novel, data.content, continueLengthRef.current);
+      sse.addEventListener('message', async (event) => {
+        if (event.data === '[DONE]') {
+          // 生成完成
+          if (generatedContent) {
+            setContent(prev => prev + '\n\n' + generatedContent);
+            setContinueDirection(''); // 清空续写走向
+            
+            // 记录角色短期经历
+            await recordCharacterExperience(novel, generatedContent, continueLengthRef.current);
+            
+            // 自动保存生成的内容
+            await handleSave();
+            Alert.alert('成功', 'AI续写内容已生成并保存');
+          } else {
+            console.warn('【创作页面】AI续写内容为空');
+          }
+          sse.close();
+          setIsGenerating(false);
+          return;
+        }
 
-      // 自动保存生成的内容
-      await handleSave();
-      Alert.alert('成功', 'AI续写内容已生成并保存');
+        // 处理SSE数据，去掉 'data: ' 前缀
+        if (!event.data || event.data.trim() === '') {
+          return;
+        }
+
+        try {
+          // 去掉 SSE 的 'data: ' 前缀
+          let dataStr = event.data;
+          if (dataStr.startsWith('data: ')) {
+            dataStr = dataStr.substring(6);
+          }
+          
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content && typeof parsed.content === 'string') {
+            generatedContent += parsed.content;
+            setContent(prev => prev + parsed.content);
+          }
+        } catch (e) {
+          // 忽略解析错误
+        }
+      });
+
+      sse.addEventListener('error', (error) => {
+        console.error('SSE error:', error);
+        sse.close();
+        setIsGenerating(false);
+        Alert.alert('错误', '生成内容失败，请重试');
+      });
     } catch (error) {
       console.error('Novel generation error:', error);
-      Alert.alert('错误', '生成内容失败，请重试');
-    } finally {
       setIsGenerating(false);
+      Alert.alert('错误', '生成内容失败，请重试');
     }
   };
 

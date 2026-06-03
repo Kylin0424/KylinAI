@@ -300,6 +300,7 @@ export default function CharacterListScreen() {
       );
     } else {
       // 只有一个小说，直接添加
+      console.log('[handleAddToNovel] About to show Alert.alert, novel:', allNovels[0].title);
       Alert.alert(
         '添加到小说',
         `确定要将「${character.name}」添加到「${allNovels[0].title}」吗？`,
@@ -308,7 +309,7 @@ export default function CharacterListScreen() {
           {
             text: '确定',
             onPress: async () => {
-              console.log('[CharacterList] Adding character to novel directly, characterId:', character.id, 'novelId:', allNovels[0].id);
+              console.log('[CharacterList] User confirmed, adding character to novel directly, characterId:', character.id, 'novelId:', allNovels[0].id);
               try {
                 await linkCharacterToNovel(character.id, allNovels[0].id, 'npc');
                 console.log('[CharacterList] Character added to novel successfully');

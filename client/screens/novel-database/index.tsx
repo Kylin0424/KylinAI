@@ -387,9 +387,15 @@ export default function NovelDatabaseScreen() {
                     <View style={styles.detailSection}>
                       <Text style={styles.detailLabel}>基本信息</Text>
                       <Text style={styles.detailText}>
+                        姓名: {selectedChar.name}{'\n'}
+                        性别: {['male', '男'].includes(selectedChar.gender) ? '男' : '女'}{'\n'}
                         年龄: {selectedChar.age}岁{'\n'}
-                        职业: {selectedChar.occupation}{'\n'}
-                        性别: {['male', '男'].includes(selectedChar.gender) ? '男' : '女'}
+                        {selectedChar.height && `身高: ${selectedChar.height}\n`}
+                        {selectedChar.weight && `体重: ${selectedChar.weight}\n`}
+                        {selectedChar.occupation && selectedChar.occupation !== '无职业' ? `职业: ${selectedChar.occupation}\n` : ''}
+                        {selectedChar.position && selectedChar.position !== '无职位' ? `职位: ${selectedChar.position}\n` : ''}
+                        {selectedChar.group && selectedChar.group !== '无团体' ? `所属团体: ${selectedChar.group}\n` : ''}
+                        {selectedChar.education && `学历: ${selectedChar.education}`}
                       </Text>
                     </View>
                     
@@ -400,6 +406,13 @@ export default function NovelDatabaseScreen() {
                       </View>
                     )}
                     
+                    {selectedChar.appearance && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>外貌特征</Text>
+                        <Text style={styles.detailText}>{selectedChar.appearance}</Text>
+                      </View>
+                    )}
+                    
                     {selectedChar.background && (
                       <View style={styles.detailSection}>
                         <Text style={styles.detailLabel}>背景故事</Text>
@@ -407,10 +420,37 @@ export default function NovelDatabaseScreen() {
                       </View>
                     )}
                     
-                    {selectedChar.appearance && (
+                    {selectedChar.familyBackground && (
                       <View style={styles.detailSection}>
-                        <Text style={styles.detailLabel}>外貌特征</Text>
-                        <Text style={styles.detailText}>{selectedChar.appearance}</Text>
+                        <Text style={styles.detailLabel}>家庭背景</Text>
+                        <Text style={styles.detailText}>{selectedChar.familyBackground}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.experience && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>人生经历</Text>
+                        <Text style={styles.detailText}>{selectedChar.experience}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.specialTraits && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>特殊标记</Text>
+                        <Text style={styles.detailText}>{selectedChar.specialTraits}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedChar.traits && selectedChar.traits.length > 0 && (
+                      <View style={styles.detailSection}>
+                        <Text style={styles.detailLabel}>人物标签</Text>
+                        <View style={styles.tagContainer}>
+                          {selectedChar.traits.map((trait, idx) => (
+                            <View key={idx} style={styles.tag}>
+                              <Text style={styles.tagText}>{trait}</Text>
+                            </View>
+                          ))}
+                        </View>
                       </View>
                     )}
                     
@@ -787,6 +827,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     lineHeight: 22,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+  },
+  tag: {
+    backgroundColor: '#E8F4FD',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: 12,
+    marginRight: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#1890FF',
   },
   memoryItem: {
     fontSize: 13,
