@@ -775,7 +775,11 @@ export default function NovelWritingScreen() {
 
   // 生成第一章开头
   const generateFirstChapterOpening = async () => {
-    if (!novel || !params.worldName) return;
+    // 使用最新的 novelId 获取最新数据，避免闭包问题
+    const currentNovelId = params.novelId || novel?.id;
+    const currentNovel = currentNovelId ? await getNovelById(currentNovelId) : null;
+    
+    if (!currentNovel || !params.worldName) return;
     
     // 确保角色数据已加载
     if (!maleCharacter && !femaleCharacter) {
@@ -811,8 +815,8 @@ ${worldSettings.protagonistDoing || '暂无'}
 2. 自然地引出主要角色（${maleCharacter?.name || '未设置'}、${femaleCharacter?.name || '未设置'}）
 3. 建立故事的基调和发展方向
 4. 字数在800-1000字左右`,
-        title: novel.title,
-        themeType: novel.themeType,
+        title: currentNovel.title,
+        themeType: currentNovel.themeType,
         maleCharacter: maleCharacter,
         femaleCharacter: femaleCharacter,
         previousChapters: [], // 第一次续写，没有之前的章节
@@ -832,13 +836,13 @@ ${worldSettings.protagonistDoing || '暂无'}
           if (fullContent) {
             try {
               console.log('【创作页面】正在保存第一章...');
-              const chapter = await addChapter(novel.id, '第一章', false);
+              const chapter = await addChapter(currentNovel.id, '第一章', false);
               console.log('【创作页面】章节创建成功:', chapter.id);
-              await updateChapter(novel.id, chapter.id, { content: fullContent });
+              await updateChapter(currentNovel.id, chapter.id, { content: fullContent });
               console.log('【创作页面】章节内容已保存');
               
               // 更新小说数据
-              const updatedNovel = await getNovelById(novel.id);
+              const updatedNovel = await getNovelById(currentNovel.id);
               if (updatedNovel) {
                 console.log('【创作页面】小说数据已更新，章节数:', updatedNovel.chapters?.length);
                 setNovel(updatedNovel);

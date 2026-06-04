@@ -127,7 +127,7 @@ export default function CharacterListScreen() {
   const [showMultiSelectConfirm, setShowMultiSelectConfirm] = useState(false);
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     const chars = await getAllCharacters();
     const rels = await getAllRelations();
@@ -145,10 +145,11 @@ export default function CharacterListScreen() {
       console.log(`  novelId: ${char.novelId || '无'}`);
       console.log(`  性别: ${char.gender}, 年龄: ${char.age}, 职业: ${char.occupation}`);
     });
+    console.log('[CharacterList] 小说数量:', novelList.length);
     console.log('[CharacterList] =============================');
 
     setIsLoading(false);
-  };
+  }, []);
 
   // 状态持久化：保存activeTab
   useEffect(() => {
@@ -162,26 +163,9 @@ export default function CharacterListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // 加载持久化的状态
-      const loadPersistedState = async () => {
-        try {
-          const savedTab = await AsyncStorage.getItem('characterList_activeTab');
-          const savedIds = await AsyncStorage.getItem('characterList_selectedIds');
-
-          if (savedTab) {
-            setActiveTab(savedTab as CharacterTab);
-          }
-          if (savedIds) {
-            setSelectedCharacterIds(JSON.parse(savedIds));
-          }
-        } catch (error) {
-          console.error('[CharacterList] Error loading persisted state:', error);
-        }
-      };
-
-      loadPersistedState();
+      // 页面获得焦点时重新加载数据
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   // 根据选项卡过滤角色

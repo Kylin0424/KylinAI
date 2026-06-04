@@ -395,7 +395,7 @@ export default function NovelDatabaseScreen() {
                         {selectedChar.occupation && selectedChar.occupation !== '无职业' ? `职业: ${selectedChar.occupation}\n` : ''}
                         {selectedChar.position && selectedChar.position !== '无职位' ? `职位: ${selectedChar.position}\n` : ''}
                         {selectedChar.group && selectedChar.group !== '无团体' ? `所属团体: ${selectedChar.group}\n` : ''}
-                        {selectedChar.education && `学历: ${selectedChar.education}`}
+                        {selectedChar.education && selectedChar.education !== '未设定' ? `学历: ${selectedChar.education}` : ''}
                       </Text>
                     </View>
                     
