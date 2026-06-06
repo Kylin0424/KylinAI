@@ -285,6 +285,7 @@ export default function CharacterListScreen() {
     } else {
       // 只有一个小说，直接添加
       console.log('[handleAddToNovel] About to show Alert.alert, novel:', allNovels[0].title);
+      console.log('[handleAddToNovel] Alert.alert being called with:', character.name, '->', allNovels[0].title);
       Alert.alert(
         '添加到小说',
         `确定要将「${character.name}」添加到「${allNovels[0].title}」吗？`,
@@ -306,6 +307,7 @@ export default function CharacterListScreen() {
           }
         ]
       );
+      console.log('[handleAddToNovel] Alert.alert call completed');
     }
   };
 

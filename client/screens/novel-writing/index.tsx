@@ -856,6 +856,10 @@ ${worldSettings.protagonistDoing || '暂无'}
               setContent(fullContent);
               hasGeneratedFirstChapter.current = true;
               console.log('【创作页面】第一章生成完成，内容长度:', fullContent.length);
+              
+              // 重新加载数据以刷新章节列表
+              console.log('【创作页面】重新加载数据...');
+              loadData();
             } catch (saveError) {
               console.error('【创作页面】保存第一章失败:', saveError);
               Alert.alert('提示', '第一章生成完成，但保存时出现问题');
