@@ -324,8 +324,10 @@ export default function NovelWritingScreen() {
     }
 
     setIsLoading(true);
+    console.log('[NovelWriting] loadData 开始加载, novelId:', params.novelId);
     try {
       const novelData = await getNovelById(params.novelId);
+      console.log('[NovelWriting] getNovelById 返回:', novelData ? '找到小说: ' + novelData.title : 'null');
       setNovel(novelData);
 
     if (novelData) {
@@ -1821,7 +1823,21 @@ ${conflictDescriptions}
     );
   }
 
+  // 加载中状态显示加载界面
   if (!novel) {
+    if (isLoading) {
+      return (
+        <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
+          <View style={styles.errorContainer}>
+            <ActivityIndicator size="large" color="#C8102E" />
+            <ThemedText variant="small" color={theme.textMuted} style={{ marginTop: 12 }}>
+              加载中...
+            </ThemedText>
+          </View>
+        </Screen>
+      );
+    }
+    
     return (
       <Screen backgroundColor={theme.backgroundRoot} statusBarStyle={isDark ? 'light' : 'dark'}>
         <View style={styles.errorContainer}>
