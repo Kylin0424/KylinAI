@@ -1027,14 +1027,7 @@ const getReverseRelationLabel = (relation: string, charGender: string): string =
                           <>
                             <TouchableOpacity
                               style={styles.addToNovelButton}
-                              onPress={() => {
-                                console.log('[CharacterList] Add to novel pressed for:', char.name);
-                                if (novels.length === 0) {
-                                  Alert.alert('提示', '请先在首页创建小说，然后再添加角色到小说中。');
-                                  return;
-                                }
-                                handleAddToNovel(char);
-                              }}
+                              onPress={() => handleAddToNovel(char)}
                               activeOpacity={0.7}
                             >
                               <Feather name="plus-circle" size={16} color="#4CAF50" />
