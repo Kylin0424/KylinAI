@@ -744,6 +744,13 @@ export default function NovelWritingScreen() {
       setWorldSettings({ ...editingWorldSettings });
       setShowWorldSettingsModal(false);
       Alert.alert('成功', '世界设定已保存');
+      
+      // 检查是否需要自动生成第一章（如果还没有章节的话）
+      const novelData = await getNovelById(novel.id);
+      if (novelData && (!novelData.chapters || novelData.chapters.length === 0)) {
+        console.log('【世界设定保存】开始生成第一章...');
+        generateFirstChapterOpening();
+      }
     } catch (error) {
       console.error('保存世界设定失败:', error);
       Alert.alert('错误', '保存世界设定失败');
@@ -781,7 +788,7 @@ export default function NovelWritingScreen() {
     const currentNovelId = params.novelId || novel?.id;
     const currentNovel = currentNovelId ? await getNovelById(currentNovelId) : null;
     
-    if (!currentNovel || !params.worldName) return;
+    if (!currentNovel) return;
     
     // 确保角色数据已加载
     if (!maleCharacter && !femaleCharacter) {
@@ -797,26 +804,31 @@ export default function NovelWritingScreen() {
     setFirstChapterContent('');
 
     try {
+      // 使用 currentNovel 中的世界设定
+      const novelWorldSettings = currentNovel;
+      
       // 构建世界背景设定
       const worldSetting = `【世界背景】
-世界：${worldSettings.worldName || '未设置'}
-年代：${worldSettings.eraBackground || '现代社会'}
-季节：${worldSettings.seasonSetting || '春季'}
-地区：${worldSettings.region || ''}
-城市：${worldSettings.cityLocation || ''}
+世界：${novelWorldSettings.worldName || novelWorldSettings.title || '未设置'}
+年代：${novelWorldSettings.eraBackground || '现代社会'}
+季节：${novelWorldSettings.seasonSetting || '春季'}
+地区：${novelWorldSettings.region || ''}
+城市：${novelWorldSettings.cityLocation || ''}
 
 【主角当前活动】
-${worldSettings.protagonistDoing || '暂无'}
+${novelWorldSettings.protagonistDoing || '暂无'}
 `;
 
       const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
       const body = JSON.stringify({
         worldSetting: worldSetting,
         prompt: `请根据以上世界背景和主角信息，创作本小说的第一章开头内容。要求：
-1. 详细介绍世界背景和时代设定
-2. 自然地引出主要角色（${maleCharacter?.name || '未设置'}、${femaleCharacter?.name || '未设置'}）
-3. 建立故事的基调和发展方向
-4. 字数在800-1000字左右`,
+【核心规则】
+1. 必须严格使用【主要角色】中提供的角色信息，禁止自行创作新的主角！
+2. 男主角必须叫"${maleCharacter?.name || '未设置'}"，女主角必须叫"${femaleCharacter?.name || '未设置'}"
+3. 详细介绍世界背景和时代设定
+4. 以设定的主角视角开篇，建立故事的基调和发展方向
+5. 字数在800-1000字左右`,
         title: currentNovel.title,
         themeType: currentNovel.themeType,
         maleCharacter: maleCharacter,
