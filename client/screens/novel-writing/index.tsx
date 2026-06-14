@@ -790,9 +790,22 @@ export default function NovelWritingScreen() {
     
     if (!currentNovel) return;
     
+    // 调试日志
+    console.log('【生成第一章】currentNovel 世界设定:', {
+      worldName: currentNovel.worldName,
+      eraBackground: currentNovel.eraBackground,
+      maleCharacterData: currentNovel.maleCharacterData,
+      femaleCharacterData: currentNovel.femaleCharacterData
+    });
+    
     // 直接从 currentNovel 中获取角色数据（而不是依赖可能未更新的状态变量）
     const maleChar = maleCharacter || currentNovel.maleCharacterData;
     const femaleChar = femaleCharacter || currentNovel.femaleCharacterData;
+    
+    console.log('【生成第一章】实际使用的主角信息:', {
+      maleChar: maleChar,
+      femaleChar: femaleChar
+    });
 
     setIsGeneratingFirstChapter(true);
     setFirstChapterContent('');
