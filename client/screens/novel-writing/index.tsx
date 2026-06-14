@@ -790,15 +790,9 @@ export default function NovelWritingScreen() {
     
     if (!currentNovel) return;
     
-    // 确保角色数据已加载
-    if (!maleCharacter && !femaleCharacter) {
-      console.log('等待角色数据加载...');
-      // 等待最多3秒让角色数据加载完成
-      for (let i = 0; i < 30; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (maleCharacter || femaleCharacter) break;
-      }
-    }
+    // 直接从 currentNovel 中获取角色数据（而不是依赖可能未更新的状态变量）
+    const maleChar = maleCharacter || currentNovel.maleCharacterData;
+    const femaleChar = femaleCharacter || currentNovel.femaleCharacterData;
 
     setIsGeneratingFirstChapter(true);
     setFirstChapterContent('');
@@ -825,14 +819,14 @@ ${novelWorldSettings.protagonistDoing || '暂无'}
         prompt: `请根据以上世界背景和主角信息，创作本小说的第一章开头内容。要求：
 【核心规则】
 1. 必须严格使用【主要角色】中提供的角色信息，禁止自行创作新的主角！
-2. 男主角必须叫"${maleCharacter?.name || '未设置'}"，女主角必须叫"${femaleCharacter?.name || '未设置'}"
+2. 男主角必须叫"${maleChar?.name || '未设置'}"，女主角必须叫"${femaleChar?.name || '未设置'}"
 3. 详细介绍世界背景和时代设定
 4. 以设定的主角视角开篇，建立故事的基调和发展方向
 5. 字数在800-1000字左右`,
         title: currentNovel.title,
         themeType: currentNovel.themeType,
-        maleCharacter: maleCharacter,
-        femaleCharacter: femaleCharacter,
+        maleCharacter: maleChar,
+        femaleCharacter: femaleChar,
         previousChapters: [], // 第一次续写，没有之前的章节
       });
 
