@@ -258,6 +258,7 @@ export default function NovelWritingScreen() {
   // 自动保存相关
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>('');
+  const hasUnsavedChangesRef = useRef(false); // 跟踪是否有未保存的更改
   const continueLengthRef = useRef<number>(0); // 记录续写前的内容长度
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
@@ -402,9 +403,13 @@ export default function NovelWritingScreen() {
         }
       } else {
         // 如果已有选中的章节，加载该章节的最新内容
+        // 但如果用户有未保存的更改，不覆盖用户的内容
         const currentChapter = novelData.chapters.find(c => c.id === currentChapterId);
         if (currentChapter) {
-          setContent(currentChapter.content || '');
+          // 只有在没有未保存更改时才从数据库加载内容
+          if (!hasUnsavedChangesRef.current) {
+            setContent(currentChapter.content || '');
+          }
         } else {
           // 章节不存在了，切换到第一个章节
           if (novelData.chapters.length > 0) {
@@ -988,6 +993,7 @@ ${explicitWorldSetting}
         await updateNovelContent(novel.id, content);
       }
       lastSavedContentRef.current = content;
+      hasUnsavedChangesRef.current = false;
       
       // 更新 novel 状态
       const updatedNovel = await getNovelById(novel.id);
@@ -1013,6 +1019,7 @@ ${explicitWorldSetting}
         await updateNovelContent(novel.id, content);
       }
       lastSavedContentRef.current = content;
+      hasUnsavedChangesRef.current = false;
       
       // 更新 novel 状态
       const updatedNovel = await getNovelById(novel.id);
@@ -1444,6 +1451,8 @@ ${explicitWorldSetting}
       } else {
         await updateNovelContent(novel.id, content);
       }
+      lastSavedContentRef.current = content;
+      hasUnsavedChangesRef.current = false;
     } catch (error) {
       console.error('Save error:', error);
     }
@@ -2141,7 +2150,10 @@ ${conflictDescriptions}
               }
             ]}
             value={content}
-            onChangeText={setContent}
+            onChangeText={(text) => {
+              setContent(text);
+              hasUnsavedChangesRef.current = true;
+            }}
             placeholder="开始创作你的故事..."
             placeholderTextColor={theme.textMuted}
             multiline
