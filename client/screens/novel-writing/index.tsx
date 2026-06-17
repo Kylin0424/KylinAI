@@ -19,7 +19,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { Screen } from '@/components/Screen';
 import { ThemedText } from '@/components/ThemedText';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
-import { useFocusEffect } from 'expo-router';
 import { createStyles } from './styles';
 import { FloatingBall } from '@/components/FloatingBall';
 import {
@@ -674,11 +673,10 @@ export default function NovelWritingScreen() {
     }
   }, [params.selectedCharacterIds, novel]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [params.novelId])
-  );
+  // 只在组件首次挂载时加载数据，避免页面获得焦点时重复加载覆盖用户内容
+  useEffect(() => {
+    loadData();
+  }, []); // 空依赖数组，只在首次挂载时执行
 
   // 字数监测与提醒
   useEffect(() => {
