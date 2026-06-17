@@ -827,20 +827,47 @@ ${novelWorldSettings.protagonistDoing || '暂无'}
 `;
 
       const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
+      
+      // 构建明确的世界设定字符串，直接嵌入prompt
+      const explicitWorldSetting = `
+世界：${novelWorldSettings.worldName || '地球'}
+年代：${novelWorldSettings.eraBackground || '千禧年'}（千禧年前后，即1999-2001年左右）
+季节：${novelWorldSettings.seasonSetting || '春季'}
+地区：${novelWorldSettings.region || '中国北方'}
+城市：${novelWorldSettings.cityLocation || '黑龙江省哈尔滨市'}
+`.trim();
+      
       const body = JSON.stringify({
         worldSetting: worldSetting,
-        prompt: `请根据以上世界背景和主角信息，创作本小说的第一章开头内容。要求：
-【核心规则】
-1. 必须严格使用【主要角色】中提供的角色信息，禁止自行创作新的主角！
-2. 男主角必须叫"${maleChar?.name || '未设置'}"，女主角必须叫"${femaleChar?.name || '未设置'}"
-3. 详细介绍世界背景和时代设定
-4. 以设定的主角视角开篇，建立故事的基调和发展方向
-5. 字数在800-1000字左右`,
+        prompt: `你是一位专业的小说作家，请严格按照以下设定创作小说第一章开头。
+
+【必须严格遵守的世界设定】
+${explicitWorldSetting}
+
+【必须严格使用的主角】
+男主角：${maleChar?.name || '未设置'}
+- 年龄：${maleChar?.age || '?'}岁
+- 学历：${maleChar?.education || '未设置'}
+- 职业：${maleChar?.occupation || '未设置'}
+- 性格：${maleChar?.personality || '未设置'}
+
+女主角：${femaleChar?.name || '未设置'}
+- 年龄：${femaleChar?.age || '?'}岁
+- 学历：${femaleChar?.education || '未设置'}
+- 职业：${femaleChar?.occupation || '未设置'}
+- 性格：${femaleChar?.personality || '未设置'}
+
+【创作要求】
+1. 绝对必须使用上述主角姓名，禁止使用任何其他姓名作为主角！
+2. 故事必须发生在"${novelWorldSettings.eraBackground || '千禧年'}"时期的"${novelWorldSettings.cityLocation || '哈尔滨市'}"
+3. 必须体现时代特色（千禧年前后的社会背景、生活方式等）
+4. 必须体现地域特色（哈尔滨的地方风貌、方言习惯等）
+5. 字数要求：800-1000字`,
         title: currentNovel.title,
         themeType: currentNovel.themeType,
         maleCharacter: maleChar,
         femaleCharacter: femaleChar,
-        previousChapters: [], // 第一次续写，没有之前的章节
+        previousChapters: [],
       });
 
       const sse = new RNSSE(url, {
