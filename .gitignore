@@ -12,3 +12,4 @@ logs/
 node-compile-cache/
 *.tar.gz
 .cozeproj/reduction
+.codegraph
