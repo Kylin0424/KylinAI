@@ -831,13 +831,13 @@ ${novelWorldSettings.protagonistDoing || '暂无'}
 
       const url = `${EXPO_PUBLIC_BACKEND_BASE_URL}/api/v1/novel/continue`;
       
-      // 构建明确的世界设定字符串，直接嵌入prompt
+      // 构建明确的世界设定字符串，直接嵌入prompt（只使用用户设定的值）
       const explicitWorldSetting = `
-世界：${novelWorldSettings.worldName || '地球'}
-年代：${novelWorldSettings.eraBackground || '千禧年'}（千禧年前后，即1999-2001年左右）
-季节：${novelWorldSettings.seasonSetting || '春季'}
-地区：${novelWorldSettings.region || '中国北方'}
-城市：${novelWorldSettings.cityLocation || '黑龙江省哈尔滨市'}
+世界：${novelWorldSettings.worldName || '未设置'}
+年代：${novelWorldSettings.eraBackground || '未设置'}
+季节：${novelWorldSettings.seasonSetting || '未设置'}
+地区：${novelWorldSettings.region || '未设置'}
+城市：${novelWorldSettings.cityLocation || '未设置'}
 `.trim();
       
       const body = JSON.stringify({
@@ -862,9 +862,9 @@ ${explicitWorldSetting}
 
 【创作要求】
 1. 绝对必须使用上述主角姓名，禁止使用任何其他姓名作为主角！
-2. 故事必须发生在"${novelWorldSettings.eraBackground || '千禧年'}"时期的"${novelWorldSettings.cityLocation || '哈尔滨市'}"
-3. 必须体现时代特色（千禧年前后的社会背景、生活方式等）
-4. 必须体现地域特色（哈尔滨的地方风貌、方言习惯等）
+2. 故事必须发生在"${novelWorldSettings.eraBackground || '未设定'}"时期的"${novelWorldSettings.cityLocation || '未设定'}"
+3. 必须体现时代特色（${novelWorldSettings.eraBackground || '未设定'}时期的社会背景、生活方式等）
+4. 必须体现地域特色（${novelWorldSettings.cityLocation || '未设定'}的地方风貌、方言习惯等）
 5. 字数要求：800-1000字`,
         title: currentNovel.title,
         themeType: currentNovel.themeType,
